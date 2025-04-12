@@ -1,0 +1,31 @@
+#!/usr/bin/env bash
+
+DIR_SCRIPT=$( cd -- "$( dirname -- "${BASH_SOURCE[0]}" )" &> /dev/null && pwd )
+DIR_ROOT=$( dirname $( dirname $( dirname $DIR_SCRIPT ) ) )
+WORKDIR="/workdir"
+CONTAINER_NAME="libnode_devcontainer"
+
+
+sudo docker run --rm -it -v $DIR_ROOT:/$WORKDIR debian:12 /bin/bash -c "\
+    DEBIAN_FRONTEND=noninteractive apt update -y && \
+    DEBIAN_FRONTEND=noninteractive apt upgrade -y && \
+    DEBIAN_FRONTEND=noninteractive apt install -y software-properties-common wget curl jq git build-essential zsh make cmake jq clang && \
+    add-apt-repository -y ppa:deadsnakes/ppa && \
+    DEBIAN_FRONTEND=noninteractive apt update -y && \
+    DEBIAN_FRONTEND=noninteractive apt install -y python3.10 python3.10-venv python3.10-dev && \
+    curl -sS "https://bootstrap.pypa.io/get-pip.py" | python3.10 && \
+    git config --global safe.directory '*' && \
+    bash $WORKDIR/scripts/build \
+"
+
+# sudo docker run --rm -it -v $DIR_ROOT:/$WORKDIR ubuntu:22.04 /bin/bash -c "\
+#     DEBIAN_FRONTEND=noninteractive apt update -y && \
+#     DEBIAN_FRONTEND=noninteractive apt upgrade -y && \
+#     DEBIAN_FRONTEND=noninteractive apt install -y software-properties-common wget curl jq git build-essential zsh make cmake jq clang && \
+#     add-apt-repository -y ppa:deadsnakes/ppa && \
+#     DEBIAN_FRONTEND=noninteractive apt update -y && \
+#     DEBIAN_FRONTEND=noninteractive apt install -y python3.10 python3.10-venv python3.10-dev && \
+#     curl -sS "https://bootstrap.pypa.io/get-pip.py" | python3.10 && \
+#     git config --global safe.directory '*' && \
+#     bash $WORKDIR/scripts/build \
+# "

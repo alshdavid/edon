@@ -1,0 +1,135 @@
+#!/usr/bin/env bash
+set -e
+
+DIR_SCRIPT=$( cd -- "$( dirname -- "${BASH_SOURCE[0]}" )" &> /dev/null && pwd )
+DIR_ROOT=$( dirname $DIR_SCRIPT )
+
+arch=""
+platform=""
+threads="8";
+
+case $(uname -m) in
+  x86_64 | x86-64 | x64 | amd64)
+    arch="x64"
+  ;;
+  aarch64 | arm64)
+    arch="arm64"
+  ;;
+esac
+
+case $(uname -s) in
+  Darwin)
+    platform="mac"
+  ;;
+  Linux)
+    platform="linux"
+  ;;
+  MSYS_NT*)
+    platform="windows"
+  ;;
+esac
+
+if [ "$platform" = "linux" ]; then
+    threads=$(lscpu -b -p=Core,Socket | grep -v '^#' | sort -u | wc -l);
+fi
+
+nodejs_github_repo="https://github.com/nodejs/node";
+dir_nodejs="$DIR_ROOT/packages/libnode";
+dir_nodejs_sources="$DIR_ROOT/packages/libnode/node";
+dir_nodejs_release="$dir_nodejs_sources/out/Release";
+dir_nodejs_patches="$DIR_ROOT/packages/libnode/patches";
+nodejs_version="$(cat $dir_nodejs/version.txt)"
+dir_release="$DIR_ROOT/release/libnode-$nodejs_version-$platform-$arch"
+
+function run() {
+    exec env LIBNODE_PATH="$dir_release/libnode.so" cargo run --package edon_example_basic
+}
+
+function build() {
+    fetch-nodejs-sources
+    patch-nodejs-sources
+    build-nodejs-sources
+    copy-nodejs-output
+    reset-nodejs-sources
+}
+
+function build-nodejs-sources() {
+    cd $dir_nodejs_sources
+    if [ "$arch" = "arm64" ]; then
+        ./configure --shared --dest-cpu $arch --dest-os $platform --with-arm-float-abi hard --with-arm-fpu neon
+    else
+        ./configure --shared --dest-cpu $arch --dest-os $platform --disable-single-executable-application
+    fi
+    make -j$threads
+}
+
+function build-nodejs-sources-static() {
+    cd $dir_nodejs_sources
+    if [ "$arch" = "arm64" ]; then
+        ./configure --shared --dest-cpu $arch --dest-os $platform --with-arm-float-abi hard --with-arm-fpu neon --fully-static --enable-static 
+    else
+        ./configure --shared --dest-cpu $arch --dest-os $platform --fully-static --enable-static
+    fi
+    make -j$threads
+}
+
+function copy-nodejs-output() {
+    rm -rf $dir_release
+    mkdir -p $dir_release
+    cp $dir_nodejs_release/node $dir_release
+    cp $dir_nodejs_release/libnode.* $dir_release
+
+    for file in "$dir_release"/*; do
+        if [[ "${file}" =~ "libnode." ]]; then
+            ln -sr $file $dir_release/libnode.so
+            break
+        fi
+    done
+
+    ls -l "$dir_release"
+}
+
+function fetch-nodejs-sources() {
+    if [ -d "$dir_nodejs_sources" ]; then
+        cd $dir_nodejs_sources
+        git reset --hard
+        git fetch origin $nodejs_version
+        git checkout $nodejs_version
+        cd $DIR_SCRIPT
+    else
+        git clone $nodejs_github_repo --branch $nodejs_version --depth=1 $dir_nodejs_sources
+    fi
+}
+
+function patch-nodejs-sources() {
+    function traverse() {
+        for source in "$1"/*
+        do
+            if [ ! -d "${source}" ] ; then
+                dest=${source//$dir_nodejs_patches/$dir_nodejs_sources}
+                contents="$(cat $source)"
+                echo "" >> "$dest"
+                echo "$contents" >> "$dest"
+                echo "patching $dest"
+            else
+                traverse "${source}"
+            fi
+        done
+    }
+
+    traverse $dir_nodejs_patches
+}
+
+function reset-nodejs-sources() {
+    cd $dir_nodejs_sources
+    git reset --hard
+    git fetch origin $nodejs_version
+    git checkout $nodejs_version
+    cd $DIR_SCRIPT
+}
+
+if [ "$1" = "" ]; then
+    build
+else
+    "$1" "$@"
+fi

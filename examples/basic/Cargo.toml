@@ -1,0 +1,9 @@
+[package]
+name = "edon_example_basic"
+version = "0.0.0-local"
+authors = ["alshdavid"]
+edition = "2021"
+license = "MIT"
+
+[dependencies]
+edon = { path = "../../packages/edon" }
