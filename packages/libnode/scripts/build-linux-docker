@@ -1,0 +1,22 @@
+#!/usr/bin/env bash
+
+COMMANDS=$(cat <<-END
+set -e
+
+cd /workdir
+
+apt update -y
+apt upgrade -y
+apt install -y software-properties-common wget curl jq git build-essential zsh make cmake jq clang
+git config --global safe.directory '*'
+
+git clone "https://github.com/nodejs/node" --branch v23.11.0 --depth=1 node
+
+cd ./node
+./configure --shared --fully-static --enable-static
+make -j16
+
+END )
+
+
+sudo docker run --rm -it -v $PWD/workdir:/workdir debian:12 /bin/bash -c "echo -e \"$COMMANDS\" | /bin/bash -s"
