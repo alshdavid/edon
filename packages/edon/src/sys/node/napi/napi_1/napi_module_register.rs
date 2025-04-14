@@ -7,5 +7,5 @@ type SIGNATURE = fn(mod_: *mut napi_module) -> napi_status;
 static CACHE: OnceLock<super::super::super::libnode::DynSymbol<SIGNATURE>> = OnceLock::new();
 
 pub unsafe fn napi_module_register(mod_: *mut napi_module) -> napi_status {
-  CACHE.get_or_init(|| super::super::super::libnode::libnode_sym(SYMBOL))(mod_)
+  CACHE.get_or_init(|| super::super::super::libnode::libnode_sym(SYMBOL).unwrap())(mod_)
 }

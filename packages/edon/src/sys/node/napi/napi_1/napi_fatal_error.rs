@@ -18,7 +18,7 @@ pub unsafe fn napi_fatal_error(
   message: *const c_char,
   message_len: isize,
 ) -> napi_status {
-  CACHE.get_or_init(|| super::super::super::libnode::libnode_sym(SYMBOL))(
+  CACHE.get_or_init(|| super::super::super::libnode::libnode_sym(SYMBOL).unwrap())(
     location,
     location_len,
     message,

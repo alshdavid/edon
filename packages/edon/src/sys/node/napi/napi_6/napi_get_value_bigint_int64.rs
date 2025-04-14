@@ -13,7 +13,7 @@ pub unsafe fn napi_get_value_bigint_int64(
   result: *mut i64,
   lossless: *mut bool,
 ) -> napi_status {
-  CACHE.get_or_init(|| super::super::super::libnode::libnode_sym(SYMBOL))(
+  CACHE.get_or_init(|| super::super::super::libnode::libnode_sym(SYMBOL).unwrap())(
     env, value, result, lossless,
   )
 }

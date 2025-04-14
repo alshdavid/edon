@@ -12,5 +12,5 @@ pub unsafe fn napi_get_new_target(
   cbinfo: napi_callback_info,
   result: *mut napi_value,
 ) -> napi_status {
-  CACHE.get_or_init(|| super::super::super::libnode::libnode_sym(SYMBOL))(env, cbinfo, result)
+  CACHE.get_or_init(|| super::super::super::libnode::libnode_sym(SYMBOL).unwrap())(env, cbinfo, result)
 }

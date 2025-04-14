@@ -18,7 +18,7 @@ pub unsafe fn napi_get_arraybuffer_info(
   data: *mut *mut c_void,
   byte_length: *mut usize,
 ) -> napi_status {
-  CACHE.get_or_init(|| super::super::super::libnode::libnode_sym(SYMBOL))(
+  CACHE.get_or_init(|| super::super::super::libnode::libnode_sym(SYMBOL).unwrap())(
     env,
     arraybuffer,
     data,

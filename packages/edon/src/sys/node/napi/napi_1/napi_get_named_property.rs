@@ -18,7 +18,7 @@ pub unsafe fn napi_get_named_property(
   utf8name: *const c_char,
   result: *mut napi_value,
 ) -> napi_status {
-  CACHE.get_or_init(|| super::super::super::libnode::libnode_sym(SYMBOL))(
+  CACHE.get_or_init(|| super::super::super::libnode::libnode_sym(SYMBOL).unwrap())(
     env, object, utf8name, result,
   )
 }

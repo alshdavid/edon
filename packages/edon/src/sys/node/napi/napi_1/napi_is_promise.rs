@@ -11,5 +11,5 @@ pub unsafe fn napi_is_promise(
   value: napi_value,
   is_promise: *mut bool,
 ) -> napi_status {
-  CACHE.get_or_init(|| super::super::super::libnode::libnode_sym(SYMBOL))(env, value, is_promise)
+  CACHE.get_or_init(|| super::super::super::libnode::libnode_sym(SYMBOL).unwrap())(env, value, is_promise)
 }

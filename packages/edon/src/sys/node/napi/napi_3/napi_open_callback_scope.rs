@@ -17,7 +17,7 @@ pub unsafe fn napi_open_callback_scope(
   context: napi_async_context,
   result: *mut napi_callback_scope,
 ) -> napi_status {
-  CACHE.get_or_init(|| super::super::super::libnode::libnode_sym(SYMBOL))(
+  CACHE.get_or_init(|| super::super::super::libnode::libnode_sym(SYMBOL).unwrap())(
     env,
     resource_object,
     context,

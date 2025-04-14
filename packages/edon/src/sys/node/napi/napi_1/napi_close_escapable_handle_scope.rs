@@ -11,5 +11,5 @@ pub unsafe fn napi_close_escapable_handle_scope(
   env: napi_env,
   scope: napi_escapable_handle_scope,
 ) -> napi_status {
-  CACHE.get_or_init(|| super::super::super::libnode::libnode_sym(SYMBOL))(env, scope)
+  CACHE.get_or_init(|| super::super::super::libnode::libnode_sym(SYMBOL).unwrap())(env, scope)
 }

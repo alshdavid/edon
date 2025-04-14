@@ -11,5 +11,5 @@ pub unsafe fn napi_get_threadsafe_function_context(
   func: napi_threadsafe_function,
   result: *mut *mut c_void,
 ) -> napi_status {
-  CACHE.get_or_init(|| super::super::super::libnode::libnode_sym(SYMBOL))(func, result)
+  CACHE.get_or_init(|| super::super::super::libnode::libnode_sym(SYMBOL).unwrap())(func, result)
 }

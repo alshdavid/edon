@@ -13,7 +13,7 @@ pub unsafe fn napi_create_reference(
   initial_refcount: u32,
   result: *mut napi_ref,
 ) -> napi_status {
-  CACHE.get_or_init(|| super::super::super::libnode::libnode_sym(SYMBOL))(
+  CACHE.get_or_init(|| super::super::super::libnode::libnode_sym(SYMBOL).unwrap())(
     env,
     value,
     initial_refcount,

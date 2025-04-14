@@ -11,5 +11,5 @@ pub unsafe fn napi_reject_deferred(
   deferred: napi_deferred,
   rejection: napi_value,
 ) -> napi_status {
-  CACHE.get_or_init(|| super::super::super::libnode::libnode_sym(SYMBOL))(env, deferred, rejection)
+  CACHE.get_or_init(|| super::super::super::libnode::libnode_sym(SYMBOL).unwrap())(env, deferred, rejection)
 }

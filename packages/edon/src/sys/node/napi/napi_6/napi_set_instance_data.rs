@@ -18,7 +18,7 @@ pub unsafe fn napi_set_instance_data(
   finalize_cb: napi_finalize,
   finalize_hint: *mut c_void,
 ) -> napi_status {
-  CACHE.get_or_init(|| super::super::super::libnode::libnode_sym(SYMBOL))(
+  CACHE.get_or_init(|| super::super::super::libnode::libnode_sym(SYMBOL).unwrap())(
     env,
     data,
     finalize_cb,

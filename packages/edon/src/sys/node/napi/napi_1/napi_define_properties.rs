@@ -17,7 +17,7 @@ pub unsafe fn napi_define_properties(
   property_count: usize,
   properties: *const napi_property_descriptor,
 ) -> napi_status {
-  CACHE.get_or_init(|| super::super::super::libnode::libnode_sym(SYMBOL))(
+  CACHE.get_or_init(|| super::super::super::libnode::libnode_sym(SYMBOL).unwrap())(
     env,
     object,
     property_count,

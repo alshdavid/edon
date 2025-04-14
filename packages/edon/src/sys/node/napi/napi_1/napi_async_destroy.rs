@@ -11,5 +11,5 @@ pub unsafe fn napi_async_destroy(
   env: napi_env,
   async_context: napi_async_context,
 ) -> napi_status {
-  CACHE.get_or_init(|| super::super::super::libnode::libnode_sym(SYMBOL))(env, async_context)
+  CACHE.get_or_init(|| super::super::super::libnode::libnode_sym(SYMBOL).unwrap())(env, async_context)
 }

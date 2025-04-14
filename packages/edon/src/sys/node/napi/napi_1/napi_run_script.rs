@@ -11,5 +11,5 @@ pub unsafe fn napi_run_script(
   script: napi_value,
   result: *mut napi_value,
 ) -> napi_status {
-  CACHE.get_or_init(|| super::super::super::libnode::libnode_sym(SYMBOL))(env, script, result)
+  CACHE.get_or_init(|| super::super::super::libnode::libnode_sym(SYMBOL).unwrap())(env, script, result)
 }

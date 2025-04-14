@@ -17,7 +17,7 @@ pub unsafe fn napi_escape_handle(
   escapee: napi_value,
   result: *mut napi_value,
 ) -> napi_status {
-  CACHE.get_or_init(|| super::super::super::libnode::libnode_sym(SYMBOL))(
+  CACHE.get_or_init(|| super::super::super::libnode::libnode_sym(SYMBOL).unwrap())(
     env, scope, escapee, result,
   )
 }

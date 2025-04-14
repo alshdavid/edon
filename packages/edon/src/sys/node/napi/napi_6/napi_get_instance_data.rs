@@ -11,5 +11,5 @@ pub unsafe fn napi_get_instance_data(
   env: napi_env,
   data: *mut *mut c_void,
 ) -> napi_status {
-  CACHE.get_or_init(|| super::super::super::libnode::libnode_sym(SYMBOL))(env, data)
+  CACHE.get_or_init(|| super::super::super::libnode::libnode_sym(SYMBOL).unwrap())(env, data)
 }

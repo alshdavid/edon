@@ -23,7 +23,7 @@ pub unsafe fn napi_make_callback(
   argv: *const napi_value,
   result: *mut napi_value,
 ) -> napi_status {
-  CACHE.get_or_init(|| super::super::super::libnode::libnode_sym(SYMBOL))(
+  CACHE.get_or_init(|| super::super::super::libnode::libnode_sym(SYMBOL).unwrap())(
     env,
     async_context,
     recv,

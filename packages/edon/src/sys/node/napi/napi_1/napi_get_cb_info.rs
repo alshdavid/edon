@@ -22,7 +22,7 @@ pub unsafe fn napi_get_cb_info(
   this_arg: *mut napi_value,
   data: *mut *mut c_void,
 ) -> napi_status {
-  CACHE.get_or_init(|| super::super::super::libnode::libnode_sym(SYMBOL))(
+  CACHE.get_or_init(|| super::super::super::libnode::libnode_sym(SYMBOL).unwrap())(
     env, cbinfo, argc, argv, this_arg, data,
   )
 }

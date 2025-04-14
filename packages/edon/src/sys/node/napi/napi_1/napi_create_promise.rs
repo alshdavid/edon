@@ -12,5 +12,5 @@ pub unsafe fn napi_create_promise(
   deferred: *mut napi_deferred,
   promise: *mut napi_value,
 ) -> napi_status {
-  CACHE.get_or_init(|| super::super::super::libnode::libnode_sym(SYMBOL))(env, deferred, promise)
+  CACHE.get_or_init(|| super::super::super::libnode::libnode_sym(SYMBOL).unwrap())(env, deferred, promise)
 }

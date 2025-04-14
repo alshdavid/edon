@@ -12,5 +12,5 @@ pub unsafe fn napi_unwrap(
   js_object: napi_value,
   result: *mut *mut c_void,
 ) -> napi_status {
-  CACHE.get_or_init(|| super::super::super::libnode::libnode_sym(SYMBOL))(env, js_object, result)
+  CACHE.get_or_init(|| super::super::super::libnode::libnode_sym(SYMBOL).unwrap())(env, js_object, result)
 }

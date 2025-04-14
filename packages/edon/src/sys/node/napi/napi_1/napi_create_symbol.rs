@@ -11,5 +11,5 @@ pub unsafe fn napi_create_symbol(
   description: napi_value,
   result: *mut napi_value,
 ) -> napi_status {
-  CACHE.get_or_init(|| super::super::super::libnode::libnode_sym(SYMBOL))(env, description, result)
+  CACHE.get_or_init(|| super::super::super::libnode::libnode_sym(SYMBOL).unwrap())(env, description, result)
 }

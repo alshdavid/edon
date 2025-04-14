@@ -11,5 +11,5 @@ pub unsafe fn napi_is_dataview(
   value: napi_value,
   result: *mut bool,
 ) -> napi_status {
-  CACHE.get_or_init(|| super::super::super::libnode::libnode_sym(SYMBOL))(env, value, result)
+  CACHE.get_or_init(|| super::super::super::libnode::libnode_sym(SYMBOL).unwrap())(env, value, result)
 }

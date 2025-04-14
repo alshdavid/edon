@@ -12,5 +12,5 @@ pub unsafe fn napi_throw_range_error(
   code: *const c_char,
   msg: *const c_char,
 ) -> napi_status {
-  CACHE.get_or_init(|| super::super::super::libnode::libnode_sym(SYMBOL))(env, code, msg)
+  CACHE.get_or_init(|| super::super::super::libnode::libnode_sym(SYMBOL).unwrap())(env, code, msg)
 }

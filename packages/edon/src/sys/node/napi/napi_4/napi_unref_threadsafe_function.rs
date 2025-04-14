@@ -10,5 +10,5 @@ pub unsafe fn napi_unref_threadsafe_function(
   env: napi_env,
   func: napi_threadsafe_function,
 ) -> napi_status {
-  CACHE.get_or_init(|| super::super::super::libnode::libnode_sym(SYMBOL))(env, func)
+  CACHE.get_or_init(|| super::super::super::libnode::libnode_sym(SYMBOL).unwrap())(env, func)
 }

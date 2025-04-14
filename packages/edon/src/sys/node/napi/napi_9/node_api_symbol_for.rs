@@ -14,7 +14,7 @@ pub unsafe fn node_api_symbol_for(
   length: isize,
   result: *mut napi_value,
 ) -> napi_status {
-  CACHE.get_or_init(|| super::super::super::libnode::libnode_sym(SYMBOL))(
+  CACHE.get_or_init(|| super::super::super::libnode::libnode_sym(SYMBOL).unwrap())(
     env, utf8name, length, result,
   )
 }

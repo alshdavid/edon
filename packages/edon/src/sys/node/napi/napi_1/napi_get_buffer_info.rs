@@ -14,5 +14,5 @@ pub unsafe fn napi_get_buffer_info(
   data: *mut *mut c_void,
   length: *mut usize,
 ) -> napi_status {
-  CACHE.get_or_init(|| super::super::super::libnode::libnode_sym(SYMBOL))(env, value, data, length)
+  CACHE.get_or_init(|| super::super::super::libnode::libnode_sym(SYMBOL).unwrap())(env, value, data, length)
 }

@@ -13,5 +13,5 @@ pub unsafe fn napi_set_property(
   key: napi_value,
   value: napi_value,
 ) -> napi_status {
-  CACHE.get_or_init(|| super::super::super::libnode::libnode_sym(SYMBOL))(env, object, key, value)
+  CACHE.get_or_init(|| super::super::super::libnode::libnode_sym(SYMBOL).unwrap())(env, object, key, value)
 }

@@ -11,5 +11,5 @@ pub unsafe fn napi_get_value_uint32(
   value: napi_value,
   result: *mut u32,
 ) -> napi_status {
-  CACHE.get_or_init(|| super::super::super::libnode::libnode_sym(SYMBOL))(env, value, result)
+  CACHE.get_or_init(|| super::super::super::libnode::libnode_sym(SYMBOL).unwrap())(env, value, result)
 }

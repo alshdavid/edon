@@ -11,5 +11,5 @@ pub unsafe fn napi_reference_ref(
   ref_: napi_ref,
   result: *mut u32,
 ) -> napi_status {
-  CACHE.get_or_init(|| super::super::super::libnode::libnode_sym(SYMBOL))(env, ref_, result)
+  CACHE.get_or_init(|| super::super::super::libnode::libnode_sym(SYMBOL).unwrap())(env, ref_, result)
 }

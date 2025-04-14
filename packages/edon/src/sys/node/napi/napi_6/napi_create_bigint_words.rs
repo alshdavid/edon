@@ -20,7 +20,7 @@ pub unsafe fn napi_create_bigint_words(
   words: *const u64,
   result: *mut napi_value,
 ) -> napi_status {
-  CACHE.get_or_init(|| super::super::super::libnode::libnode_sym(SYMBOL))(
+  CACHE.get_or_init(|| super::super::super::libnode::libnode_sym(SYMBOL).unwrap())(
     env, sign_bit, word_count, words, result,
   )
 }

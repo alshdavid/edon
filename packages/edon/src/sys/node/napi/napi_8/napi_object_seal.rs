@@ -10,5 +10,5 @@ pub unsafe fn napi_object_seal(
   env: napi_env,
   object: napi_value,
 ) -> napi_status {
-  CACHE.get_or_init(|| super::super::super::libnode::libnode_sym(SYMBOL))(env, object)
+  CACHE.get_or_init(|| super::super::super::libnode::libnode_sym(SYMBOL).unwrap())(env, object)
 }

@@ -19,7 +19,7 @@ pub unsafe fn napi_get_value_string_utf16(
   bufsize: usize,
   result: *mut usize,
 ) -> napi_status {
-  CACHE.get_or_init(|| super::super::super::libnode::libnode_sym(SYMBOL))(
+  CACHE.get_or_init(|| super::super::super::libnode::libnode_sym(SYMBOL).unwrap())(
     env, value, buf, bufsize, result,
   )
 }

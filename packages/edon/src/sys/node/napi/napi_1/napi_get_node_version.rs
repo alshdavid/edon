@@ -10,5 +10,5 @@ pub unsafe fn napi_get_node_version(
   env: napi_env,
   version: *mut *const napi_node_version,
 ) -> napi_status {
-  CACHE.get_or_init(|| super::super::super::libnode::libnode_sym(SYMBOL))(env, version)
+  CACHE.get_or_init(|| super::super::super::libnode::libnode_sym(SYMBOL).unwrap())(env, version)
 }

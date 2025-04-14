@@ -10,5 +10,5 @@ pub unsafe fn napi_close_callback_scope(
   env: napi_env,
   scope: napi_callback_scope,
 ) -> napi_status {
-  CACHE.get_or_init(|| super::super::super::libnode::libnode_sym(SYMBOL))(env, scope)
+  CACHE.get_or_init(|| super::super::super::libnode::libnode_sym(SYMBOL).unwrap())(env, scope)
 }

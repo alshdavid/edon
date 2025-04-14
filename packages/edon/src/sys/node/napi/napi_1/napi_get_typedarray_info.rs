@@ -24,7 +24,7 @@ pub unsafe fn napi_get_typedarray_info(
   arraybuffer: *mut napi_value,
   byte_offset: *mut usize,
 ) -> napi_status {
-  CACHE.get_or_init(|| super::super::super::libnode::libnode_sym(SYMBOL))(
+  CACHE.get_or_init(|| super::super::super::libnode::libnode_sym(SYMBOL).unwrap())(
     env,
     typedarray,
     type_,

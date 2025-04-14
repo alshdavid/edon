@@ -10,5 +10,5 @@ pub unsafe fn napi_is_exception_pending(
   env: napi_env,
   result: *mut bool,
 ) -> napi_status {
-  CACHE.get_or_init(|| super::super::super::libnode::libnode_sym(SYMBOL))(env, result)
+  CACHE.get_or_init(|| super::super::super::libnode::libnode_sym(SYMBOL).unwrap())(env, result)
 }

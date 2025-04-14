@@ -22,7 +22,7 @@ pub unsafe fn napi_add_finalizer(
   finalize_hint: *mut c_void,
   result: *mut napi_ref,
 ) -> napi_status {
-  CACHE.get_or_init(|| super::super::super::libnode::libnode_sym(SYMBOL))(
+  CACHE.get_or_init(|| super::super::super::libnode::libnode_sym(SYMBOL).unwrap())(
     env,
     js_object,
     native_object,

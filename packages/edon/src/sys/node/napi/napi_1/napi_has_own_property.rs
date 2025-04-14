@@ -13,5 +13,5 @@ pub unsafe fn napi_has_own_property(
   key: napi_value,
   result: *mut bool,
 ) -> napi_status {
-  CACHE.get_or_init(|| super::super::super::libnode::libnode_sym(SYMBOL))(env, object, key, result)
+  CACHE.get_or_init(|| super::super::super::libnode::libnode_sym(SYMBOL).unwrap())(env, object, key, result)
 }

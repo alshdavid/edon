@@ -22,7 +22,7 @@ pub unsafe fn napi_create_external_buffer(
   finalize_hint: *mut c_void,
   result: *mut napi_value,
 ) -> napi_status {
-  CACHE.get_or_init(|| super::super::super::libnode::libnode_sym(SYMBOL))(
+  CACHE.get_or_init(|| super::super::super::libnode::libnode_sym(SYMBOL).unwrap())(
     env,
     length,
     data,

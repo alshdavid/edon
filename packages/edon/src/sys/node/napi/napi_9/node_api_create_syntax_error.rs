@@ -13,5 +13,5 @@ pub unsafe fn node_api_create_syntax_error(
   msg: napi_value,
   result: *mut napi_value,
 ) -> napi_status {
-  CACHE.get_or_init(|| super::super::super::libnode::libnode_sym(SYMBOL))(env, code, msg, result)
+  CACHE.get_or_init(|| super::super::super::libnode::libnode_sym(SYMBOL).unwrap())(env, code, msg, result)
 }

@@ -24,7 +24,7 @@ pub unsafe fn napi_create_async_work(
   data: *mut c_void,
   result: *mut napi_async_work,
 ) -> napi_status {
-  CACHE.get_or_init(|| super::super::super::libnode::libnode_sym(SYMBOL))(
+  CACHE.get_or_init(|| super::super::super::libnode::libnode_sym(SYMBOL).unwrap())(
     env,
     async_resource,
     async_resource_name,

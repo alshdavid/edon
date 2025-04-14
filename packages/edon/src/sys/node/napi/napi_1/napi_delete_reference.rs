@@ -10,5 +10,5 @@ pub unsafe fn napi_delete_reference(
   env: napi_env,
   ref_: napi_ref,
 ) -> napi_status {
-  CACHE.get_or_init(|| super::super::super::libnode::libnode_sym(SYMBOL))(env, ref_)
+  CACHE.get_or_init(|| super::super::super::libnode::libnode_sym(SYMBOL).unwrap())(env, ref_)
 }

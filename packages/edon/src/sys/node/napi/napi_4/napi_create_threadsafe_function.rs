@@ -32,7 +32,7 @@ pub unsafe fn napi_create_threadsafe_function(
   call_js_cb: napi_threadsafe_function_call_js,
   result: *mut napi_threadsafe_function,
 ) -> napi_status {
-  CACHE.get_or_init(|| super::super::super::libnode::libnode_sym(SYMBOL))(
+  CACHE.get_or_init(|| super::super::super::libnode::libnode_sym(SYMBOL).unwrap())(
     env,
     func,
     async_resource,

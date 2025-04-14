@@ -27,7 +27,7 @@ pub unsafe fn napi_define_class(
   properties: *const napi_property_descriptor,
   result: *mut napi_value,
 ) -> napi_status {
-  CACHE.get_or_init(|| super::super::super::libnode::libnode_sym(SYMBOL))(
+  CACHE.get_or_init(|| super::super::super::libnode::libnode_sym(SYMBOL).unwrap())(
     env,
     utf8name,
     length,

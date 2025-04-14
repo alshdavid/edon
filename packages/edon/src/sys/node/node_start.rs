@@ -9,5 +9,5 @@ pub unsafe fn node_start(
   argc: c_int,
   argv: *const *const c_char,
 ) {
-  CACHE.get_or_init(|| super::libnode::libnode_sym(b"node_start"))(argc, argv)
+  CACHE.get_or_init(|| super::libnode::libnode_sym(b"node_start").unwrap())(argc, argv)
 }

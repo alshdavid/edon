@@ -18,7 +18,7 @@ pub unsafe fn napi_add_async_cleanup_hook(
   arg: *mut c_void,
   remove_handle: *mut napi_async_cleanup_hook_handle,
 ) -> napi_status {
-  CACHE.get_or_init(|| super::super::super::libnode::libnode_sym(SYMBOL))(
+  CACHE.get_or_init(|| super::super::super::libnode::libnode_sym(SYMBOL).unwrap())(
     env,
     hook,
     arg,

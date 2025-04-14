@@ -10,5 +10,5 @@ pub unsafe fn napi_get_uv_event_loop(
   env: napi_env,
   loop_: *mut *mut uv_loop_s,
 ) -> napi_status {
-  CACHE.get_or_init(|| super::super::super::libnode::libnode_sym(SYMBOL))(env, loop_)
+  CACHE.get_or_init(|| super::super::super::libnode::libnode_sym(SYMBOL).unwrap())(env, loop_)
 }

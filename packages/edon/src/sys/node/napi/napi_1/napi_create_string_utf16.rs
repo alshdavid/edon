@@ -13,5 +13,5 @@ pub unsafe fn napi_create_string_utf16(
   length: isize,
   result: *mut napi_value,
 ) -> napi_status {
-  CACHE.get_or_init(|| super::super::super::libnode::libnode_sym(SYMBOL))(env, str_, length, result)
+  CACHE.get_or_init(|| super::super::super::libnode::libnode_sym(SYMBOL).unwrap())(env, str_, length, result)
 }

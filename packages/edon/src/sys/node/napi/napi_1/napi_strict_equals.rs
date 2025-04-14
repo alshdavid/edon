@@ -13,5 +13,5 @@ pub unsafe fn napi_strict_equals(
   rhs: napi_value,
   result: *mut bool,
 ) -> napi_status {
-  CACHE.get_or_init(|| super::super::super::libnode::libnode_sym(SYMBOL))(env, lhs, rhs, result)
+  CACHE.get_or_init(|| super::super::super::libnode::libnode_sym(SYMBOL).unwrap())(env, lhs, rhs, result)
 }

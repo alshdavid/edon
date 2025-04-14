@@ -42,8 +42,8 @@ nodejs_version="$(cat $dir_nodejs/version.txt)"
 dir_release="$DIR_ROOT/release/libnode-$nodejs_version-$platform-$arch"
 
 function run() {
-    # exec cargo run --package edon_example_basic
-    exec env EDON_LIBNODE_PATH="$dir_release/libnode.so" cargo run --package edon_example_basic
+    exec cargo run --package edon_example_basic
+    # exec env EDON_LIBNODE_PATH="$dir_release/libnode.so" cargo run --package edon_example_basic
 }
 
 function build-libnode() {

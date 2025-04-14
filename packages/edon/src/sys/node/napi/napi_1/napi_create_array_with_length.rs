@@ -11,5 +11,5 @@ pub unsafe fn napi_create_array_with_length(
   length: usize,
   result: *mut napi_value,
 ) -> napi_status {
-  CACHE.get_or_init(|| super::super::super::libnode::libnode_sym(SYMBOL))(env, length, result)
+  CACHE.get_or_init(|| super::super::super::libnode::libnode_sym(SYMBOL).unwrap())(env, length, result)
 }

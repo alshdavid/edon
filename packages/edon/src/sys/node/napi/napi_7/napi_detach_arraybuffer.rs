@@ -10,5 +10,5 @@ pub unsafe fn napi_detach_arraybuffer(
   env: napi_env,
   arraybuffer: napi_value,
 ) -> napi_status {
-  CACHE.get_or_init(|| super::super::super::libnode::libnode_sym(SYMBOL))(env, arraybuffer)
+  CACHE.get_or_init(|| super::super::super::libnode::libnode_sym(SYMBOL).unwrap())(env, arraybuffer)
 }
