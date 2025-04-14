@@ -72,11 +72,17 @@ Ok(())
 
 My end goal is that `edon` is installed via crates.io and be used without any additional downloads or fragile configurations. It should be turn-key & batteries included.
 
-I have plans to compile libnode to a statically linked library and vendor it within the crate however I have made a few attempts at building Node.js this way without success. If anyone has experience with building Node.js or has experience vendoring static libraries in Rust crates - PRs, [issues](https://github.com/alshdavid/edon/issues), [discussions](https://github.com/alshdavid/edon/discussions) are welcome!  
+I have plans to compile libnode to a statically linked library however I have made a few attempts at building Node.js this way without success. If anyone has experience with building Node.js or has experience vendoring static libraries in Rust crates - PRs, [issues](https://github.com/alshdavid/edon/issues), [discussions](https://github.com/alshdavid/edon/discussions) are welcome!  
 
 However, currently the `libnode.so` / `libnode.dylib` / `libnode.dll` must be downloaded from the [Github releases](https://github.com/alshdavid/edon/releases) and placed next to the executable. Alternatively the path to the shared library can be specified via the `EDON_LIBNODE_PATH` variable.
 
+```rust
+mkdir -p "$HOME/.config/edon/lib"
+curl -L --progress-bar --url "https://github.com/alshdavid/edon/releases/download/v23.11.0-beta.1/libnode-v23.11.0-linux-x64.tar.xz"  | tar -xJzf - -C "$HOME/.config/edon/lib"
+ls -l "$HOME/.config/edon/lib/libnode-v23.11.0-linux-x64"
 
+export EDON_LIBNODE_PATH="$HOME/.config/edon/lib/libnode-v23.11.0-linux-x64/libnode.so"
+```
 
 ```rust
 fn main() {

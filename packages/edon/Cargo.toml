@@ -1,6 +1,6 @@
 [package]
 name = "edon"
-version = "0.0.10"
+version = "0.0.11"
 authors = ["David Alsh"]
 repository = "https://github.com/alshdavid/edon"
 description = "Library embedding Nodejs (libnode) within Rust"
@@ -12,6 +12,3 @@ license = "MIT"
 [dependencies]
 libloading = "^0.8.0"
 libffi = "^4.0.0"
-tar = "0.4.44"
-xz = "0.1.0"
-homedir = "0.3.4"
