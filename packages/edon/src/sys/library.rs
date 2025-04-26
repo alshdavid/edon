@@ -41,6 +41,11 @@ fn find_libnode() -> crate::Result<PathBuf> {
         if target2.exists() {
           return Ok(target2);
         }
+
+        let target3 = target2.join("share").join(LIB_NAME);
+        if target3.exists() {
+          return Ok(target3);
+        }
       }
 
       return Err(crate::Error::LibnodeNotFound);
