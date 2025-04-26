@@ -10,7 +10,7 @@ use std::sync::RwLock;
 
 use crate::sys;
 
-type InitFn = unsafe extern "C" fn(sys::node::napi::napi_env, sys::node::napi::napi_value) -> sys::node::napi::napi_value;
+type InitFn = unsafe extern "C" fn(sys::napi::napi_env, sys::napi::napi_value) -> sys::napi::napi_value;
 
 static NAPI_MODULE_NAMES: LazyLock<RwLock<HashMap<String, CString>>> =
   LazyLock::new(Default::default);
@@ -39,7 +39,7 @@ pub fn napi_module_register<
   F: 'static
     + Sync
     + Send
-    + Fn(sys::node::napi::napi_env, sys::node::napi::napi_value) -> sys::node::napi::napi_value,
+    + Fn(sys::napi::napi_env, sys::napi::napi_value) -> sys::napi::napi_value,
 >(
   module_name: S,
   register_function: F,
@@ -54,7 +54,7 @@ pub fn napi_module_register<
   let target_fn: InitFn = unsafe { std::mem::transmute(target_fn_ptr) };
   std::mem::forget(target_fn_closure);
 
-  let nm = Box::into_raw(Box::new(sys::node::napi::napi_module {
+  let nm = Box::into_raw(Box::new(sys::napi::napi_module {
     nm_version: 131 as c_int,
     nm_flags: 0 as c_uint,
     nm_filename: get_napi_module_register_name(&module_name).unwrap(),
@@ -70,6 +70,6 @@ pub fn napi_module_register<
   }));
 
   unsafe {
-    sys::node::napi::napi_module_register(nm);
+    sys::napi::napi_module_register(nm);
   }
 }

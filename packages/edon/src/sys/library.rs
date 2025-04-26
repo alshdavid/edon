@@ -46,9 +46,7 @@ fn find_libnode() -> crate::Result<PathBuf> {
   }
 }
 
-
-
-pub fn libnode_auto() -> &'static crate::Result<DynLibrary> {
+pub fn load_auto() -> &'static crate::Result<DynLibrary> {
   LIBNODE.get_or_init(|| {
     let libnode_path = find_libnode()?;
     match unsafe { DynLibrary::new(libnode_path) } {
@@ -58,11 +56,11 @@ pub fn libnode_auto() -> &'static crate::Result<DynLibrary> {
   })
 }
 
-pub fn libnode_this() -> &'static crate::Result<DynLibrary> {
+pub fn load_this() -> &'static crate::Result<DynLibrary> {
   LIBNODE.get_or_init(|| Ok(DynLibrary::this()))
 }
 
-pub fn libnode<P: AsRef<Path>>(path: P) -> &'static crate::Result<DynLibrary> {
+pub fn load<P: AsRef<Path>>(path: P) -> &'static crate::Result<DynLibrary> {
   LIBNODE.get_or_init(|| {
     match unsafe { DynLibrary::new(path.as_ref()) } {
         Ok(lib) => Ok(lib),
@@ -71,7 +69,7 @@ pub fn libnode<P: AsRef<Path>>(path: P) -> &'static crate::Result<DynLibrary> {
   })
 }
 
-pub unsafe fn libnode_sym<T>(symbol: &[u8]) -> crate::Result<DynSymbol<T>> {
+pub unsafe fn get_sym<T>(symbol: &[u8]) -> crate::Result<DynSymbol<T>> {
   let lib = match LIBNODE.get() {
     Some(Ok(lib)) => lib,
     Some(Err(err)) => return Err(crate::Error::from(err)),

@@ -11,10 +11,10 @@ pub fn main() -> std::io::Result<()> {
   nodejs.napi_module_register("my_native_extension", |env, exports| unsafe {
     // Create number
     let mut raw_value = ptr::null_mut();
-    sys::node::napi::napi_create_uint32(env, 42, &mut raw_value);
+    sys::napi::napi_create_uint32(env, 42, &mut raw_value);
 
     // Set number on exports object
-    sys::node::napi::napi_set_named_property(
+    sys::napi::napi_set_named_property(
       env,
       exports.cast(),
       CString::new("hello").unwrap().as_ptr(),

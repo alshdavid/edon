@@ -8,12 +8,12 @@ pub struct Nodejs {}
 
 impl Nodejs {
   pub fn load<P: AsRef<Path>>(path: P) -> crate::Result<Self> {
-    let _ = sys::node::libnode::libnode(path);
+    let _ = sys::library::load(path);
     Ok(Self{})
   }
 
   pub fn load_auto() -> crate::Result<Self> {
-    let _ = sys::node::libnode::libnode_auto();
+    let _ = sys::library::load_auto();
     Ok(Self{})
   }
 
@@ -30,7 +30,7 @@ impl Nodejs {
     F: 'static
       + Sync
       + Send
-      + Fn(sys::node::napi::napi_env, sys::node::napi::napi_value) -> sys::node::napi::napi_value,
+      + Fn(sys::napi::napi_env, sys::napi::napi_value) -> sys::napi::napi_value,
   >(
     &self,
     module_name: S,

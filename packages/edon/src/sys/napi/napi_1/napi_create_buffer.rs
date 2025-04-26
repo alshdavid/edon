@@ -6,7 +6,7 @@ use super::super::*;
 const SYMBOL: &[u8] = "napi_create_buffer".as_bytes();
 type SIGNATURE =
   fn(env: napi_env, length: usize, data: *mut *mut c_void, result: *mut napi_value) -> napi_status;
-static CACHE: OnceLock<super::super::super::libnode::DynSymbol<SIGNATURE>> = OnceLock::new();
+static CACHE: OnceLock<super::super::super::library::DynSymbol<SIGNATURE>> = OnceLock::new();
 
 pub unsafe fn napi_create_buffer(
   env: napi_env,
@@ -14,5 +14,5 @@ pub unsafe fn napi_create_buffer(
   data: *mut *mut c_void,
   result: *mut napi_value,
 ) -> napi_status {
-  CACHE.get_or_init(|| super::super::super::libnode::libnode_sym(SYMBOL).unwrap())(env, length, data, result)
+  CACHE.get_or_init(|| super::super::super::library::get_sym(SYMBOL).unwrap())(env, length, data, result)
 }

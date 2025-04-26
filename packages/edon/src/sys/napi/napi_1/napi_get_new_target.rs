@@ -5,12 +5,12 @@ use super::super::*;
 const SYMBOL: &[u8] = "napi_get_new_target".as_bytes();
 type SIGNATURE =
   fn(env: napi_env, cbinfo: napi_callback_info, result: *mut napi_value) -> napi_status;
-static CACHE: OnceLock<super::super::super::libnode::DynSymbol<SIGNATURE>> = OnceLock::new();
+static CACHE: OnceLock<super::super::super::library::DynSymbol<SIGNATURE>> = OnceLock::new();
 
 pub unsafe fn napi_get_new_target(
   env: napi_env,
   cbinfo: napi_callback_info,
   result: *mut napi_value,
 ) -> napi_status {
-  CACHE.get_or_init(|| super::super::super::libnode::libnode_sym(SYMBOL).unwrap())(env, cbinfo, result)
+  CACHE.get_or_init(|| super::super::super::library::get_sym(SYMBOL).unwrap())(env, cbinfo, result)
 }

@@ -1,3 +1,3 @@
 pub mod napi;
 pub mod node;
-pub mod libnode;
+pub mod library;
