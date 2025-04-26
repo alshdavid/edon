@@ -26,10 +26,12 @@ pub fn main() -> std::io::Result<()> {
   });
 
   // Execute JavaScript and access the native extensions via process._linkedBinding
-  nodejs.eval_blocking(r#"
+  nodejs.eval_blocking(
+    r#"
     console.log('Hello World')
     console.log(process._linkedBinding("my_native_extension"))
-  "#)?;
-  
+  "#,
+  )?;
+
   Ok(())
 }

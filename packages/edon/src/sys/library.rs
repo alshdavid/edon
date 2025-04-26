@@ -1,4 +1,6 @@
-use std::{path::{Path, PathBuf}, sync::OnceLock};
+use std::path::Path;
+use std::path::PathBuf;
+use std::sync::OnceLock;
 
 #[cfg(unix)]
 pub type DynSymbol<T> = libloading::os::unix::Symbol<T>;
@@ -29,15 +31,15 @@ fn find_libnode() -> crate::Result<PathBuf> {
     Err(_) => {
       let current_exe = std::env::current_exe()?;
       let target1 = current_exe.join(LIB_NAME);
-      
+
       if target1.exists() {
-        return Ok(target1)
+        return Ok(target1);
       }
 
       if let Some(target2) = current_exe.parent() {
         let target2 = target2.join("lib").join(LIB_NAME);
         if target2.exists() {
-          return Ok(target2)
+          return Ok(target2);
         }
       }
 
@@ -50,8 +52,8 @@ pub fn load_auto() -> &'static crate::Result<DynLibrary> {
   LIBNODE.get_or_init(|| {
     let libnode_path = find_libnode()?;
     match unsafe { DynLibrary::new(libnode_path) } {
-        Ok(lib) => Ok(lib),
-        Err(_) => Err(crate::Error::LibnodeFailedToLoad),
+      Ok(lib) => Ok(lib),
+      Err(_) => Err(crate::Error::LibnodeFailedToLoad),
     }
   })
 }
@@ -61,11 +63,9 @@ pub fn load_this() -> &'static crate::Result<DynLibrary> {
 }
 
 pub fn load<P: AsRef<Path>>(path: P) -> &'static crate::Result<DynLibrary> {
-  LIBNODE.get_or_init(|| {
-    match unsafe { DynLibrary::new(path.as_ref()) } {
-        Ok(lib) => Ok(lib),
-        Err(_) => Err(crate::Error::LibnodeFailedToLoad),
-    }
+  LIBNODE.get_or_init(|| match unsafe { DynLibrary::new(path.as_ref()) } {
+    Ok(lib) => Ok(lib),
+    Err(_) => Err(crate::Error::LibnodeFailedToLoad),
   })
 }
 
@@ -73,7 +73,7 @@ pub unsafe fn get_sym<T>(symbol: &[u8]) -> crate::Result<DynSymbol<T>> {
   let lib = match LIBNODE.get() {
     Some(Ok(lib)) => lib,
     Some(Err(err)) => return Err(crate::Error::from(err)),
-    None => return Err(crate::Error::LibnodeNotLoaded)
+    None => return Err(crate::Error::LibnodeNotLoaded),
   };
   match lib.get(symbol.as_ref()) {
     Ok(sym) => Ok(sym),

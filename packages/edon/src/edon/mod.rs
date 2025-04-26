@@ -1,6 +1,6 @@
 mod error;
-pub (crate) mod internal;
-mod node;
+pub(crate) mod internal;
+mod nodejs;
 
 pub use self::error::*;
-pub use self::node::*;
+pub use self::nodejs::*;
