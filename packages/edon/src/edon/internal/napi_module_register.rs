@@ -10,14 +10,13 @@ use std::sync::RwLock;
 
 use crate::sys;
 
-type InitFn = unsafe extern "C" fn(sys::napi::napi_env, sys::napi::napi_value) -> sys::napi::napi_value;
+type InitFn =
+  unsafe extern "C" fn(sys::napi::napi_env, sys::napi::napi_value) -> sys::napi::napi_value;
 
 static NAPI_MODULE_NAMES: LazyLock<RwLock<HashMap<String, CString>>> =
   LazyLock::new(Default::default);
 
-fn set_napi_module_register_name<S: AsRef<str>>(
-  name: S,
-) -> bool {
+fn set_napi_module_register_name<S: AsRef<str>>(name: S) -> bool {
   let mut napi_module_names = NAPI_MODULE_NAMES.write().unwrap();
   let name = name.as_ref().to_string();
   let cname = CString::new(name.clone()).unwrap();
@@ -36,10 +35,7 @@ fn get_napi_module_register_name<S: AsRef<str>>(name: S) -> Option<*const c_char
 
 pub fn napi_module_register<
   S: AsRef<str>,
-  F: 'static
-    + Sync
-    + Send
-    + Fn(sys::napi::napi_env, sys::napi::napi_value) -> sys::napi::napi_value,
+  F: 'static + Fn(sys::napi::napi_env, sys::napi::napi_value) -> sys::napi::napi_value,
 >(
   module_name: S,
   register_function: F,

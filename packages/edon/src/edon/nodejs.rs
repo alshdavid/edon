@@ -1,15 +1,27 @@
+use std::ffi::CString;
 use std::path::Path;
+use std::ptr;
+use std::sync::mpsc::channel;
+use std::sync::mpsc::Sender;
+use std::thread;
+use std::time::Duration;
 
 use super::internal;
-use crate::sys;
+use crate::sys::napi::napi_callback_info;
+use crate::sys::napi::napi_env;
+use crate::sys::napi::napi_value;
+use crate::sys::{self};
 
-pub struct Nodejs {}
+pub struct Nodejs {
+  tx_eval: Sender<(String, Sender<()>)>,
+}
 
 impl Nodejs {
   /// Load libnode.so by path
   pub fn load<P: AsRef<Path>>(path: P) -> crate::Result<Self> {
     let _ = sys::library::load(path);
-    Ok(Self {})
+    let tx_eval = internal::start_node_instance();
+    Ok(Self { tx_eval })
   }
 
   /// Look for libnode.so from
@@ -19,23 +31,27 @@ impl Nodejs {
   /// <exe_path>/../share/libnode.so
   pub fn load_auto() -> crate::Result<Self> {
     let _ = sys::library::load_auto();
-    Ok(Self {})
+    let tx_eval = internal::start_node_instance();
+    Ok(Self { tx_eval })
   }
 
   /// Start Nodejs
-  pub fn start_blocking<Args: AsRef<str>>(
-    &self,
-    argv: &[Args],
-  ) -> crate::Result<()> {
-    internal::start_blocking(argv)
-  }
+  // pub fn start_blocking<Args: AsRef<str>>(
+  //   &self,
+  //   argv: &[Args],
+  // ) -> crate::Result<()> {
+  //   internal::start_blocking(argv)
+  // }
 
   /// Evaluate block of JavaScript
-  pub fn eval_blocking<Code: AsRef<str>>(
+  pub fn eval_main<Code: AsRef<str>>(
     &self,
     code: Code,
   ) -> crate::Result<()> {
-    internal::eval_blocking(code)
+    let (tx, rx) = channel();
+    self.tx_eval.send((code.as_ref().to_string(), tx)).unwrap();
+    rx.recv().unwrap();
+    Ok(())
   }
 
   /// Register native module

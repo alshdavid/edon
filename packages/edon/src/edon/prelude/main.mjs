@@ -1,1 +1,3 @@
-console.log("hello world")
+process._linkedBinding('edon:main').onEvent((detail) => {
+  eval(detail)
+});
