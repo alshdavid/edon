@@ -27,11 +27,18 @@ pub fn main() -> std::io::Result<()> {
       exports
     });
 
+  // const code = 'console.log(process._linkedBinding("my_native_extension"))';
+
   // Execute JavaScript and access the native extensions via process._linkedBinding
   nodejs.eval_blocking(
     r#"
-    console.log('Hello World')
-    console.log(process._linkedBinding("my_native_extension"))
+    const worker_threads = require('node:worker_threads');
+
+    const code = `
+      console.log(process._linkedBinding("my_native_extension"))  
+    `
+
+    new worker_threads.Worker(code, { eval: true })
   "#,
   )?;
 
