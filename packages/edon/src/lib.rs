@@ -1,4 +1,4 @@
-mod libnode;
+mod edon;
 pub mod sys;
 
-pub use self::libnode::*;
+pub use self::edon::*;

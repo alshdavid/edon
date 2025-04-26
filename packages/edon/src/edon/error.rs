@@ -7,6 +7,7 @@ pub type Result<T> = std::result::Result<T, Error>;
 pub enum Error {
   NodejsAlreadyRunning,
   NodejsNotRunning,
+  LibnodeNotLoaded,
   LibnodeNotFound,
   LibnodeFailedToLoad,
   LibnodeSymbolNotFound,
@@ -18,6 +19,7 @@ impl std::fmt::Debug for Error {
         match self {
             Self::NodejsAlreadyRunning => write!(f, "NodejsAlreadyRunning"),
             Self::NodejsNotRunning => write!(f, "NodejsNotRunning"),
+            Self::LibnodeNotLoaded => write!(f, "LibnodeNotLoaded"),
             Self::LibnodeNotFound => write!(f, "{}", self),
             Self::LibnodeFailedToLoad => write!(f, "LibnodeFailedToLoad"),
             Self::LibnodeSymbolNotFound => write!(f, "LibnodeSymbolNotFound"),
@@ -35,6 +37,7 @@ impl std::fmt::Display for Error {
       Error::NodejsAlreadyRunning => write!(f, "AlreadyRunning"),
       Error::NodejsNotRunning => write!(f, "NotRunning"),
       Error::LibnodeFailedToLoad => write!(f, "LibnodeFailedToLoad"),
+      Error::LibnodeNotLoaded => write!(f, "LibnodeNotLoaded"),
       Error::LibnodeSymbolNotFound => write!(f, "LibnodeSymbolNotFound"),
       Error::IoError(err) => write!(f, "{}", err),
       Error::LibnodeNotFound => write!(f, r#"NotFound: {}
@@ -55,6 +58,7 @@ impl From<&Error> for Error {
         Error::NodejsAlreadyRunning => Error::NodejsAlreadyRunning,
         Error::NodejsNotRunning => Error::NodejsNotRunning,
         Error::LibnodeNotFound => Error::LibnodeNotFound,
+        Error::LibnodeNotLoaded => Error::LibnodeNotLoaded,
         Error::LibnodeFailedToLoad => Error::LibnodeFailedToLoad,
         Error::LibnodeSymbolNotFound => Error::LibnodeSymbolNotFound,
         Error::IoError(error) => Error::IoError(error.clone()),
