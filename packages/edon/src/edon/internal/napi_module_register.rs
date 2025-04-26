@@ -8,7 +8,7 @@ use std::ptr;
 use std::sync::LazyLock;
 use std::sync::RwLock;
 
-use super::super::sys;
+use crate::sys;
 
 type InitFn = unsafe extern "C" fn(sys::node::napi::napi_env, sys::node::napi::napi_value) -> sys::node::napi::napi_value;
 

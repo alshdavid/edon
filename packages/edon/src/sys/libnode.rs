@@ -46,6 +46,8 @@ fn find_libnode() -> crate::Result<PathBuf> {
   }
 }
 
+
+
 pub fn libnode_auto() -> &'static crate::Result<DynLibrary> {
   LIBNODE.get_or_init(|| {
     let libnode_path = find_libnode()?;
@@ -54,6 +56,10 @@ pub fn libnode_auto() -> &'static crate::Result<DynLibrary> {
         Err(_) => Err(crate::Error::LibnodeFailedToLoad),
     }
   })
+}
+
+pub fn libnode_this() -> &'static crate::Result<DynLibrary> {
+  LIBNODE.get_or_init(|| Ok(DynLibrary::this()))
 }
 
 pub fn libnode<P: AsRef<Path>>(path: P) -> &'static crate::Result<DynLibrary> {

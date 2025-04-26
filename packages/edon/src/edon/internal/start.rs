@@ -2,8 +2,8 @@ use std::ffi::c_char;
 use std::ffi::c_int;
 use std::ffi::CString;
 
-use crate::edon::mark_running;
-use crate::edon::mark_stopped;
+use super::mark_running;
+use super::mark_stopped;
 use crate::sys;
 
 pub fn start_blocking<Args: AsRef<str>>(argv: &[Args]) -> crate::Result<()> {

@@ -9,20 +9,17 @@ Features:
 - Native Nodejs extensions via standard napi bindings
 - Support for worker threads
 
-Todo:
-- (help wanted) Build Nodejs statically and link/vendor it into the crate to allow creation of portable single binary outputs
-- Deno backend behind `deno_backend` feature
-- Bun backend behind `bun_backend` feature
-- Quickjs backend behind `quickjs_backend` feature
-
 # Usage
 
 ## Simple Example
 
 ```rust
 pub fn main() -> std::io::Result<()> {
+  // Load the libnode.so/dylib/dll
+  let nodejs = edon::Nodejs::load("/path/to/libnode.so")?;
+
   // Execute JavaScript and TypeScript with
-  edon::eval_blocking(r#"
+  nodejs.eval_blocking(r#"
     const message: string = "Hello World TypeScript"
     console.log(message)
     console.log(process._linkedBinding("my_native_extension"))
@@ -36,11 +33,13 @@ pub fn main() -> std::io::Result<()> {
 
 ```rust
 pub fn main() -> std::io::Result<()> {
+  // Load the libnode.so/dylib/dll
+  let nodejs = edon::Nodejs::load("/path/to/libnode.so")?;
+
   // Inject a native extension into the JavaScript runtime
   // to create/interact with JavaScript
-
   // Note: This shares the same thread-safe idiosyncrasies as napi
-  edon::napi_module_register("my_native_extension", |env, exports| unsafe {
+  nodejs.napi_module_register("my_native_extension", |env, exports| unsafe {
     // Create number
     let mut raw_value = ptr::null_mut();
     edon::sys::napi::napi_create_uint32(env, 42, &mut raw_value);
@@ -58,12 +57,12 @@ pub fn main() -> std::io::Result<()> {
   });
 
   // Execute JavaScript and access the native extensions via process._linkedBinding
-  edon::eval_blocking(r#"
+  nodejs.eval_blocking(r#"
     console.log('Hello World')
     console.log(process._linkedBinding("my_native_extension")) // { hello: 42 }
   "#)?;
 
-Ok(())
+  Ok(())
 }
 ```
 
