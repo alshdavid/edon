@@ -1,15 +1,9 @@
-use std::ffi::CString;
 use std::path::Path;
-use std::ptr;
 use std::sync::mpsc::channel;
 use std::sync::mpsc::Sender;
-use std::thread;
-use std::time::Duration;
 
 use super::internal;
-use crate::sys::napi::napi_callback_info;
-use crate::sys::napi::napi_env;
-use crate::sys::napi::napi_value;
+use super::NodejsWorker;
 use crate::sys::{self};
 
 pub struct Nodejs {
@@ -35,23 +29,8 @@ impl Nodejs {
     Ok(Self { tx_eval })
   }
 
-  /// Start Nodejs
-  // pub fn start_blocking<Args: AsRef<str>>(
-  //   &self,
-  //   argv: &[Args],
-  // ) -> crate::Result<()> {
-  //   internal::start_blocking(argv)
-  // }
-
-  /// Evaluate block of JavaScript
-  pub fn eval_main<Code: AsRef<str>>(
-    &self,
-    code: Code,
-  ) -> crate::Result<()> {
-    let (tx, rx) = channel();
-    self.tx_eval.send((code.as_ref().to_string(), tx)).unwrap();
-    rx.recv().unwrap();
-    Ok(())
+  pub fn is_running() -> bool {
+    internal::is_running()
   }
 
   /// Register native module
@@ -67,7 +46,22 @@ impl Nodejs {
     internal::napi_module_register(module_name, register_function)
   }
 
-  pub fn is_running() -> bool {
-    internal::is_running()
+  /// Evaluate block of JavaScript
+  pub fn eval<Code: AsRef<str>>(
+    &self,
+    code: Code,
+  ) -> crate::Result<()> {
+    let (tx, rx) = channel();
+    self.tx_eval.send((code.as_ref().to_string(), tx)).unwrap();
+    rx.recv().unwrap();
+    Ok(())
+  }
+
+  /// Evaluate block of JavaScript
+  pub fn new_worker(&self) -> crate::Result<NodejsWorker> {
+    // let (tx, rx) = channel();
+    // self.tx_eval.send((code.as_ref().to_string(), tx)).unwrap();
+    // rx.recv().unwrap();
+    Ok(NodejsWorker {})
   }
 }

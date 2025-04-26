@@ -25,11 +25,12 @@ pub fn main() -> std::io::Result<()> {
     exports
   });
 
+  let worker = nodejs.new_worker()?;
   // const code = 'console.log(process._linkedBinding("my_native_extension"))';
 
   // Execute JavaScript and access the native extensions via process._linkedBinding
-  nodejs.eval_main(r#"console.log('hello world')"#)?;
-  nodejs.eval_main(r#"console.log('hello world2')"#)?;
+  worker.eval(r#"console.log('hello world')"#)?;
+  worker.eval(r#"console.log('hello world2')"#)?;
 
   Ok(())
 }

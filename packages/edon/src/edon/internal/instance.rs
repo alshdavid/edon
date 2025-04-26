@@ -13,6 +13,11 @@ pub fn start_node_instance() -> Sender<(String, Sender<()>)> {
   let (tx, rx) = channel();
   let closure_data_ptr = Box::into_raw(Box::new(rx));
 
+  /* 
+    interface EdonMain {
+      onEvent(callback: (detail: string) => any)
+    }
+  */
   super::napi_module_register("edon:main", move |env, exports| unsafe {
     let name = "edon::main::onEvent";
     let mut raw_result = ptr::null_mut();
@@ -40,8 +45,6 @@ pub fn start_node_instance() -> Sender<(String, Sender<()>)> {
   std::thread::spawn(|| {
     super::eval_blocking(format!("{};\n", super::super::prelude::MAIN_JS)).unwrap();
   });
-
-  // thread::sleep(Duration::from_secs(1));
 
   tx
 }
