@@ -170,10 +170,7 @@ pub trait ValidateNapiValue: TypeName {
     } else {
       Err(Error::new(
         Status::InvalidArg,
-        format!(
-          "Expect value to be {}, but received {}",
-          value_type, received_type
-        ),
+        format!("Expect value to be {value_type}, but received {received_type}"),
       ))
     }
   }

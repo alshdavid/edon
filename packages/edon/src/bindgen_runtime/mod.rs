@@ -58,8 +58,7 @@ pub unsafe extern "C" fn raw_finalize_unchecked<T: ObjectFinalize>(
       // In general, the `fn drop` would happen first
       assert!(
         rc_strong_count == 1 || rc_strong_count == 2,
-        "Rc strong count is: {}, it should be 1 or 2",
-        rc_strong_count
+        "Rc strong count is: {rc_strong_count}, it should be 1 or 2"
       );
     }
     let finalize = unsafe { Box::from_raw(finalize_callbacks_rc.get()) };

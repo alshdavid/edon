@@ -393,7 +393,7 @@ impl Env {
     Finalize: FnOnce(Hint, Env),
   {
     let mut raw_value = ptr::null_mut();
-    if data.is_null() || data as *const u8 == EMPTY_VEC.as_ptr() {
+    if data.is_null() || std::ptr::eq(data, EMPTY_VEC.as_ptr()) {
       return Err(Error::new(
         Status::InvalidArg,
         "Borrowed data should not be null".to_owned(),
@@ -818,9 +818,9 @@ impl Env {
     let location_len = location.len();
     let message_len = message.len();
     let location =
-      CString::new(location).expect(format!("Convert [{}] to CString failed", location).as_str());
+      CString::new(location).expect(format!("Convert [{location}] to CString failed").as_str());
     let message =
-      CString::new(message).expect(format!("Convert [{}] to CString failed", message).as_str());
+      CString::new(message).expect(format!("Convert [{message}] to CString failed").as_str());
 
     unsafe {
       sys::napi_fatal_error(
@@ -1153,7 +1153,7 @@ impl Env {
       .into_utf8()?
       .as_str()?
       .parse()
-      .map_err(|e| Error::new(Status::InvalidArg, format!("{}", e)))
+      .map_err(|e| Error::new(Status::InvalidArg, format!("{e}")))
   }
 
   pub fn get_uv_event_loop(&self) -> Result<*mut sys::uv_loop_s> {
@@ -1636,7 +1636,6 @@ pub(crate) unsafe extern "C" fn trampoline<
       ptr::null_mut()
     })
 }
-
 
 pub(crate) unsafe extern "C" fn trampoline_setter<
   V: FromNapiValue,

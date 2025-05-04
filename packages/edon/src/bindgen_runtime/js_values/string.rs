@@ -155,7 +155,7 @@ impl FromNapiValue for &str {
     match unsafe { CStr::from_ptr(buf_ptr) }.to_str() {
       Err(e) => Err(Error::new(
         Status::InvalidArg,
-        format!("Failed to read utf8 string, {}", e),
+        format!("Failed to read utf8 string, {e}"),
       )),
       Ok(s) => Ok(s),
     }
@@ -244,7 +244,7 @@ impl FromNapiValue for Utf16String {
     match String::from_utf16(ret) {
       Err(e) => Err(Error::new(
         Status::InvalidArg,
-        format!("Failed to read utf16 string, {}", e),
+        format!("Failed to read utf16 string, {e}"),
       )),
       Ok(s) => Ok(Utf16String(s)),
     }

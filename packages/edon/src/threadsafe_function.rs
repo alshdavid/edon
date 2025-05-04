@@ -698,8 +698,7 @@ unsafe extern "C" fn call_js_cb<T: 'static, V: ToNapiValue, R, ES>(
         };
         if let Err(err) = callback(callback_arg) {
           let message = format!(
-            "Failed to convert return value in ThreadsafeFunction callback into Rust value: {}",
-            err
+            "Failed to convert return value in ThreadsafeFunction callback into Rust value: {err}"
           );
           let message_length = message.len();
           let c_message = CString::new(message).unwrap();
@@ -751,7 +750,7 @@ fn handle_call_js_cb_status(
     assert!(stat == sys::Status::napi_ok || stat == sys::Status::napi_pending_exception);
   } else {
     let error_code: Status = status.into();
-    let error_code_string = format!("{:?}", error_code);
+    let error_code_string = format!("{error_code:?}");
     let mut error_code_value = ptr::null_mut();
     assert_eq!(
       unsafe {

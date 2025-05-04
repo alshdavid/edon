@@ -154,7 +154,7 @@ unsafe extern "C" fn complete<T: Task>(
     };
   }
   if let Err(e) = work.inner_task.finally(unsafe { Env::from_raw(env) }) {
-    debug_assert!(false, "Panic in Task finally fn: {:?}", e);
+    debug_assert!(false, "Panic in Task finally fn: {e:?}");
   }
   let delete_status = unsafe { sys::napi_delete_async_work(env, napi_async_work) };
   debug_assert!(

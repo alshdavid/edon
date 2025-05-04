@@ -16,7 +16,7 @@ impl JsStringUtf8 {
     match str::from_utf8(&self.buf) {
       Err(e) => Err(Error::new(
         Status::InvalidArg,
-        format!("Failed to read utf8 string, {}", e),
+        format!("Failed to read utf8 string, {e}"),
       )),
       Ok(s) => Ok(s),
     }

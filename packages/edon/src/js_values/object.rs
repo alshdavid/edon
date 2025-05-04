@@ -95,7 +95,7 @@ impl TryFrom<sys::napi_key_collection_mode> for KeyCollectionMode {
       sys::KeyCollectionMode::own_only => Ok(Self::OwnOnly),
       _ => Err(Error::new(
         crate::Status::InvalidArg,
-        format!("Invalid key collection mode: {}", value),
+        format!("Invalid key collection mode: {value}"),
       )),
     }
   }
@@ -132,7 +132,7 @@ impl TryFrom<sys::napi_key_filter> for KeyFilter {
       sys::KeyFilter::skip_symbols => Ok(Self::SkipSymbols),
       _ => Err(Error::new(
         crate::Status::InvalidArg,
-        format!("Invalid key filter [{}]", value),
+        format!("Invalid key filter [{value}]"),
       )),
     }
   }
@@ -165,7 +165,7 @@ impl TryFrom<sys::napi_key_conversion> for KeyConversion {
       sys::KeyConversion::numbers_to_strings => Ok(Self::NumbersToStrings),
       _ => Err(Error::new(
         crate::Status::InvalidArg,
-        format!("Invalid key conversion [{}]", value),
+        format!("Invalid key conversion [{value}]"),
       )),
     }
   }

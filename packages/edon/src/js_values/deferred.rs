@@ -74,9 +74,7 @@ impl<Data: ToNapiValue, Resolver: FnOnce(Env) -> Result<Data>> JsDeferred<Data, 
     self,
     result: Result<Resolver>,
   ) {
-    let data = DeferredData {
-      resolver: result,
-    };
+    let data = DeferredData { resolver: result };
 
     // Call back into the JS thread via a threadsafe function. This results in napi_resolve_deferred being called.
     let status = unsafe {
@@ -181,7 +179,7 @@ extern "C" fn napi_resolve_deferred<Data: ToNapiValue, Resolver: FnOnce(Env) -> 
       }
       Err(err) => {
         if cfg!(debug_assertions) {
-          println!("Failed to reject deferred: {:?}", err);
+          println!("Failed to reject deferred: {err:?}");
           let mut err = ptr::null_mut();
           let mut err_msg = ptr::null_mut();
           unsafe {

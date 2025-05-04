@@ -2,14 +2,23 @@ use std::collections::HashMap;
 use std::collections::HashSet;
 use std::ffi::CStr;
 use std::ptr;
-use std::sync::atomic::{AtomicBool, Ordering};
+use std::sync::atomic::AtomicBool;
+use std::sync::atomic::Ordering;
 use std::sync::RwLock;
 use std::thread::ThreadId;
 
 use once_cell::sync::Lazy;
 
-use crate::{check_status, sys, Env, JsFunction, Property, Result, Value, ValueType};
-use crate::{check_status_or_throw, JsError};
+use crate::check_status;
+use crate::check_status_or_throw;
+use crate::sys;
+use crate::Env;
+use crate::JsError;
+use crate::JsFunction;
+use crate::Property;
+use crate::Result;
+use crate::Value;
+use crate::ValueType;
 
 pub type ExportRegisterCallback = unsafe fn(sys::napi_env) -> Result<sys::napi_value>;
 pub type ModuleExportsCallback =
@@ -24,7 +33,10 @@ impl<K, V> PersistedPerInstanceHashMap<K, V> {
   }
 
   #[allow(clippy::mut_from_ref)]
-  pub(crate) fn borrow_mut<F, R>(&self, f: F) -> R
+  pub(crate) fn borrow_mut<F, R>(
+    &self,
+    f: F,
+  ) -> R
   where
     F: FnOnce(&mut HashMap<K, V>) -> R,
   {
@@ -156,7 +168,10 @@ pub fn register_class(
 /// returnSomeFn()(); // 1
 /// ```
 ///
-pub fn get_js_function(env: &Env, raw_fn: ExportRegisterCallback) -> Result<JsFunction> {
+pub fn get_js_function(
+  env: &Env,
+  raw_fn: ExportRegisterCallback,
+) -> Result<JsFunction> {
   FN_REGISTER_MAP.borrow_mut(|inner| {
     inner
       .get(&raw_fn)
@@ -440,8 +455,7 @@ pub(crate) unsafe extern "C" fn noop(
       sys::napi_throw_error(
         env,
         ptr::null_mut(),
-        CStr::from_bytes_with_nul_unchecked(b"Class contains no `constructor`, can not new it!\0")
-          .as_ptr(),
+        c"Class contains no `constructor`, can not new it!".as_ptr(),
       );
     }
   }
@@ -522,7 +536,10 @@ unsafe extern "C" fn remove_thread_id(id: *mut std::ffi::c_void) {
 }
 
 #[allow(unused)]
-unsafe extern "C" fn empty(env: sys::napi_env, info: sys::napi_callback_info) -> sys::napi_value {
+unsafe extern "C" fn empty(
+  env: sys::napi_env,
+  info: sys::napi_callback_info,
+) -> sys::napi_value {
   ptr::null_mut()
 }
 
