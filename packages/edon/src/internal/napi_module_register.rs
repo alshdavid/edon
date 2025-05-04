@@ -22,7 +22,7 @@ fn set_napi_module_register_name<S: AsRef<str>>(name: S) -> bool {
     return false;
   }
   napi_module_names.insert(name, cname);
-  true
+  return true;
 }
 
 fn get_napi_module_register_name<S: AsRef<str>>(name: S) -> Option<*const c_char> {
@@ -56,7 +56,7 @@ pub fn napi_module_register<
     nm_modname: get_napi_module_register_name(&module_name).unwrap(),
     nm_priv: get_napi_module_register_name(&module_name).unwrap() as *mut c_void,
     reserved: [
-      std::ptr::null_mut::<c_void>(),
+      0 as *mut c_void,
       ptr::null_mut(),
       ptr::null_mut(),
       ptr::null_mut(),

@@ -22,6 +22,8 @@ impl Nodejs {
   /// Look for libnode.so from
   /// env:EDON_LIBNODE_PATH
   /// <exe_path>/libnode.so
+  /// <exe_path>/lib/libnode.so
+  /// <exe_path>/share/libnode.so
   /// <exe_path>/../lib/libnode.so
   /// <exe_path>/../share/libnode.so
   pub fn load_auto() -> crate::Result<Self> {
@@ -32,6 +34,8 @@ impl Nodejs {
 
       let paths = vec![
         dirname.join(LIB_NAME),
+        dirname.join("lib").join(LIB_NAME),
+        dirname.join("share").join(LIB_NAME),
         dirname.join("..").join("lib").join(LIB_NAME),
         dirname.join("..").join("share").join(LIB_NAME),
       ];
