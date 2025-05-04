@@ -7,8 +7,8 @@ pub use env::*;
 pub use iterator::Generator;
 pub use js_values::*;
 pub use module_register::*;
+pub use error::*;
 
-use super::sys;
 use crate::napi::JsError;
 use crate::napi::Result;
 use crate::napi::Status;
@@ -35,7 +35,7 @@ pub trait ObjectFinalize: Sized {
 /// called when node wrapper objects destroyed
 #[doc(hidden)]
 pub unsafe extern "C" fn raw_finalize_unchecked<T: ObjectFinalize>(
-  env: sys::napi_env,
+  env: libnode_sys::napi_env,
   finalize_data: *mut c_void,
   _finalize_hint: *mut c_void,
 ) {
@@ -63,9 +63,9 @@ pub unsafe extern "C" fn raw_finalize_unchecked<T: ObjectFinalize>(
     }
     let finalize = unsafe { Box::from_raw(finalize_callbacks_rc.get()) };
     finalize();
-    let delete_reference_status = unsafe { sys::napi_delete_reference(env, ref_val) };
+    let delete_reference_status = unsafe { libnode_sys::napi_delete_reference(env, ref_val) };
     debug_assert!(
-      delete_reference_status == sys::Status::napi_ok,
+      delete_reference_status == libnode_sys::Status::napi_ok,
       "Delete reference in finalize callback failed {}",
       Status::from(delete_reference_status)
     );
@@ -77,7 +77,7 @@ pub unsafe extern "C" fn raw_finalize_unchecked<T: ObjectFinalize>(
 /// called when node buffer is ready for gc
 #[doc(hidden)]
 pub unsafe extern "C" fn drop_buffer(
-  _env: sys::napi_env,
+  _env: libnode_sys::napi_env,
   #[allow(unused)] finalize_data: *mut c_void,
   finalize_hint: *mut c_void,
 ) {

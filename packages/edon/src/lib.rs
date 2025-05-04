@@ -1,13 +1,15 @@
 
-mod napi;
+pub mod napi;
 pub(crate) mod internal;
 mod nodejs;
+mod error;
 mod nodejs_worker;
 pub(crate) mod prelude;
 
 pub use libnode_sys as sys;
 
-// pub use self::error::*;
-pub use napi::*;
+pub use self::error::*;
 pub use self::nodejs::*;
 pub use self::nodejs_worker::*;
+pub use self::napi::Env;
+pub use self::napi::js_values;

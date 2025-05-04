@@ -50,21 +50,21 @@ pub trait Generator {
 
 #[allow(clippy::not_unsafe_ptr_arg_deref)]
 pub fn create_iterator<T: Generator>(
-  env: sys::napi_env,
-  instance: sys::napi_value,
+  env: libnode_sys::napi_env,
+  instance: libnode_sys::napi_value,
   generator_ptr: *mut T,
 ) {
   let mut global = ptr::null_mut();
   check_status_or_throw!(
     env,
-    unsafe { sys::napi_get_global(env, &mut global) },
+    unsafe { libnode_sys::napi_get_global(env, &mut global) },
     "Get global object failed",
   );
   let mut symbol_object = ptr::null_mut();
   check_status_or_throw!(
     env,
     unsafe {
-      sys::napi_get_named_property(env, global, "Symbol\0".as_ptr().cast(), &mut symbol_object)
+      libnode_sys::napi_get_named_property(env, global, "Symbol\0".as_ptr().cast(), &mut symbol_object)
     },
     "Get global object failed",
   );
@@ -72,7 +72,7 @@ pub fn create_iterator<T: Generator>(
   check_status_or_throw!(
     env,
     unsafe {
-      sys::napi_get_named_property(
+      libnode_sys::napi_get_named_property(
         env,
         symbol_object,
         "iterator\0".as_ptr().cast(),
@@ -85,7 +85,7 @@ pub fn create_iterator<T: Generator>(
   check_status_or_throw!(
     env,
     unsafe {
-      sys::napi_create_function(
+      libnode_sys::napi_create_function(
         env,
         "Iterator\0".as_ptr().cast(),
         8,
@@ -98,24 +98,24 @@ pub fn create_iterator<T: Generator>(
   );
   check_status_or_throw!(
     env,
-    unsafe { sys::napi_set_property(env, instance, iterator_symbol, generator_function) },
+    unsafe { libnode_sys::napi_set_property(env, instance, iterator_symbol, generator_function) },
     "Failed to set Symbol.iterator on class instance",
   );
 }
 
 #[doc(hidden)]
 pub unsafe extern "C" fn symbol_generator<T: Generator>(
-  env: sys::napi_env,
-  info: sys::napi_callback_info,
-) -> sys::napi_value {
+  env: libnode_sys::napi_env,
+  info: libnode_sys::napi_callback_info,
+) -> libnode_sys::napi_value {
   let mut this = ptr::null_mut();
-  let mut argv: [sys::napi_value; 1] = [ptr::null_mut()];
+  let mut argv: [libnode_sys::napi_value; 1] = [ptr::null_mut()];
   let mut argc = 0;
   let mut generator_ptr = ptr::null_mut();
   check_status_or_throw!(
     env,
     unsafe {
-      sys::napi_get_cb_info(
+      libnode_sys::napi_get_cb_info(
         env,
         info,
         &mut argc,
@@ -129,14 +129,14 @@ pub unsafe extern "C" fn symbol_generator<T: Generator>(
   let mut generator_object = ptr::null_mut();
   check_status_or_throw!(
     env,
-    unsafe { sys::napi_create_object(env, &mut generator_object) },
+    unsafe { libnode_sys::napi_create_object(env, &mut generator_object) },
     "Create Generator object failed"
   );
   let mut next_function = ptr::null_mut();
   check_status_or_throw!(
     env,
     unsafe {
-      sys::napi_create_function(
+      libnode_sys::napi_create_function(
         env,
         "next\0".as_ptr().cast(),
         4,
@@ -151,7 +151,7 @@ pub unsafe extern "C" fn symbol_generator<T: Generator>(
   check_status_or_throw!(
     env,
     unsafe {
-      sys::napi_create_function(
+      libnode_sys::napi_create_function(
         env,
         "return\0".as_ptr().cast(),
         6,
@@ -166,7 +166,7 @@ pub unsafe extern "C" fn symbol_generator<T: Generator>(
   check_status_or_throw!(
     env,
     unsafe {
-      sys::napi_create_function(
+      libnode_sys::napi_create_function(
         env,
         "throw\0".as_ptr().cast(),
         5,
@@ -181,7 +181,7 @@ pub unsafe extern "C" fn symbol_generator<T: Generator>(
   check_status_or_throw!(
     env,
     unsafe {
-      sys::napi_set_named_property(
+      libnode_sys::napi_set_named_property(
         env,
         generator_object,
         "next\0".as_ptr().cast(),
@@ -194,7 +194,7 @@ pub unsafe extern "C" fn symbol_generator<T: Generator>(
   check_status_or_throw!(
     env,
     unsafe {
-      sys::napi_set_named_property(
+      libnode_sys::napi_set_named_property(
         env,
         generator_object,
         "return\0".as_ptr().cast(),
@@ -207,7 +207,7 @@ pub unsafe extern "C" fn symbol_generator<T: Generator>(
   check_status_or_throw!(
     env,
     unsafe {
-      sys::napi_set_named_property(
+      libnode_sys::napi_set_named_property(
         env,
         generator_object,
         "throw\0".as_ptr().cast(),
@@ -220,24 +220,24 @@ pub unsafe extern "C" fn symbol_generator<T: Generator>(
   let mut generator_state = ptr::null_mut();
   check_status_or_throw!(
     env,
-    unsafe { sys::napi_get_boolean(env, false, &mut generator_state) },
+    unsafe { libnode_sys::napi_get_boolean(env, false, &mut generator_state) },
     "Create generator state failed"
   );
 
-  let properties = [sys::napi_property_descriptor {
+  let properties = [libnode_sys::napi_property_descriptor {
     utf8name: GENERATOR_STATE_KEY.as_ptr().cast(),
     name: ptr::null_mut(),
     method: None,
     getter: None,
     setter: None,
     value: generator_state,
-    attributes: sys::PropertyAttributes::writable,
+    attributes: libnode_sys::PropertyAttributes::writable,
     data: ptr::null_mut(),
   }];
 
   check_status_or_throw!(
     env,
-    unsafe { sys::napi_define_properties(env, generator_object, 1, properties.as_ptr()) },
+    unsafe { libnode_sys::napi_define_properties(env, generator_object, 1, properties.as_ptr()) },
     "Define properties on Generator object failed"
   );
 
@@ -245,17 +245,17 @@ pub unsafe extern "C" fn symbol_generator<T: Generator>(
 }
 
 extern "C" fn generator_next<T: Generator>(
-  env: sys::napi_env,
-  info: sys::napi_callback_info,
-) -> sys::napi_value {
+  env: libnode_sys::napi_env,
+  info: libnode_sys::napi_callback_info,
+) -> libnode_sys::napi_value {
   let mut this = ptr::null_mut();
-  let mut argv: [sys::napi_value; 1] = [ptr::null_mut()];
+  let mut argv: [libnode_sys::napi_value; 1] = [ptr::null_mut()];
   let mut argc = 1;
   let mut generator_ptr = ptr::null_mut();
   check_status_or_throw!(
     env,
     unsafe {
-      sys::napi_get_cb_info(
+      libnode_sys::napi_get_cb_info(
         env,
         info,
         &mut argc,
@@ -270,7 +270,7 @@ extern "C" fn generator_next<T: Generator>(
   check_status_or_throw!(
     env,
     unsafe {
-      sys::napi_get_named_property(
+      libnode_sys::napi_get_named_property(
         env,
         this,
         GENERATOR_STATE_KEY.as_ptr().cast(),
@@ -282,13 +282,13 @@ extern "C" fn generator_next<T: Generator>(
   let mut completed = false;
   check_status_or_throw!(
     env,
-    unsafe { sys::napi_get_value_bool(env, generator_state, &mut completed) },
+    unsafe { libnode_sys::napi_get_value_bool(env, generator_state, &mut completed) },
     "Get generator state failed"
   );
   let mut result = std::ptr::null_mut();
   check_status_or_throw!(
     env,
-    unsafe { sys::napi_create_object(env, &mut result) },
+    unsafe { libnode_sys::napi_create_object(env, &mut result) },
     "Failed to create iterator result object",
   );
   if !completed {
@@ -300,7 +300,7 @@ extern "C" fn generator_next<T: Generator>(
         Ok(input) => Some(input),
         Err(e) => {
           unsafe {
-            sys::napi_throw_error(
+            libnode_sys::napi_throw_error(
               env,
               format!("{}", e.status).as_ptr() as *mut c_char,
               e.reason.as_ptr() as *mut c_char,
@@ -320,13 +320,13 @@ extern "C" fn generator_next<T: Generator>(
   let mut completed_value = ptr::null_mut();
   check_status_or_throw!(
     env,
-    unsafe { sys::napi_get_boolean(env, completed, &mut completed_value) },
+    unsafe { libnode_sys::napi_get_boolean(env, completed, &mut completed_value) },
     "Failed to create completed value"
   );
   check_status_or_throw!(
     env,
     unsafe {
-      sys::napi_set_named_property(
+      libnode_sys::napi_set_named_property(
         env,
         result,
         "done\0".as_ptr() as *const std::os::raw::c_char,
@@ -340,17 +340,17 @@ extern "C" fn generator_next<T: Generator>(
 }
 
 extern "C" fn generator_return<T: Generator>(
-  env: sys::napi_env,
-  info: sys::napi_callback_info,
-) -> sys::napi_value {
+  env: libnode_sys::napi_env,
+  info: libnode_sys::napi_callback_info,
+) -> libnode_sys::napi_value {
   let mut this = ptr::null_mut();
-  let mut argv: [sys::napi_value; 1] = [ptr::null_mut()];
+  let mut argv: [libnode_sys::napi_value; 1] = [ptr::null_mut()];
   let mut argc = 1;
   let mut generator_ptr = ptr::null_mut();
   check_status_or_throw!(
     env,
     unsafe {
-      sys::napi_get_cb_info(
+      libnode_sys::napi_get_cb_info(
         env,
         info,
         &mut argc,
@@ -371,7 +371,7 @@ extern "C" fn generator_return<T: Generator>(
         Ok(input) => input,
         Err(e) => {
           unsafe {
-            sys::napi_throw_error(
+            libnode_sys::napi_throw_error(
               env,
               format!("{}", e.status).as_ptr() as *mut c_char,
               e.reason.as_ptr() as *mut c_char,
@@ -385,13 +385,13 @@ extern "C" fn generator_return<T: Generator>(
   let mut generator_state = ptr::null_mut();
   check_status_or_throw!(
     env,
-    unsafe { sys::napi_get_boolean(env, true, &mut generator_state) },
+    unsafe { libnode_sys::napi_get_boolean(env, true, &mut generator_state) },
     "Create generator state failed"
   );
   check_status_or_throw!(
     env,
     unsafe {
-      sys::napi_set_named_property(
+      libnode_sys::napi_set_named_property(
         env,
         this,
         GENERATOR_STATE_KEY.as_ptr().cast(),
@@ -403,14 +403,14 @@ extern "C" fn generator_return<T: Generator>(
   let mut result = std::ptr::null_mut();
   check_status_or_throw!(
     env,
-    unsafe { sys::napi_create_object(env, &mut result) },
+    unsafe { libnode_sys::napi_create_object(env, &mut result) },
     "Failed to create iterator result object",
   );
   if argc > 0 {
     check_status_or_throw!(
       env,
       unsafe {
-        sys::napi_set_named_property(
+        libnode_sys::napi_set_named_property(
           env,
           result,
           "value\0".as_ptr() as *const std::os::raw::c_char,
@@ -423,7 +423,7 @@ extern "C" fn generator_return<T: Generator>(
   check_status_or_throw!(
     env,
     unsafe {
-      sys::napi_set_named_property(
+      libnode_sys::napi_set_named_property(
         env,
         result,
         "done\0".as_ptr() as *const std::os::raw::c_char,
@@ -437,17 +437,17 @@ extern "C" fn generator_return<T: Generator>(
 }
 
 extern "C" fn generator_throw<T: Generator>(
-  env: sys::napi_env,
-  info: sys::napi_callback_info,
-) -> sys::napi_value {
+  env: libnode_sys::napi_env,
+  info: libnode_sys::napi_callback_info,
+) -> libnode_sys::napi_value {
   let mut this = ptr::null_mut();
-  let mut argv: [sys::napi_value; 1] = [ptr::null_mut()];
+  let mut argv: [libnode_sys::napi_value; 1] = [ptr::null_mut()];
   let mut argc = 1;
   let mut generator_ptr = ptr::null_mut();
   check_status_or_throw!(
     env,
     unsafe {
-      sys::napi_get_cb_info(
+      libnode_sys::napi_get_cb_info(
         env,
         info,
         &mut argc,
@@ -464,7 +464,7 @@ extern "C" fn generator_throw<T: Generator>(
     let mut undefined = ptr::null_mut();
     check_status_or_throw!(
       env,
-      unsafe { sys::napi_get_undefined(env, &mut undefined) },
+      unsafe { libnode_sys::napi_get_undefined(env, &mut undefined) },
       "Get undefined failed"
     );
     g.catch(
@@ -488,7 +488,7 @@ extern "C" fn generator_throw<T: Generator>(
   let mut result = ptr::null_mut();
   check_status_or_throw!(
     env,
-    unsafe { sys::napi_create_object(env, &mut result) },
+    unsafe { libnode_sys::napi_create_object(env, &mut result) },
     "Failed to create iterator result object",
   );
   let mut generator_state = ptr::null_mut();
@@ -498,13 +498,13 @@ extern "C" fn generator_throw<T: Generator>(
       generator_state_value = true;
       check_status_or_throw!(
         env,
-        unsafe { sys::napi_get_boolean(env, generator_state_value, &mut generator_state) },
+        unsafe { libnode_sys::napi_get_boolean(env, generator_state_value, &mut generator_state) },
         "Create generator state failed"
       );
       check_status_or_throw!(
         env,
         unsafe {
-          sys::napi_set_named_property(
+          libnode_sys::napi_set_named_property(
             env,
             this,
             GENERATOR_STATE_KEY.as_ptr().cast(),
@@ -513,9 +513,9 @@ extern "C" fn generator_throw<T: Generator>(
         },
         "Get generator state failed"
       );
-      let throw_status = unsafe { sys::napi_throw(env, e.0.value) };
+      let throw_status = unsafe { libnode_sys::napi_throw(env, e.0.value) };
       debug_assert!(
-        throw_status == sys::Status::napi_ok,
+        throw_status == libnode_sys::Status::napi_ok,
         "Failed to throw error {}",
         crate::napi::Status::from(throw_status)
       );
@@ -530,13 +530,13 @@ extern "C" fn generator_throw<T: Generator>(
   }
   check_status_or_throw!(
     env,
-    unsafe { sys::napi_get_boolean(env, generator_state_value, &mut generator_state) },
+    unsafe { libnode_sys::napi_get_boolean(env, generator_state_value, &mut generator_state) },
     "Create generator state failed"
   );
   check_status_or_throw!(
     env,
     unsafe {
-      sys::napi_set_named_property(
+      libnode_sys::napi_set_named_property(
         env,
         this,
         GENERATOR_STATE_KEY.as_ptr().cast(),
@@ -547,7 +547,7 @@ extern "C" fn generator_throw<T: Generator>(
   );
   check_status_or_throw!(
     env,
-    unsafe { sys::napi_set_named_property(env, result, "done\0".as_ptr().cast(), generator_state) },
+    unsafe { libnode_sys::napi_set_named_property(env, result, "done\0".as_ptr().cast(), generator_state) },
     "Get generator state failed"
   );
 
@@ -555,8 +555,8 @@ extern "C" fn generator_throw<T: Generator>(
 }
 
 fn set_generator_value<V: ToNapiValue>(
-  env: sys::napi_env,
-  result: sys::napi_value,
+  env: libnode_sys::napi_env,
+  result: libnode_sys::napi_value,
   value: V,
 ) {
   match unsafe { ToNapiValue::to_napi_value(env, value) } {
@@ -564,7 +564,7 @@ fn set_generator_value<V: ToNapiValue>(
       check_status_or_throw!(
         env,
         unsafe {
-          sys::napi_set_named_property(
+          libnode_sys::napi_set_named_property(
             env,
             result,
             "value\0".as_ptr() as *const std::os::raw::c_char,
@@ -576,7 +576,7 @@ fn set_generator_value<V: ToNapiValue>(
     }
     Err(e) => {
       unsafe {
-        sys::napi_throw_error(
+        libnode_sys::napi_throw_error(
           env,
           format!("{}", e.status).as_ptr() as *mut c_char,
           e.reason.as_ptr() as *mut c_char,

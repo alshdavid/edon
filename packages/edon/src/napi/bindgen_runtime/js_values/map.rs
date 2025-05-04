@@ -26,9 +26,9 @@ where
   V: ToNapiValue,
 {
   unsafe fn to_napi_value(
-    raw_env: sys::napi_env,
+    raw_env: libnode_sys::napi_env,
     val: Self,
-  ) -> Result<sys::napi_value> {
+  ) -> Result<libnode_sys::napi_value> {
     let env = Env::from(raw_env);
     let mut obj = env.create_object()?;
     for (k, v) in val.into_iter() {
@@ -46,8 +46,8 @@ where
   S: Default + BuildHasher,
 {
   unsafe fn from_napi_value(
-    env: sys::napi_env,
-    napi_val: sys::napi_value,
+    env: libnode_sys::napi_env,
+    napi_val: libnode_sys::napi_value,
   ) -> Result<Self> {
     let obj = unsafe { Object::from_napi_value(env, napi_val)? };
     let mut map = HashMap::default();
@@ -79,9 +79,9 @@ where
   V: ToNapiValue,
 {
   unsafe fn to_napi_value(
-    raw_env: sys::napi_env,
+    raw_env: libnode_sys::napi_env,
     val: Self,
-  ) -> Result<sys::napi_value> {
+  ) -> Result<libnode_sys::napi_value> {
     let env = Env::from(raw_env);
     let mut obj = env.create_object()?;
     for (k, v) in val.into_iter() {
@@ -98,8 +98,8 @@ where
   V: FromNapiValue,
 {
   unsafe fn from_napi_value(
-    env: sys::napi_env,
-    napi_val: sys::napi_value,
+    env: libnode_sys::napi_env,
+    napi_val: libnode_sys::napi_value,
   ) -> Result<Self> {
     let obj = unsafe { Object::from_napi_value(env, napi_val)? };
     let mut map = BTreeMap::default();

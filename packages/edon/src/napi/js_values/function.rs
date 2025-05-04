@@ -66,10 +66,10 @@ impl JsFunction {
     let raw_args = args
       .iter()
       .map(|arg| unsafe { arg.raw() })
-      .collect::<Vec<sys::napi_value>>();
+      .collect::<Vec<libnode_sys::napi_value>>();
     let mut return_value = ptr::null_mut();
     check_pending_exception!(self.0.env, unsafe {
-      sys::napi_call_function(
+      libnode_sys::napi_call_function(
         self.0.env,
         raw_this,
         self.0.value,
@@ -99,7 +99,7 @@ impl JsFunction {
       .ok_or_else(|| Error::new(Status::GenericFailure, "Get raw this failed".to_owned()))?;
     let mut return_value = ptr::null_mut();
     check_pending_exception!(self.0.env, unsafe {
-      sys::napi_call_function(
+      libnode_sys::napi_call_function(
         self.0.env,
         raw_this,
         self.0.value,
@@ -127,9 +127,9 @@ impl JsFunction {
     let raw_args = args
       .iter()
       .map(|arg| unsafe { arg.raw() })
-      .collect::<Vec<sys::napi_value>>();
+      .collect::<Vec<libnode_sys::napi_value>>();
     check_pending_exception!(self.0.env, unsafe {
-      sys::napi_new_instance(
+      libnode_sys::napi_new_instance(
         self.0.env,
         self.0.value,
         length,
@@ -144,7 +144,7 @@ impl JsFunction {
   pub fn name(&self) -> Result<String> {
     let mut name = ptr::null_mut();
     check_pending_exception!(self.0.env, unsafe {
-      sys::napi_get_named_property(
+      libnode_sys::napi_get_named_property(
         self.0.env,
         self.0.value,
         "name\0".as_ptr().cast(),

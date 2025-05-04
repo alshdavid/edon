@@ -36,7 +36,7 @@ impl JsString {
   pub fn utf8_len(&self) -> Result<usize> {
     let mut length = 0;
     check_status!(unsafe {
-      sys::napi_get_value_string_utf8(self.0.env, self.0.value, ptr::null_mut(), 0, &mut length)
+      libnode_sys::napi_get_value_string_utf8(self.0.env, self.0.value, ptr::null_mut(), 0, &mut length)
     })?;
     Ok(length)
   }
@@ -44,7 +44,7 @@ impl JsString {
   pub fn utf16_len(&self) -> Result<usize> {
     let mut length = 0;
     check_status!(unsafe {
-      sys::napi_get_value_string_utf16(self.0.env, self.0.value, ptr::null_mut(), 0, &mut length)
+      libnode_sys::napi_get_value_string_utf16(self.0.env, self.0.value, ptr::null_mut(), 0, &mut length)
     })?;
     Ok(length)
   }
@@ -52,7 +52,7 @@ impl JsString {
   pub fn latin1_len(&self) -> Result<usize> {
     let mut length = 0;
     check_status!(unsafe {
-      sys::napi_get_value_string_latin1(self.0.env, self.0.value, ptr::null_mut(), 0, &mut length)
+      libnode_sys::napi_get_value_string_latin1(self.0.env, self.0.value, ptr::null_mut(), 0, &mut length)
     })?;
     Ok(length)
   }
@@ -63,7 +63,7 @@ impl JsString {
     let mut result = Vec::with_capacity(len);
     let buf_ptr = result.as_mut_ptr();
     check_status!(unsafe {
-      sys::napi_get_value_string_utf8(
+      libnode_sys::napi_get_value_string_utf8(
         self.0.env,
         self.0.value,
         buf_ptr,
@@ -88,7 +88,7 @@ impl JsString {
     let mut result = vec![0; len];
     let buf_ptr = result.as_mut_ptr();
     check_status!(unsafe {
-      sys::napi_get_value_string_utf16(
+      libnode_sys::napi_get_value_string_utf16(
         self.0.env,
         self.0.value,
         buf_ptr,
@@ -109,7 +109,7 @@ impl JsString {
     let mut result = Vec::with_capacity(len);
     let buf_ptr = result.as_mut_ptr();
     check_status!(unsafe {
-      sys::napi_get_value_string_latin1(
+      libnode_sys::napi_get_value_string_latin1(
         self.0.env,
         self.0.value,
         buf_ptr,

@@ -12,11 +12,11 @@ pub type Object = JsObject;
 
 impl Object {
   #[cfg(feature = "serde-json")]
-  pub(crate) fn new(env: sys::napi_env) -> Result<Self> {
+  pub(crate) fn new(env: libnode_sys::napi_env) -> Result<Self> {
     let mut ptr = ptr::null_mut();
     unsafe {
       check_status!(
-        sys::napi_create_object(env, &mut ptr),
+        libnode_sys::napi_create_object(env, &mut ptr),
         "Failed to create napi Object"
       )?;
     }
@@ -43,14 +43,14 @@ impl Object {
   fn get_inner(
     &self,
     field: &str,
-  ) -> Result<Option<sys::napi_value>> {
+  ) -> Result<Option<libnode_sys::napi_value>> {
     let c_field = CString::new(field)?;
 
     unsafe {
       let mut ret = ptr::null_mut();
 
       check_status!(
-        sys::napi_get_named_property(self.0.env, self.0.value, c_field.as_ptr(), &mut ret),
+        libnode_sys::napi_get_named_property(self.0.env, self.0.value, c_field.as_ptr(), &mut ret),
         "Failed to get property with field `{field}`",
       )?;
 
@@ -75,13 +75,13 @@ impl Object {
   unsafe fn set_inner(
     &mut self,
     field: &str,
-    napi_val: sys::napi_value,
+    napi_val: libnode_sys::napi_value,
   ) -> Result<()> {
     let c_field = CString::new(field)?;
 
     unsafe {
       check_status!(
-        sys::napi_set_named_property(self.0.env, self.0.value, c_field.as_ptr(), napi_val),
+        libnode_sys::napi_set_named_property(self.0.env, self.0.value, c_field.as_ptr(), napi_val),
         "Failed to set property with field `{field}`",
       )?;
       Ok(())
@@ -92,7 +92,7 @@ impl Object {
     let mut names = ptr::null_mut();
     unsafe {
       check_status!(
-        sys::napi_get_property_names(obj.0.env, obj.0.value, &mut names),
+        libnode_sys::napi_get_property_names(obj.0.env, obj.0.value, &mut names),
         "Failed to get property names of given object"
       )?;
     }

@@ -20,9 +20,9 @@ use crate::napi::Result;
 use crate::napi::Value;
 use crate::napi::ValueType;
 
-pub type ExportRegisterCallback = unsafe fn(sys::napi_env) -> Result<sys::napi_value>;
+pub type ExportRegisterCallback = unsafe fn(libnode_sys::napi_env) -> Result<libnode_sys::napi_value>;
 pub type ModuleExportsCallback =
-  unsafe fn(env: sys::napi_env, exports: sys::napi_value) -> Result<()>;
+  unsafe fn(env: libnode_sys::napi_env, exports: libnode_sys::napi_value) -> Result<()>;
 
 #[repr(transparent)]
 pub(crate) struct PersistedPerInstanceHashMap<K, V>(RwLock<HashMap<K, V>>);
@@ -63,7 +63,7 @@ unsafe impl<K, V> Send for PersistedPerInstanceHashMap<K, V> {}
 unsafe impl<K, V> Sync for PersistedPerInstanceHashMap<K, V> {}
 
 type FnRegisterMap =
-  PersistedPerInstanceHashMap<ExportRegisterCallback, (sys::napi_callback, &'static str)>;
+  PersistedPerInstanceHashMap<ExportRegisterCallback, (libnode_sys::napi_callback, &'static str)>;
 type RegisteredClassesMap = PersistedPerInstanceHashMap<ThreadId, RegisteredClasses>;
 
 static MODULE_REGISTER_CALLBACK: Lazy<ModuleRegisterCallback> = Lazy::new(Default::default);
@@ -72,7 +72,7 @@ static IS_FIRST_MODULE: AtomicBool = AtomicBool::new(true);
 static FIRST_MODULE_REGISTERED: AtomicBool = AtomicBool::new(false);
 static REGISTERED_CLASSES: Lazy<RegisteredClassesMap> = Lazy::new(Default::default);
 static FN_REGISTER_MAP: Lazy<FnRegisterMap> = Lazy::new(Default::default);
-pub(crate) static CUSTOM_GC_TSFN: std::sync::atomic::AtomicPtr<sys::napi_threadsafe_function__> =
+pub(crate) static CUSTOM_GC_TSFN: std::sync::atomic::AtomicPtr<libnode_sys::napi_threadsafe_function__> =
   std::sync::atomic::AtomicPtr::new(ptr::null_mut());
 pub(crate) static CUSTOM_GC_TSFN_DESTROYED: AtomicBool = AtomicBool::new(false);
 // Store thread id of the thread that created the CustomGC ThreadsafeFunction.
@@ -81,7 +81,7 @@ pub(crate) static THREADS_CAN_ACCESS_ENV: once_cell::sync::Lazy<
 > = once_cell::sync::Lazy::new(Default::default);
 
 type RegisteredClasses =
-  PersistedPerInstanceHashMap</* export name */ String, /* constructor */ sys::napi_ref>;
+  PersistedPerInstanceHashMap</* export name */ String, /* constructor */ libnode_sys::napi_ref>;
 
 // compatibility for #[module_exports]
 static MODULE_EXPORTS: Lazy<RwLock<Vec<ModuleExportsCallback>>> = Lazy::new(Default::default);
@@ -94,7 +94,7 @@ fn wait_first_thread_registered() {
 }
 
 #[doc(hidden)]
-pub fn get_class_constructor(js_name: &'static str) -> Option<sys::napi_ref> {
+pub fn get_class_constructor(js_name: &'static str) -> Option<libnode_sys::napi_ref> {
   let current_id = std::thread::current().id();
   REGISTERED_CLASSES.borrow_mut(|map| {
     map
@@ -128,7 +128,7 @@ pub fn register_module_export(
 pub fn register_js_function(
   name: &'static str,
   cb: ExportRegisterCallback,
-  c_fn: sys::napi_callback,
+  c_fn: libnode_sys::napi_callback,
 ) {
   FN_REGISTER_MAP.borrow_mut(|inner| {
     inner.insert(cb, (c_fn, name));
@@ -180,7 +180,7 @@ pub fn get_js_function(
         let name_len = name.len() - 1;
         let fn_name = unsafe { CStr::from_bytes_with_nul_unchecked(name.as_bytes()) };
         check_status!(unsafe {
-          sys::napi_create_function(
+          libnode_sys::napi_create_function(
             env.0,
             fn_name.as_ptr(),
             name_len as isize,
@@ -247,9 +247,9 @@ pub fn get_c_callback(raw_fn: ExportRegisterCallback) -> Result<crate::napi::Cal
 ///
 /// Arguments `env` and `exports` must **not** be null.
 pub unsafe extern "C" fn napi_register_module_v1(
-  env: sys::napi_env,
-  exports: sys::napi_value,
-) -> sys::napi_value {
+  env: libnode_sys::napi_env,
+  exports: libnode_sys::napi_value,
+) -> libnode_sys::napi_value {
   if IS_FIRST_MODULE.load(Ordering::SeqCst) {
     IS_FIRST_MODULE.store(false, Ordering::SeqCst);
   } else {
@@ -284,7 +284,7 @@ pub unsafe extern "C" fn napi_register_module_v1(
             check_status_or_throw!(
               env,
               unsafe {
-                sys::napi_get_named_property(
+                libnode_sys::napi_get_named_property(
                   env,
                   exports,
                   mod_name_c_str.as_ptr(),
@@ -297,14 +297,14 @@ pub unsafe extern "C" fn napi_register_module_v1(
           } else {
             check_status_or_throw!(
               env,
-              unsafe { sys::napi_create_object(env, &mut exports_js_mod) },
+              unsafe { libnode_sys::napi_create_object(env, &mut exports_js_mod) },
               "Create export JavaScript Object [{}] failed",
               js_mod_str
             );
             check_status_or_throw!(
               env,
               unsafe {
-                sys::napi_set_named_property(env, exports, mod_name_c_str.as_ptr(), exports_js_mod)
+                libnode_sys::napi_set_named_property(env, exports, mod_name_c_str.as_ptr(), exports_js_mod)
               },
               "Set exports Object [{}] into exports object failed",
               js_mod_str
@@ -322,7 +322,7 @@ pub unsafe extern "C" fn napi_register_module_v1(
                 exports_js_mod
               };
               check_status!(
-                sys::napi_set_named_property(env, exported_object, js_name.as_ptr(), v),
+                libnode_sys::napi_set_named_property(env, exported_object, js_name.as_ptr(), v),
                 "Failed to register export `{}`",
                 name,
               )
@@ -346,7 +346,7 @@ pub unsafe extern "C" fn napi_register_module_v1(
             if exports_objects.contains(*js_mod_str) {
               check_status_or_throw!(
                 env,
-                sys::napi_get_named_property(
+                libnode_sys::napi_get_named_property(
                   env,
                   exports,
                   mod_name_c_str.as_ptr(),
@@ -358,13 +358,13 @@ pub unsafe extern "C" fn napi_register_module_v1(
             } else {
               check_status_or_throw!(
                 env,
-                sys::napi_create_object(env, &mut exports_js_mod),
+                libnode_sys::napi_create_object(env, &mut exports_js_mod),
                 "Create export JavaScript Object [{}] failed",
                 js_mod_str
               );
               check_status_or_throw!(
                 env,
-                sys::napi_set_named_property(env, exports, mod_name_c_str.as_ptr(), exports_js_mod),
+                libnode_sys::napi_set_named_property(env, exports, mod_name_c_str.as_ptr(), exports_js_mod),
                 "Set exports Object [{}] into exports object failed",
                 js_mod_str
               );
@@ -384,7 +384,7 @@ pub unsafe extern "C" fn napi_register_module_v1(
 
           check_status_or_throw!(
             env,
-            sys::napi_define_class(
+            libnode_sys::napi_define_class(
               env,
               js_class_name.as_ptr(),
               (js_name.len() - 1) as isize,
@@ -400,13 +400,13 @@ pub unsafe extern "C" fn napi_register_module_v1(
           );
 
           let mut ctor_ref = ptr::null_mut();
-          sys::napi_create_reference(env, class_ptr, 1, &mut ctor_ref);
+          libnode_sys::napi_create_reference(env, class_ptr, 1, &mut ctor_ref);
 
           registered_classes.insert(js_name.to_string(), ctor_ref);
 
           check_status_or_throw!(
             env,
-            sys::napi_set_named_property(
+            libnode_sys::napi_set_named_property(
               env,
               if exports_js_mod.is_null() {
                 exports
@@ -447,12 +447,12 @@ pub unsafe extern "C" fn napi_register_module_v1(
 }
 
 pub(crate) unsafe extern "C" fn noop(
-  env: sys::napi_env,
-  _info: sys::napi_callback_info,
-) -> sys::napi_value {
+  env: libnode_sys::napi_env,
+  _info: libnode_sys::napi_callback_info,
+) -> libnode_sys::napi_value {
   if !crate::napi::bindgen_runtime::___CALL_FROM_FACTORY.with(|s| s.load(Ordering::Relaxed)) {
     unsafe {
-      sys::napi_throw_error(
+      libnode_sys::napi_throw_error(
         env,
         ptr::null_mut(),
         c"Class contains no `constructor`, can not new it!".as_ptr(),
@@ -462,13 +462,13 @@ pub(crate) unsafe extern "C" fn noop(
   ptr::null_mut()
 }
 
-fn create_custom_gc(env: sys::napi_env) {
+fn create_custom_gc(env: libnode_sys::napi_env) {
   if !FIRST_MODULE_REGISTERED.load(Ordering::SeqCst) {
     let mut custom_gc_fn = ptr::null_mut();
     check_status_or_throw!(
       env,
       unsafe {
-        sys::napi_create_function(
+        libnode_sys::napi_create_function(
           env,
           "custom_gc".as_ptr().cast(),
           9,
@@ -483,7 +483,7 @@ fn create_custom_gc(env: sys::napi_env) {
     check_status_or_throw!(
       env,
       unsafe {
-        sys::napi_create_string_utf8(env, "CustomGC".as_ptr().cast(), 8, &mut async_resource_name)
+        libnode_sys::napi_create_string_utf8(env, "CustomGC".as_ptr().cast(), 8, &mut async_resource_name)
       },
       "Create async resource string in napi_register_module_v1"
     );
@@ -491,7 +491,7 @@ fn create_custom_gc(env: sys::napi_env) {
     check_status_or_throw!(
       env,
       unsafe {
-        sys::napi_create_threadsafe_function(
+        libnode_sys::napi_create_threadsafe_function(
           env,
           custom_gc_fn,
           ptr::null_mut(),
@@ -509,7 +509,7 @@ fn create_custom_gc(env: sys::napi_env) {
     );
     check_status_or_throw!(
       env,
-      unsafe { sys::napi_unref_threadsafe_function(env, custom_gc_tsfn) },
+      unsafe { libnode_sys::napi_unref_threadsafe_function(env, custom_gc_tsfn) },
       "Unref Custom GC ThreadsafeFunction in napi_register_module_v1 failed"
     );
     CUSTOM_GC_TSFN.store(custom_gc_tsfn, Ordering::Relaxed);
@@ -520,7 +520,7 @@ fn create_custom_gc(env: sys::napi_env) {
   check_status_or_throw!(
     env,
     unsafe {
-      sys::napi_add_env_cleanup_hook(
+      libnode_sys::napi_add_env_cleanup_hook(
         env,
         Some(remove_thread_id),
         Box::into_raw(Box::new(current_thread_id)).cast(),
@@ -537,15 +537,15 @@ unsafe extern "C" fn remove_thread_id(id: *mut std::ffi::c_void) {
 
 #[allow(unused)]
 unsafe extern "C" fn empty(
-  env: sys::napi_env,
-  info: sys::napi_callback_info,
-) -> sys::napi_value {
+  env: libnode_sys::napi_env,
+  info: libnode_sys::napi_callback_info,
+) -> libnode_sys::napi_value {
   ptr::null_mut()
 }
 
 #[allow(unused_variables)]
 unsafe extern "C" fn custom_gc_finalize(
-  env: sys::napi_env,
+  env: libnode_sys::napi_env,
   finalize_data: *mut std::ffi::c_void,
   finalize_hint: *mut std::ffi::c_void,
 ) {
@@ -554,8 +554,8 @@ unsafe extern "C" fn custom_gc_finalize(
 
 // recycle the ArrayBuffer/Buffer Reference if the ArrayBuffer/Buffer is not dropped on the main thread
 extern "C" fn custom_gc(
-  env: sys::napi_env,
-  _js_callback: sys::napi_value,
+  env: libnode_sys::napi_env,
+  _js_callback: libnode_sys::napi_value,
   _context: *mut std::ffi::c_void,
   data: *mut std::ffi::c_void,
 ) {
@@ -568,7 +568,7 @@ extern "C" fn custom_gc(
   let mut ref_count = 0;
   check_status_or_throw!(
     env,
-    unsafe { sys::napi_reference_unref(env, data.cast(), &mut ref_count) },
+    unsafe { libnode_sys::napi_reference_unref(env, data.cast(), &mut ref_count) },
     "Failed to unref Buffer reference in Custom GC"
   );
   debug_assert!(
@@ -577,7 +577,7 @@ extern "C" fn custom_gc(
   );
   check_status_or_throw!(
     env,
-    unsafe { sys::napi_delete_reference(env, data.cast()) },
+    unsafe { libnode_sys::napi_delete_reference(env, data.cast()) },
     "Failed to delete Buffer reference in Custom GC"
   );
 }

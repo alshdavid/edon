@@ -12,10 +12,10 @@ pub struct NodeVersion {
   pub release: &'static str,
 }
 
-impl TryFrom<sys::napi_node_version> for NodeVersion {
+impl TryFrom<libnode_sys::napi_node_version> for NodeVersion {
   type Error = Error;
 
-  fn try_from(value: sys::napi_node_version) -> Result<NodeVersion, Error> {
+  fn try_from(value: libnode_sys::napi_node_version) -> Result<NodeVersion, Error> {
     Ok(NodeVersion {
       major: value.major,
       minor: value.minor,

@@ -27,8 +27,8 @@ impl ValidateNapiValue for Null {}
 
 impl FromNapiValue for Null {
   unsafe fn from_napi_value(
-    env: sys::napi_env,
-    napi_val: sys::napi_value,
+    env: libnode_sys::napi_env,
+    napi_val: libnode_sys::napi_value,
   ) -> Result<Self> {
     match type_of!(env, napi_val) {
       Ok(ValueType::Null) => Ok(Null),
@@ -42,13 +42,13 @@ impl FromNapiValue for Null {
 
 impl ToNapiValue for Null {
   unsafe fn to_napi_value(
-    env: sys::napi_env,
+    env: libnode_sys::napi_env,
     _val: Self,
-  ) -> Result<sys::napi_value> {
+  ) -> Result<libnode_sys::napi_value> {
     let mut ret = ptr::null_mut();
 
     check_status!(
-      unsafe { sys::napi_get_null(env, &mut ret) },
+      unsafe { libnode_sys::napi_get_null(env, &mut ret) },
       "Failed to create napi null value"
     )?;
 
@@ -70,8 +70,8 @@ impl ValidateNapiValue for Undefined {}
 
 impl FromNapiValue for Undefined {
   unsafe fn from_napi_value(
-    env: sys::napi_env,
-    napi_val: sys::napi_value,
+    env: libnode_sys::napi_env,
+    napi_val: libnode_sys::napi_value,
   ) -> Result<Self> {
     match type_of!(env, napi_val) {
       Ok(ValueType::Undefined) => Ok(()),
@@ -85,13 +85,13 @@ impl FromNapiValue for Undefined {
 
 impl ToNapiValue for Undefined {
   unsafe fn to_napi_value(
-    env: sys::napi_env,
+    env: libnode_sys::napi_env,
     _val: Self,
-  ) -> Result<sys::napi_value> {
+  ) -> Result<libnode_sys::napi_value> {
     let mut ret = ptr::null_mut();
 
     check_status!(
-      unsafe { sys::napi_get_undefined(env, &mut ret) },
+      unsafe { libnode_sys::napi_get_undefined(env, &mut ret) },
       "Failed to create napi undefined value"
     )?;
 

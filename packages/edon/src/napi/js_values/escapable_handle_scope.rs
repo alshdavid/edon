@@ -8,7 +8,7 @@ use crate::napi::NapiRaw;
 use crate::napi::Result;
 
 pub struct EscapableHandleScope<T: NapiRaw> {
-  handle_scope: sys::napi_escapable_handle_scope,
+  handle_scope: libnode_sys::napi_escapable_handle_scope,
   value: T,
 }
 
@@ -18,10 +18,10 @@ impl<T: NapiRaw> EscapableHandleScope<T> {
     value: T,
   ) -> Result<Self> {
     let mut handle_scope = ptr::null_mut();
-    check_status!(unsafe { sys::napi_open_escapable_handle_scope(env.0, &mut handle_scope) })?;
+    check_status!(unsafe { libnode_sys::napi_open_escapable_handle_scope(env.0, &mut handle_scope) })?;
     let mut result = ptr::null_mut();
     check_status!(unsafe {
-      sys::napi_escape_handle(env.0, handle_scope, NapiRaw::raw(&value), &mut result)
+      libnode_sys::napi_escape_handle(env.0, handle_scope, NapiRaw::raw(&value), &mut result)
     })?;
     Ok(Self {
       handle_scope,
@@ -33,7 +33,7 @@ impl<T: NapiRaw> EscapableHandleScope<T> {
     self,
     env: Env,
   ) -> Result<()> {
-    check_status!(unsafe { sys::napi_close_escapable_handle_scope(env.0, self.handle_scope) })
+    check_status!(unsafe { libnode_sys::napi_close_escapable_handle_scope(env.0, self.handle_scope) })
   }
 }
 

@@ -24,11 +24,11 @@ impl TypeName for JsDate {
 
 impl ValidateNapiValue for JsDate {
   unsafe fn validate(
-    env: sys::napi_env,
-    napi_val: sys::napi_value,
-  ) -> Result<sys::napi_value> {
+    env: libnode_sys::napi_env,
+    napi_val: libnode_sys::napi_value,
+  ) -> Result<libnode_sys::napi_value> {
     let mut is_date = false;
-    check_status!(unsafe { sys::napi_is_date(env, napi_val, &mut is_date) })?;
+    check_status!(unsafe { libnode_sys::napi_is_date(env, napi_val, &mut is_date) })?;
     if !is_date {
       return Err(Error::new(
         Status::InvalidArg,
@@ -43,7 +43,7 @@ impl ValidateNapiValue for JsDate {
 impl JsDate {
   pub fn value_of(&self) -> Result<f64> {
     let mut timestamp: f64 = 0.0;
-    check_status!(unsafe { sys::napi_get_date_value(self.0.env, self.0.value, &mut timestamp) })?;
+    check_status!(unsafe { libnode_sys::napi_get_date_value(self.0.env, self.0.value, &mut timestamp) })?;
     Ok(timestamp)
   }
 }

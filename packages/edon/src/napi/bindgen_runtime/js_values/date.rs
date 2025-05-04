@@ -24,11 +24,11 @@ impl<Tz: TimeZone> TypeName for DateTime<Tz> {
 
 impl<Tz: TimeZone> ValidateNapiValue for DateTime<Tz> {
   unsafe fn validate(
-    env: sys::napi_env,
-    napi_val: sys::napi_value,
-  ) -> Result<sys::napi_value> {
+    env: libnode_sys::napi_env,
+    napi_val: libnode_sys::napi_value,
+  ) -> Result<libnode_sys::napi_value> {
     let mut is_date = false;
-    check_status!(unsafe { sys::napi_is_date(env, napi_val, &mut is_date) })?;
+    check_status!(unsafe { libnode_sys::napi_is_date(env, napi_val, &mut is_date) })?;
     if !is_date {
       return Err(Error::new(
         Status::InvalidArg,
@@ -42,14 +42,14 @@ impl<Tz: TimeZone> ValidateNapiValue for DateTime<Tz> {
 
 impl ToNapiValue for NaiveDateTime {
   unsafe fn to_napi_value(
-    env: sys::napi_env,
+    env: libnode_sys::napi_env,
     val: NaiveDateTime,
-  ) -> Result<sys::napi_value> {
+  ) -> Result<libnode_sys::napi_value> {
     let mut ptr = std::ptr::null_mut();
     let millis_since_epoch_utc = val.and_utc().timestamp_millis() as f64;
 
     check_status!(
-      unsafe { sys::napi_create_date(env, millis_since_epoch_utc, &mut ptr) },
+      unsafe { libnode_sys::napi_create_date(env, millis_since_epoch_utc, &mut ptr) },
       "Failed to convert rust type `NaiveDateTime` into napi value",
     )?;
 
@@ -59,8 +59,8 @@ impl ToNapiValue for NaiveDateTime {
 
 impl FromNapiValue for NaiveDateTime {
   unsafe fn from_napi_value(
-    env: sys::napi_env,
-    napi_val: sys::napi_value,
+    env: libnode_sys::napi_env,
+    napi_val: libnode_sys::napi_value,
   ) -> Result<Self> {
     let mut to_iso_string = ptr::null_mut();
     check_status!(
@@ -76,13 +76,13 @@ impl FromNapiValue for NaiveDateTime {
     )?;
     let mut to_iso_string_method = ptr::null_mut();
     check_status!(
-      unsafe { sys::napi_get_property(env, napi_val, to_iso_string, &mut to_iso_string_method) },
+      unsafe { libnode_sys::napi_get_property(env, napi_val, to_iso_string, &mut to_iso_string_method) },
       "get toISOString method failed"
     )?;
     let mut iso_string_value = ptr::null_mut();
     check_status!(
       unsafe {
-        sys::napi_call_function(
+        libnode_sys::napi_call_function(
           env,
           napi_val,
           to_iso_string_method,
@@ -97,7 +97,7 @@ impl FromNapiValue for NaiveDateTime {
     let mut iso_string_length = 0;
     check_status!(
       unsafe {
-        sys::napi_get_value_string_utf8(
+        libnode_sys::napi_get_value_string_utf8(
           env,
           iso_string_value,
           ptr::null_mut(),
@@ -110,7 +110,7 @@ impl FromNapiValue for NaiveDateTime {
     let mut iso_string = String::with_capacity(iso_string_length + 1);
     check_status!(
       unsafe {
-        sys::napi_get_value_string_utf8(
+        libnode_sys::napi_get_value_string_utf8(
           env,
           iso_string_value,
           iso_string.as_mut_ptr().cast(),
@@ -139,14 +139,14 @@ impl FromNapiValue for NaiveDateTime {
 
 impl<Tz: TimeZone> ToNapiValue for DateTime<Tz> {
   unsafe fn to_napi_value(
-    env: sys::napi_env,
+    env: libnode_sys::napi_env,
     val: DateTime<Tz>,
-  ) -> Result<sys::napi_value> {
+  ) -> Result<libnode_sys::napi_value> {
     let mut ptr = std::ptr::null_mut();
     let millis_since_epoch_utc = val.timestamp_millis() as f64;
 
     check_status!(
-      unsafe { sys::napi_create_date(env, millis_since_epoch_utc, &mut ptr) },
+      unsafe { libnode_sys::napi_create_date(env, millis_since_epoch_utc, &mut ptr) },
       "Failed to convert rust type `DateTime` into napi value",
     )?;
 
@@ -159,13 +159,13 @@ where
   DateTime<Tz>: From<DateTime<Local>>,
 {
   unsafe fn from_napi_value(
-    env: sys::napi_env,
-    napi_val: sys::napi_value,
+    env: libnode_sys::napi_env,
+    napi_val: libnode_sys::napi_value,
   ) -> Result<Self> {
     let mut milliseconds_since_epoch_utc = 0.0;
 
     check_status!(
-      unsafe { sys::napi_get_date_value(env, napi_val, &mut milliseconds_since_epoch_utc) },
+      unsafe { libnode_sys::napi_get_date_value(env, napi_val, &mut milliseconds_since_epoch_utc) },
       "Failed to convert napi value into rust type `DateTime`",
     )?;
 

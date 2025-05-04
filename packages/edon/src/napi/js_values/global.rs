@@ -12,8 +12,8 @@ pub struct JSON(pub(crate) Value);
 
 impl FromNapiValue for JSON {
   unsafe fn from_napi_value(
-    env: sys::napi_env,
-    napi_val: sys::napi_value,
+    env: libnode_sys::napi_env,
+    napi_val: libnode_sys::napi_value,
   ) -> Result<Self> {
     Ok(JSON(Value {
       env,

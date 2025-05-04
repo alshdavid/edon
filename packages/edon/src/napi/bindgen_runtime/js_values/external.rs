@@ -112,12 +112,12 @@ impl<T: 'static> External<T> {
 
 impl<T: 'static> FromNapiValue for External<T> {
   unsafe fn from_napi_value(
-    env: sys::napi_env,
-    napi_val: sys::napi_value,
+    env: libnode_sys::napi_env,
+    napi_val: libnode_sys::napi_value,
   ) -> crate::napi::Result<Self> {
     let mut unknown_tagged_object = std::ptr::null_mut();
     check_status!(
-      unsafe { sys::napi_get_value_external(env, napi_val, &mut unknown_tagged_object) },
+      unsafe { libnode_sys::napi_get_value_external(env, napi_val, &mut unknown_tagged_object) },
       "Failed to get external value"
     )?;
 
@@ -166,13 +166,13 @@ impl<T: 'static> DerefMut for External<T> {
 
 impl<T: 'static> ToNapiValue for External<T> {
   unsafe fn to_napi_value(
-    env: sys::napi_env,
+    env: libnode_sys::napi_env,
     mut val: Self,
-  ) -> crate::napi::Result<sys::napi_value> {
+  ) -> crate::napi::Result<libnode_sys::napi_value> {
     let mut napi_value = std::ptr::null_mut();
     check_status!(
       unsafe {
-        sys::napi_create_external(
+        libnode_sys::napi_create_external(
           env,
           val.obj as *mut _,
           Some(crate::napi::raw_finalize::<T>),
@@ -189,7 +189,7 @@ impl<T: 'static> ToNapiValue for External<T> {
       if val.size_hint != 0 {
         check_status!(
           unsafe {
-            sys::napi_adjust_external_memory(
+            libnode_sys::napi_adjust_external_memory(
               env,
               val.size_hint as i64,
               adjusted_external_memory_size.as_mut_ptr(),

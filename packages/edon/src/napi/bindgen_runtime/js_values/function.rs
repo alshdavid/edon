@@ -18,8 +18,8 @@ impl ValidateNapiValue for JsFunction {}
 pub trait JsValuesTupleIntoVec {
   fn into_vec(
     self,
-    env: sys::napi_env,
-  ) -> Result<Vec<sys::napi_value>>;
+    env: libnode_sys::napi_env,
+  ) -> Result<Vec<libnode_sys::napi_value>>;
 }
 
 /// A JavaScript function.
@@ -27,8 +27,8 @@ pub trait JsValuesTupleIntoVec {
 /// If you want to use it outside the scope of a function call, you can turn it into a reference.
 /// By calling the `create_ref` method.
 pub struct Function<'scope, Args: JsValuesTupleIntoVec, Return: FromNapiValue> {
-  pub(crate) env: sys::napi_env,
-  pub(crate) value: sys::napi_value,
+  pub(crate) env: libnode_sys::napi_env,
+  pub(crate) value: libnode_sys::napi_value,
   pub(crate) _args: std::marker::PhantomData<Args>,
   pub(crate) _return: std::marker::PhantomData<Return>,
   _scope: std::marker::PhantomData<&'scope ()>,
@@ -49,7 +49,7 @@ impl<'scope, Args: JsValuesTupleIntoVec, Return: FromNapiValue> TypeName
 impl<'scope, Args: JsValuesTupleIntoVec, Return: FromNapiValue> NapiRaw
   for Function<'scope, Args, Return>
 {
-  unsafe fn raw(&self) -> sys::napi_value {
+  unsafe fn raw(&self) -> libnode_sys::napi_value {
     self.value
   }
 }
@@ -58,8 +58,8 @@ impl<'scope, Args: JsValuesTupleIntoVec, Return: FromNapiValue> FromNapiValue
   for Function<'scope, Args, Return>
 {
   unsafe fn from_napi_value(
-    env: sys::napi_env,
-    value: sys::napi_value,
+    env: libnode_sys::napi_env,
+    value: libnode_sys::napi_value,
   ) -> Result<Self> {
     Ok(Function {
       env,
@@ -86,7 +86,7 @@ impl<'scope, Args: JsValuesTupleIntoVec, Return: FromNapiValue> Function<'scope,
   ) -> Result<Return> {
     let mut raw_this = ptr::null_mut();
     check_status!(
-      unsafe { sys::napi_get_undefined(self.env, &mut raw_this) },
+      unsafe { libnode_sys::napi_get_undefined(self.env, &mut raw_this) },
       "Get undefined value failed"
     )?;
     let args_ptr = args.into_vec(self.env)?;
@@ -94,7 +94,7 @@ impl<'scope, Args: JsValuesTupleIntoVec, Return: FromNapiValue> Function<'scope,
     check_pending_exception!(
       self.env,
       unsafe {
-        sys::napi_call_function(
+        libnode_sys::napi_call_function(
           self.env,
           raw_this,
           self.value,
@@ -121,7 +121,7 @@ impl<'scope, Args: JsValuesTupleIntoVec, Return: FromNapiValue> Function<'scope,
     check_pending_exception!(
       self.env,
       unsafe {
-        sys::napi_call_function(
+        libnode_sys::napi_call_function(
           self.env,
           raw_this,
           self.value,
@@ -139,7 +139,7 @@ impl<'scope, Args: JsValuesTupleIntoVec, Return: FromNapiValue> Function<'scope,
   pub fn create_ref(&self) -> Result<FunctionRef<Args, Return>> {
     let mut reference = ptr::null_mut();
     check_status!(
-      unsafe { sys::napi_create_reference(self.env, self.value, 1, &mut reference) },
+      unsafe { libnode_sys::napi_create_reference(self.env, self.value, 1, &mut reference) },
       "Create reference failed"
     )?;
     Ok(FunctionRef {
@@ -154,8 +154,8 @@ impl<'scope, Args: JsValuesTupleIntoVec, Return: FromNapiValue> Function<'scope,
 /// A reference to a JavaScript function.
 /// It can be used to outlive the scope of the function.
 pub struct FunctionRef<Args: JsValuesTupleIntoVec, Return: FromNapiValue> {
-  pub(crate) inner: sys::napi_ref,
-  pub(crate) env: sys::napi_env,
+  pub(crate) inner: libnode_sys::napi_ref,
+  pub(crate) env: libnode_sys::napi_env,
   _args: std::marker::PhantomData<Args>,
   _return: std::marker::PhantomData<Return>,
 }
@@ -169,7 +169,7 @@ impl<Args: JsValuesTupleIntoVec, Return: FromNapiValue> FunctionRef<Args, Return
   ) -> Result<Function<'scope, Args, Return>> {
     let mut value = ptr::null_mut();
     check_status!(
-      unsafe { sys::napi_get_reference_value(env.0, self.inner, &mut value) },
+      unsafe { libnode_sys::napi_get_reference_value(env.0, self.inner, &mut value) },
       "Get reference value failed"
     )?;
     Ok(Function {
@@ -184,8 +184,8 @@ impl<Args: JsValuesTupleIntoVec, Return: FromNapiValue> FunctionRef<Args, Return
 
 impl<Args: JsValuesTupleIntoVec, Return: FromNapiValue> Drop for FunctionRef<Args, Return> {
   fn drop(&mut self) {
-    let status = unsafe { sys::napi_delete_reference(self.env, self.inner) };
-    debug_assert_eq!(status, sys::Status::napi_ok, "Drop FunctionRef failed");
+    let status = unsafe { libnode_sys::napi_delete_reference(self.env, self.inner) };
+    debug_assert_eq!(status, libnode_sys::Status::napi_ok, "Drop FunctionRef failed");
   }
 }
 
@@ -203,12 +203,12 @@ impl<Args: JsValuesTupleIntoVec, Return: FromNapiValue> FromNapiValue
   for FunctionRef<Args, Return>
 {
   unsafe fn from_napi_value(
-    env: sys::napi_env,
-    value: sys::napi_value,
+    env: libnode_sys::napi_env,
+    value: libnode_sys::napi_value,
   ) -> Result<Self> {
     let mut reference = ptr::null_mut();
     check_status!(
-      unsafe { sys::napi_create_reference(env, value, 1, &mut reference) },
+      unsafe { libnode_sys::napi_create_reference(env, value, 1, &mut reference) },
       "Create reference failed"
     )?;
     Ok(FunctionRef {
@@ -244,7 +244,7 @@ macro_rules! impl_call_apply {
 
       let mut return_value = ptr::null_mut();
       check_pending_exception!(self.0.env, unsafe {
-        sys::napi_call_function(
+        libnode_sys::napi_call_function(
           self.0.env,
           raw_this,
           self.0.value,
@@ -273,7 +273,7 @@ macro_rules! impl_call_apply {
 
       let mut return_value = ptr::null_mut();
       check_pending_exception!(self.0.env, unsafe {
-        sys::napi_call_function(
+        libnode_sys::napi_call_function(
           self.0.env,
           raw_this,
           self.0.value,
@@ -297,7 +297,7 @@ impl JsFunction {
 
     let mut return_value = ptr::null_mut();
     check_pending_exception!(self.0.env, unsafe {
-      sys::napi_call_function(
+      libnode_sys::napi_call_function(
         self.0.env,
         raw_this,
         self.0.value,
@@ -317,7 +317,7 @@ impl JsFunction {
 
     let mut return_value = ptr::null_mut();
     check_pending_exception!(self.0.env, unsafe {
-      sys::napi_call_function(
+      libnode_sys::napi_call_function(
         self.0.env,
         raw_this,
         self.0.value,

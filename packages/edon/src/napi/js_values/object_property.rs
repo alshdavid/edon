@@ -32,11 +32,11 @@ impl Default for PropertyClosures {
 #[derive(Clone)]
 pub struct Property {
   pub name: CString,
-  getter: sys::napi_callback,
-  setter: sys::napi_callback,
-  method: sys::napi_callback,
+  getter: libnode_sys::napi_callback,
+  setter: libnode_sys::napi_callback,
+  method: libnode_sys::napi_callback,
   attrs: PropertyAttributes,
-  value: sys::napi_value,
+  value: libnode_sys::napi_value,
   pub(crate) is_ctor: bool,
   pub(crate) closures: PropertyClosures,
 }
@@ -59,11 +59,11 @@ impl Default for Property {
 bitflags! {
   #[derive(Debug, Copy, Clone)]
   pub struct PropertyAttributes: i32 {
-    const Default = sys::PropertyAttributes::default;
-    const Writable = sys::PropertyAttributes::writable;
-    const Enumerable = sys::PropertyAttributes::enumerable;
-    const Configurable = sys::PropertyAttributes::configurable;
-    const Static = sys::PropertyAttributes::static_;
+    const Default = libnode_sys::PropertyAttributes::default;
+    const Writable = libnode_sys::PropertyAttributes::writable;
+    const Enumerable = libnode_sys::PropertyAttributes::enumerable;
+    const Configurable = libnode_sys::PropertyAttributes::configurable;
+    const Static = libnode_sys::PropertyAttributes::static_;
   }
 }
 
@@ -73,7 +73,7 @@ impl Default for PropertyAttributes {
   }
 }
 
-impl From<PropertyAttributes> for sys::napi_property_attributes {
+impl From<PropertyAttributes> for libnode_sys::napi_property_attributes {
   fn from(value: PropertyAttributes) -> Self {
     value.bits()
   }
@@ -169,9 +169,9 @@ impl Property {
     self
   }
 
-  pub(crate) fn raw(&self) -> sys::napi_property_descriptor {
+  pub(crate) fn raw(&self) -> libnode_sys::napi_property_descriptor {
     let closures = Box::into_raw(Box::new(self.closures));
-    sys::napi_property_descriptor {
+    libnode_sys::napi_property_descriptor {
       utf8name: self.name.as_ptr(),
       name: ptr::null_mut(),
       method: self.method,

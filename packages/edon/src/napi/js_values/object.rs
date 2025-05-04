@@ -37,14 +37,14 @@ impl JsObject {
     let mut maybe_ref = ptr::null_mut();
     let wrap_context = Box::leak(Box::new((native, finalize_cb, ptr::null_mut())));
     check_status!(unsafe {
-      sys::napi_add_finalizer(
+      libnode_sys::napi_add_finalizer(
         self.0.env,
         self.0.value,
         wrap_context as *mut _ as *mut c_void,
         Some(
           finalize_callback::<T, Hint, F>
             as unsafe extern "C" fn(
-              env: sys::napi_env,
+              env: libnode_sys::napi_env,
               finalize_data: *mut c_void,
               finalize_hint: *mut c_void,
             ),
@@ -59,7 +59,7 @@ impl JsObject {
 }
 
 unsafe extern "C" fn finalize_callback<T, Hint, F>(
-  raw_env: sys::napi_env,
+  raw_env: libnode_sys::napi_env,
   finalize_data: *mut c_void,
   finalize_hint: *mut c_void,
 ) where
@@ -68,14 +68,14 @@ unsafe extern "C" fn finalize_callback<T, Hint, F>(
   F: FnOnce(FinalizeContext<T, Hint>),
 {
   let (value, callback, raw_ref) =
-    unsafe { *Box::from_raw(finalize_data as *mut (T, F, sys::napi_ref)) };
+    unsafe { *Box::from_raw(finalize_data as *mut (T, F, libnode_sys::napi_ref)) };
   let hint = unsafe { *Box::from_raw(finalize_hint as *mut Hint) };
   let env = unsafe { Env::from_raw(raw_env) };
   callback(FinalizeContext { env, value, hint });
   if !raw_ref.is_null() {
-    let status = unsafe { sys::napi_delete_reference(raw_env, raw_ref) };
+    let status = unsafe { libnode_sys::napi_delete_reference(raw_env, raw_ref) };
     debug_assert!(
-      status == sys::Status::napi_ok,
+      status == libnode_sys::Status::napi_ok,
       "Delete reference in finalize callback failed"
     );
   }
@@ -86,13 +86,13 @@ pub enum KeyCollectionMode {
   OwnOnly,
 }
 
-impl TryFrom<sys::napi_key_collection_mode> for KeyCollectionMode {
+impl TryFrom<libnode_sys::napi_key_collection_mode> for KeyCollectionMode {
   type Error = Error;
 
-  fn try_from(value: sys::napi_key_collection_mode) -> Result<Self> {
+  fn try_from(value: libnode_sys::napi_key_collection_mode) -> Result<Self> {
     match value {
-      sys::KeyCollectionMode::include_prototypes => Ok(Self::IncludePrototypes),
-      sys::KeyCollectionMode::own_only => Ok(Self::OwnOnly),
+      libnode_sys::KeyCollectionMode::include_prototypes => Ok(Self::IncludePrototypes),
+      libnode_sys::KeyCollectionMode::own_only => Ok(Self::OwnOnly),
       _ => Err(Error::new(
         crate::napi::Status::InvalidArg,
         format!("Invalid key collection mode: {value}"),
@@ -101,11 +101,11 @@ impl TryFrom<sys::napi_key_collection_mode> for KeyCollectionMode {
   }
 }
 
-impl From<KeyCollectionMode> for sys::napi_key_collection_mode {
+impl From<KeyCollectionMode> for libnode_sys::napi_key_collection_mode {
   fn from(value: KeyCollectionMode) -> Self {
     match value {
-      KeyCollectionMode::IncludePrototypes => sys::KeyCollectionMode::include_prototypes,
-      KeyCollectionMode::OwnOnly => sys::KeyCollectionMode::own_only,
+      KeyCollectionMode::IncludePrototypes => libnode_sys::KeyCollectionMode::include_prototypes,
+      KeyCollectionMode::OwnOnly => libnode_sys::KeyCollectionMode::own_only,
     }
   }
 }
@@ -119,17 +119,17 @@ pub enum KeyFilter {
   SkipSymbols,
 }
 
-impl TryFrom<sys::napi_key_filter> for KeyFilter {
+impl TryFrom<libnode_sys::napi_key_filter> for KeyFilter {
   type Error = Error;
 
-  fn try_from(value: sys::napi_key_filter) -> Result<Self> {
+  fn try_from(value: libnode_sys::napi_key_filter) -> Result<Self> {
     match value {
-      sys::KeyFilter::all_properties => Ok(Self::AllProperties),
-      sys::KeyFilter::writable => Ok(Self::Writable),
-      sys::KeyFilter::enumerable => Ok(Self::Enumerable),
-      sys::KeyFilter::configurable => Ok(Self::Configurable),
-      sys::KeyFilter::skip_strings => Ok(Self::SkipStrings),
-      sys::KeyFilter::skip_symbols => Ok(Self::SkipSymbols),
+      libnode_sys::KeyFilter::all_properties => Ok(Self::AllProperties),
+      libnode_sys::KeyFilter::writable => Ok(Self::Writable),
+      libnode_sys::KeyFilter::enumerable => Ok(Self::Enumerable),
+      libnode_sys::KeyFilter::configurable => Ok(Self::Configurable),
+      libnode_sys::KeyFilter::skip_strings => Ok(Self::SkipStrings),
+      libnode_sys::KeyFilter::skip_symbols => Ok(Self::SkipSymbols),
       _ => Err(Error::new(
         crate::napi::Status::InvalidArg,
         format!("Invalid key filter [{value}]"),
@@ -138,15 +138,15 @@ impl TryFrom<sys::napi_key_filter> for KeyFilter {
   }
 }
 
-impl From<KeyFilter> for sys::napi_key_filter {
+impl From<KeyFilter> for libnode_sys::napi_key_filter {
   fn from(value: KeyFilter) -> Self {
     match value {
-      KeyFilter::AllProperties => sys::KeyFilter::all_properties,
-      KeyFilter::Writable => sys::KeyFilter::writable,
-      KeyFilter::Enumerable => sys::KeyFilter::enumerable,
-      KeyFilter::Configurable => sys::KeyFilter::configurable,
-      KeyFilter::SkipStrings => sys::KeyFilter::skip_strings,
-      KeyFilter::SkipSymbols => sys::KeyFilter::skip_symbols,
+      KeyFilter::AllProperties => libnode_sys::KeyFilter::all_properties,
+      KeyFilter::Writable => libnode_sys::KeyFilter::writable,
+      KeyFilter::Enumerable => libnode_sys::KeyFilter::enumerable,
+      KeyFilter::Configurable => libnode_sys::KeyFilter::configurable,
+      KeyFilter::SkipStrings => libnode_sys::KeyFilter::skip_strings,
+      KeyFilter::SkipSymbols => libnode_sys::KeyFilter::skip_symbols,
     }
   }
 }
@@ -156,13 +156,13 @@ pub enum KeyConversion {
   NumbersToStrings,
 }
 
-impl TryFrom<sys::napi_key_conversion> for KeyConversion {
+impl TryFrom<libnode_sys::napi_key_conversion> for KeyConversion {
   type Error = Error;
 
-  fn try_from(value: sys::napi_key_conversion) -> Result<Self> {
+  fn try_from(value: libnode_sys::napi_key_conversion) -> Result<Self> {
     match value {
-      sys::KeyConversion::keep_numbers => Ok(Self::KeepNumbers),
-      sys::KeyConversion::numbers_to_strings => Ok(Self::NumbersToStrings),
+      libnode_sys::KeyConversion::keep_numbers => Ok(Self::KeepNumbers),
+      libnode_sys::KeyConversion::numbers_to_strings => Ok(Self::NumbersToStrings),
       _ => Err(Error::new(
         crate::napi::Status::InvalidArg,
         format!("Invalid key conversion [{value}]"),
@@ -171,11 +171,11 @@ impl TryFrom<sys::napi_key_conversion> for KeyConversion {
   }
 }
 
-impl From<KeyConversion> for sys::napi_key_conversion {
+impl From<KeyConversion> for libnode_sys::napi_key_conversion {
   fn from(value: KeyConversion) -> Self {
     match value {
-      KeyConversion::KeepNumbers => sys::KeyConversion::keep_numbers,
-      KeyConversion::NumbersToStrings => sys::KeyConversion::numbers_to_strings,
+      KeyConversion::KeepNumbers => libnode_sys::KeyConversion::keep_numbers,
+      KeyConversion::NumbersToStrings => libnode_sys::KeyConversion::numbers_to_strings,
     }
   }
 }

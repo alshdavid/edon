@@ -18,7 +18,7 @@ use crate::napi::ValueType;
 impl<A: NapiRaw, B: NapiRaw> Either<A, B> {
   /// # Safety
   /// Backward compatible with `Either` in **v1**
-  pub unsafe fn raw(&self) -> sys::napi_value {
+  pub unsafe fn raw(&self) -> libnode_sys::napi_value {
     match &self {
       Self::A(a) => unsafe { a.raw() },
       Self::B(b) => unsafe { b.raw() },
@@ -76,7 +76,7 @@ macro_rules! either_n {
     impl< $( $parameter ),+ > FromNapiValue for $either_name < $( $parameter ),+ >
       where $( $parameter: TypeName + FromNapiValue + ValidateNapiValue ),+
     {
-      unsafe fn from_napi_value(env: sys::napi_env, napi_val: sys::napi_value) -> crate::napi::Result<Self> {
+      unsafe fn from_napi_value(env: libnode_sys::napi_env, napi_val: libnode_sys::napi_value) -> crate::napi::Result<Self> {
         let mut ret = Err(Error::new(Status::InvalidArg, "Invalid value".to_owned()));
         $(
           if unsafe {
@@ -111,7 +111,7 @@ macro_rules! either_n {
       where $( $parameter: ToNapiValue ),+
     {
       unsafe fn to_napi_value(
-        env: sys::napi_env,
+        env: libnode_sys::napi_env,
         value: Self
       ) -> crate::napi::Result<libnode_sys::napi_value> {
         match value {
@@ -124,10 +124,10 @@ macro_rules! either_n {
       where $( $parameter: ValidateNapiValue ),+
     {
       unsafe fn validate(
-        env: sys::napi_env,
-        napi_val: sys::napi_value,
-      ) -> crate::napi::Result<sys::napi_value> {
-        let mut ret: crate::napi::Result<sys::napi_value>;
+        env: libnode_sys::napi_env,
+        napi_val: libnode_sys::napi_value,
+      ) -> crate::napi::Result<libnode_sys::napi_value> {
+        let mut ret: crate::napi::Result<libnode_sys::napi_value>;
         $(
           if unsafe {
             ret = $parameter::validate(env, napi_val);
@@ -203,16 +203,16 @@ either_n!(Either25, A, B, C, D, E, F, G, H, I, J, K, L, M, N, O, P, Q, R, S, T, 
 either_n!(Either26, A, B, C, D, E, F, G, H, I, J, K, L, M, N, O, P, Q, R, S, T, U, V, W, X, Y, Z);
 
 fn silence_rejected_promise(
-  env: sys::napi_env,
-  promise: sys::napi_value,
+  env: libnode_sys::napi_env,
+  promise: libnode_sys::napi_value,
 ) -> crate::napi::Result<()> {
   let mut catch_method = std::ptr::null_mut();
   check_status!(unsafe {
-    sys::napi_get_named_property(env, promise, "catch\0".as_ptr().cast(), &mut catch_method)
+    libnode_sys::napi_get_named_property(env, promise, "catch\0".as_ptr().cast(), &mut catch_method)
   })?;
   let mut catch_noop_callback = std::ptr::null_mut();
   check_status!(unsafe {
-    sys::napi_create_function(
+    libnode_sys::napi_create_function(
       env,
       "catch\0".as_ptr().cast(),
       5,
@@ -222,7 +222,7 @@ fn silence_rejected_promise(
     )
   })?;
   check_status!(unsafe {
-    sys::napi_call_function(
+    libnode_sys::napi_call_function(
       env,
       promise,
       catch_method,
@@ -235,8 +235,8 @@ fn silence_rejected_promise(
 }
 
 unsafe extern "C" fn noop(
-  _env: sys::napi_env,
-  _info: sys::napi_callback_info,
-) -> sys::napi_value {
+  _env: libnode_sys::napi_env,
+  _info: libnode_sys::napi_callback_info,
+) -> libnode_sys::napi_value {
   std::ptr::null_mut()
 }

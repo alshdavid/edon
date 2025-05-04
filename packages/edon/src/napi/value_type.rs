@@ -33,16 +33,16 @@ impl Display for ValueType {
 impl From<i32> for ValueType {
   fn from(value: i32) -> ValueType {
     match value {
-      sys::ValueType::napi_bigint => ValueType::BigInt,
-      sys::ValueType::napi_boolean => ValueType::Boolean,
-      sys::ValueType::napi_external => ValueType::External,
-      sys::ValueType::napi_function => ValueType::Function,
-      sys::ValueType::napi_null => ValueType::Null,
-      sys::ValueType::napi_number => ValueType::Number,
-      sys::ValueType::napi_object => ValueType::Object,
-      sys::ValueType::napi_string => ValueType::String,
-      sys::ValueType::napi_symbol => ValueType::Symbol,
-      sys::ValueType::napi_undefined => ValueType::Undefined,
+      libnode_sys::ValueType::napi_bigint => ValueType::BigInt,
+      libnode_sys::ValueType::napi_boolean => ValueType::Boolean,
+      libnode_sys::ValueType::napi_external => ValueType::External,
+      libnode_sys::ValueType::napi_function => ValueType::Function,
+      libnode_sys::ValueType::napi_null => ValueType::Null,
+      libnode_sys::ValueType::napi_number => ValueType::Number,
+      libnode_sys::ValueType::napi_object => ValueType::Object,
+      libnode_sys::ValueType::napi_string => ValueType::String,
+      libnode_sys::ValueType::napi_symbol => ValueType::Symbol,
+      libnode_sys::ValueType::napi_undefined => ValueType::Undefined,
       _ => ValueType::Unknown,
     }
   }

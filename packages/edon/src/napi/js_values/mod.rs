@@ -48,7 +48,6 @@ pub use date::*;
 #[cfg(feature = "serde-json")]
 pub use de::De;
 pub use deferred::*;
-pub use either::Either;
 pub use escapable_handle_scope::EscapableHandleScope;
 pub use function::JsFunction;
 pub use global::*;
@@ -115,8 +114,8 @@ macro_rules! impl_napi_value_trait {
   ($js_value:ident, $value_type:ident) => {
     impl NapiValue for $js_value {
       unsafe fn from_raw(
-        env: sys::napi_env,
-        value: sys::napi_value,
+        env: libnode_sys::napi_env,
+        value: libnode_sys::napi_value,
       ) -> Result<$js_value> {
         let value_type = type_of!(env, value)?;
         if value_type != $value_type {
@@ -134,8 +133,8 @@ macro_rules! impl_napi_value_trait {
       }
 
       unsafe fn from_raw_unchecked(
-        env: sys::napi_env,
-        value: sys::napi_value,
+        env: libnode_sys::napi_env,
+        value: libnode_sys::napi_value,
       ) -> $js_value {
         $js_value(Value {
           env,
@@ -146,13 +145,13 @@ macro_rules! impl_napi_value_trait {
     }
 
     impl NapiRaw for $js_value {
-      unsafe fn raw(&self) -> sys::napi_value {
+      unsafe fn raw(&self) -> libnode_sys::napi_value {
         self.0.value
       }
     }
 
     impl<'env> NapiRaw for &'env $js_value {
-      unsafe fn raw(&self) -> sys::napi_value {
+      unsafe fn raw(&self) -> libnode_sys::napi_value {
         self.0.value
       }
     }
@@ -176,7 +175,7 @@ macro_rules! impl_js_value_methods {
       pub fn coerce_to_bool(self) -> Result<JsBoolean> {
         let mut new_raw_value = ptr::null_mut();
         check_status!(unsafe {
-          sys::napi_coerce_to_bool(self.0.env, self.0.value, &mut new_raw_value)
+          libnode_sys::napi_coerce_to_bool(self.0.env, self.0.value, &mut new_raw_value)
         })?;
         Ok(JsBoolean(Value {
           env: self.0.env,
@@ -188,7 +187,7 @@ macro_rules! impl_js_value_methods {
       pub fn coerce_to_number(self) -> Result<JsNumber> {
         let mut new_raw_value = ptr::null_mut();
         check_status!(unsafe {
-          sys::napi_coerce_to_number(self.0.env, self.0.value, &mut new_raw_value)
+          libnode_sys::napi_coerce_to_number(self.0.env, self.0.value, &mut new_raw_value)
         })?;
         Ok(JsNumber(Value {
           env: self.0.env,
@@ -200,7 +199,7 @@ macro_rules! impl_js_value_methods {
       pub fn coerce_to_string(self) -> Result<JsString> {
         let mut new_raw_value = ptr::null_mut();
         check_status!(unsafe {
-          sys::napi_coerce_to_string(self.0.env, self.0.value, &mut new_raw_value)
+          libnode_sys::napi_coerce_to_string(self.0.env, self.0.value, &mut new_raw_value)
         })?;
         Ok(JsString(Value {
           env: self.0.env,
@@ -212,7 +211,7 @@ macro_rules! impl_js_value_methods {
       pub fn coerce_to_object(self) -> Result<JsObject> {
         let mut new_raw_value = ptr::null_mut();
         check_status!(unsafe {
-          sys::napi_coerce_to_object(self.0.env, self.0.value, &mut new_raw_value)
+          libnode_sys::napi_coerce_to_object(self.0.env, self.0.value, &mut new_raw_value)
         })?;
         Ok(JsObject(Value {
           env: self.0.env,
@@ -223,43 +222,43 @@ macro_rules! impl_js_value_methods {
 
       pub fn is_date(&self) -> Result<bool> {
         let mut is_date = true;
-        check_status!(unsafe { sys::napi_is_date(self.0.env, self.0.value, &mut is_date) })?;
+        check_status!(unsafe { libnode_sys::napi_is_date(self.0.env, self.0.value, &mut is_date) })?;
         Ok(is_date)
       }
 
       pub fn is_promise(&self) -> Result<bool> {
         let mut is_promise = true;
-        check_status!(unsafe { sys::napi_is_promise(self.0.env, self.0.value, &mut is_promise) })?;
+        check_status!(unsafe { libnode_sys::napi_is_promise(self.0.env, self.0.value, &mut is_promise) })?;
         Ok(is_promise)
       }
 
       pub fn is_error(&self) -> Result<bool> {
         let mut result = false;
-        check_status!(unsafe { sys::napi_is_error(self.0.env, self.0.value, &mut result) })?;
+        check_status!(unsafe { libnode_sys::napi_is_error(self.0.env, self.0.value, &mut result) })?;
         Ok(result)
       }
 
       pub fn is_typedarray(&self) -> Result<bool> {
         let mut result = false;
-        check_status!(unsafe { sys::napi_is_typedarray(self.0.env, self.0.value, &mut result) })?;
+        check_status!(unsafe { libnode_sys::napi_is_typedarray(self.0.env, self.0.value, &mut result) })?;
         Ok(result)
       }
 
       pub fn is_dataview(&self) -> Result<bool> {
         let mut result = false;
-        check_status!(unsafe { sys::napi_is_dataview(self.0.env, self.0.value, &mut result) })?;
+        check_status!(unsafe { libnode_sys::napi_is_dataview(self.0.env, self.0.value, &mut result) })?;
         Ok(result)
       }
 
       pub fn is_array(&self) -> Result<bool> {
         let mut is_array = false;
-        check_status!(unsafe { sys::napi_is_array(self.0.env, self.0.value, &mut is_array) })?;
+        check_status!(unsafe { libnode_sys::napi_is_array(self.0.env, self.0.value, &mut is_array) })?;
         Ok(is_array)
       }
 
       pub fn is_buffer(&self) -> Result<bool> {
         let mut is_buffer = false;
-        check_status!(unsafe { sys::napi_is_buffer(self.0.env, self.0.value, &mut is_buffer) })?;
+        check_status!(unsafe { libnode_sys::napi_is_buffer(self.0.env, self.0.value, &mut is_buffer) })?;
         Ok(is_buffer)
       }
 
@@ -272,7 +271,7 @@ macro_rules! impl_js_value_methods {
       {
         let mut result = false;
         check_status!(unsafe {
-          sys::napi_instanceof(self.0.env, self.0.value, constructor.raw(), &mut result)
+          libnode_sys::napi_instanceof(self.0.env, self.0.value, constructor.raw(), &mut result)
         })?;
         Ok(result)
       }
@@ -293,7 +292,7 @@ macro_rules! impl_object_methods {
         V: NapiRaw,
       {
         check_status!(unsafe {
-          sys::napi_set_property(self.0.env, self.0.value, key.raw(), value.raw())
+          libnode_sys::napi_set_property(self.0.env, self.0.value, key.raw(), value.raw())
         })
       }
 
@@ -307,7 +306,7 @@ macro_rules! impl_object_methods {
       {
         let mut raw_value = ptr::null_mut();
         check_status!(unsafe {
-          sys::napi_get_property(self.0.env, self.0.value, key.raw(), &mut raw_value)
+          libnode_sys::napi_get_property(self.0.env, self.0.value, key.raw(), &mut raw_value)
         })?;
         unsafe { T::from_raw(self.0.env, raw_value) }
       }
@@ -322,7 +321,7 @@ macro_rules! impl_object_methods {
       {
         let mut raw_value = ptr::null_mut();
         check_status!(unsafe {
-          sys::napi_get_property(self.0.env, self.0.value, key.raw(), &mut raw_value)
+          libnode_sys::napi_get_property(self.0.env, self.0.value, key.raw(), &mut raw_value)
         })?;
         Ok(unsafe { T::from_raw_unchecked(self.0.env, raw_value) })
       }
@@ -337,7 +336,7 @@ macro_rules! impl_object_methods {
       {
         let key = CString::new(name)?;
         check_status!(unsafe {
-          sys::napi_set_named_property(
+          libnode_sys::napi_set_named_property(
             self.0.env,
             self.0.value,
             key.as_ptr(),
@@ -355,7 +354,7 @@ macro_rules! impl_object_methods {
         let len = name.len();
         let name = CString::new(name)?;
         check_status!(unsafe {
-          sys::napi_create_function(
+          libnode_sys::napi_create_function(
             self.0.env,
             name.as_ptr(),
             len as isize,
@@ -366,7 +365,7 @@ macro_rules! impl_object_methods {
         })?;
         check_status!(
           unsafe {
-            sys::napi_set_named_property(self.0.env, self.0.value, name.as_ptr(), js_function)
+            libnode_sys::napi_set_named_property(self.0.env, self.0.value, name.as_ptr(), js_function)
           },
           "create_named_method error"
         )
@@ -383,7 +382,7 @@ macro_rules! impl_object_methods {
         let mut raw_value = ptr::null_mut();
         check_status!(
           unsafe {
-            sys::napi_get_named_property(self.0.env, self.0.value, key.as_ptr(), &mut raw_value)
+            libnode_sys::napi_get_named_property(self.0.env, self.0.value, key.as_ptr(), &mut raw_value)
           },
           "get_named_property error"
         )?;
@@ -407,7 +406,7 @@ macro_rules! impl_object_methods {
         let mut raw_value = ptr::null_mut();
         check_status!(
           unsafe {
-            sys::napi_get_named_property(self.0.env, self.0.value, key.as_ptr(), &mut raw_value)
+            libnode_sys::napi_get_named_property(self.0.env, self.0.value, key.as_ptr(), &mut raw_value)
           },
           "get_named_property_unchecked error"
         )?;
@@ -422,7 +421,7 @@ macro_rules! impl_object_methods {
         let key = CString::new(name.as_ref())?;
         check_status!(
           unsafe {
-            sys::napi_has_named_property(self.0.env, self.0.value, key.as_ptr(), &mut result)
+            libnode_sys::napi_has_named_property(self.0.env, self.0.value, key.as_ptr(), &mut result)
           },
           "napi_has_named_property error"
         )?;
@@ -438,7 +437,7 @@ macro_rules! impl_object_methods {
       {
         let mut result = false;
         check_status!(unsafe {
-          sys::napi_delete_property(self.0.env, self.0.value, name.raw(), &mut result)
+          libnode_sys::napi_delete_property(self.0.env, self.0.value, name.raw(), &mut result)
         })?;
         Ok(result)
       }
@@ -450,7 +449,7 @@ macro_rules! impl_object_methods {
         let mut result = false;
         let mut js_key = ptr::null_mut();
         check_status!(unsafe {
-          sys::napi_create_string_utf8(
+          libnode_sys::napi_create_string_utf8(
             self.0.env,
             name.as_ptr().cast(),
             name.len() as isize,
@@ -458,7 +457,7 @@ macro_rules! impl_object_methods {
           )
         })?;
         check_status!(unsafe {
-          sys::napi_delete_property(self.0.env, self.0.value, js_key, &mut result)
+          libnode_sys::napi_delete_property(self.0.env, self.0.value, js_key, &mut result)
         })?;
         Ok(result)
       }
@@ -470,7 +469,7 @@ macro_rules! impl_object_methods {
         let mut result = false;
         let mut js_key = ptr::null_mut();
         check_status!(unsafe {
-          sys::napi_create_string_utf8(
+          libnode_sys::napi_create_string_utf8(
             self.0.env,
             key.as_ptr().cast(),
             key.len() as isize,
@@ -478,7 +477,7 @@ macro_rules! impl_object_methods {
           )
         })?;
         check_status!(unsafe {
-          sys::napi_has_own_property(self.0.env, self.0.value, js_key, &mut result)
+          libnode_sys::napi_has_own_property(self.0.env, self.0.value, js_key, &mut result)
         })?;
         Ok(result)
       }
@@ -492,7 +491,7 @@ macro_rules! impl_object_methods {
       {
         let mut result = false;
         check_status!(unsafe {
-          sys::napi_has_own_property(self.0.env, self.0.value, key.raw(), &mut result)
+          libnode_sys::napi_has_own_property(self.0.env, self.0.value, key.raw(), &mut result)
         })?;
         Ok(result)
       }
@@ -504,7 +503,7 @@ macro_rules! impl_object_methods {
         let mut js_key = ptr::null_mut();
         let mut result = false;
         check_status!(unsafe {
-          sys::napi_create_string_utf8(
+          libnode_sys::napi_create_string_utf8(
             self.0.env,
             name.as_ptr().cast(),
             name.len() as isize,
@@ -512,7 +511,7 @@ macro_rules! impl_object_methods {
           )
         })?;
         check_status!(unsafe {
-          sys::napi_has_property(self.0.env, self.0.value, js_key, &mut result)
+          libnode_sys::napi_has_property(self.0.env, self.0.value, js_key, &mut result)
         })?;
         Ok(result)
       }
@@ -526,7 +525,7 @@ macro_rules! impl_object_methods {
       {
         let mut result = false;
         check_status!(unsafe {
-          sys::napi_has_property(self.0.env, self.0.value, name.raw(), &mut result)
+          libnode_sys::napi_has_property(self.0.env, self.0.value, name.raw(), &mut result)
         })?;
         Ok(result)
       }
@@ -534,7 +533,7 @@ macro_rules! impl_object_methods {
       pub fn get_property_names(&self) -> Result<JsObject> {
         let mut raw_value = ptr::null_mut();
         check_status!(unsafe {
-          sys::napi_get_property_names(self.0.env, self.0.value, &mut raw_value)
+          libnode_sys::napi_get_property_names(self.0.env, self.0.value, &mut raw_value)
         })?;
         Ok(unsafe { JsObject::from_raw_unchecked(self.0.env, raw_value) })
       }
@@ -549,7 +548,7 @@ macro_rules! impl_object_methods {
       ) -> Result<JsObject> {
         let mut properties_value = ptr::null_mut();
         check_status!(unsafe {
-          sys::napi_get_all_property_names(
+          libnode_sys::napi_get_all_property_names(
             self.0.env,
             self.0.value,
             mode.into(),
@@ -567,7 +566,7 @@ macro_rules! impl_object_methods {
         T: NapiValue,
       {
         let mut result = ptr::null_mut();
-        check_status!(unsafe { sys::napi_get_prototype(self.0.env, self.0.value, &mut result) })?;
+        check_status!(unsafe { libnode_sys::napi_get_prototype(self.0.env, self.0.value, &mut result) })?;
         unsafe { T::from_raw(self.0.env, result) }
       }
 
@@ -576,7 +575,7 @@ macro_rules! impl_object_methods {
         T: NapiValue,
       {
         let mut result = ptr::null_mut();
-        check_status!(unsafe { sys::napi_get_prototype(self.0.env, self.0.value, &mut result) })?;
+        check_status!(unsafe { libnode_sys::napi_get_prototype(self.0.env, self.0.value, &mut result) })?;
         Ok(unsafe { T::from_raw_unchecked(self.0.env, result) })
       }
 
@@ -589,7 +588,7 @@ macro_rules! impl_object_methods {
         T: NapiRaw,
       {
         check_status!(unsafe {
-          sys::napi_set_element(self.0.env, self.0.value, index, value.raw())
+          libnode_sys::napi_set_element(self.0.env, self.0.value, index, value.raw())
         })
       }
 
@@ -599,7 +598,7 @@ macro_rules! impl_object_methods {
       ) -> Result<bool> {
         let mut result = false;
         check_status!(unsafe {
-          sys::napi_has_element(self.0.env, self.0.value, index, &mut result)
+          libnode_sys::napi_has_element(self.0.env, self.0.value, index, &mut result)
         })?;
         Ok(result)
       }
@@ -610,7 +609,7 @@ macro_rules! impl_object_methods {
       ) -> Result<bool> {
         let mut result = false;
         check_status!(unsafe {
-          sys::napi_delete_element(self.0.env, self.0.value, index, &mut result)
+          libnode_sys::napi_delete_element(self.0.env, self.0.value, index, &mut result)
         })?;
         Ok(result)
       }
@@ -624,7 +623,7 @@ macro_rules! impl_object_methods {
       {
         let mut raw_value = ptr::null_mut();
         check_status!(unsafe {
-          sys::napi_get_element(self.0.env, self.0.value, index, &mut raw_value)
+          libnode_sys::napi_get_element(self.0.env, self.0.value, index, &mut raw_value)
         })?;
         unsafe { T::from_raw(self.0.env, raw_value) }
       }
@@ -638,7 +637,7 @@ macro_rules! impl_object_methods {
       {
         let mut raw_value = ptr::null_mut();
         check_status!(unsafe {
-          sys::napi_get_element(self.0.env, self.0.value, index, &mut raw_value)
+          libnode_sys::napi_get_element(self.0.env, self.0.value, index, &mut raw_value)
         })?;
         Ok(unsafe { T::from_raw_unchecked(self.0.env, raw_value) })
       }
@@ -657,7 +656,7 @@ macro_rules! impl_object_methods {
             .collect::<Vec<*mut std::ffi::c_void>>();
           let len = Box::into_raw(Box::new(closures.len()));
           check_status!(unsafe {
-            sys::napi_add_finalizer(
+            libnode_sys::napi_add_finalizer(
               self.0.env,
               self.0.value,
               closures.as_mut_ptr().cast(),
@@ -669,12 +668,12 @@ macro_rules! impl_object_methods {
           std::mem::forget(closures);
         }
         check_status!(unsafe {
-          sys::napi_define_properties(
+          libnode_sys::napi_define_properties(
             self.0.env,
             self.0.value,
             properties.len(),
             properties_iter
-              .collect::<Vec<sys::napi_property_descriptor>>()
+              .collect::<Vec<libnode_sys::napi_property_descriptor>>()
               .as_ptr(),
           )
         })
@@ -696,17 +695,17 @@ macro_rules! impl_object_methods {
       pub fn get_array_length_unchecked(&self) -> Result<u32> {
         let mut length: u32 = 0;
         check_status!(unsafe {
-          sys::napi_get_array_length(self.0.env, self.0.value, &mut length)
+          libnode_sys::napi_get_array_length(self.0.env, self.0.value, &mut length)
         })?;
         Ok(length)
       }
 
       pub fn freeze(&mut self) -> Result<()> {
-        check_status!(unsafe { sys::napi_object_freeze(self.0.env, self.0.value) })
+        check_status!(unsafe { libnode_sys::napi_object_freeze(self.0.env, self.0.value) })
       }
 
       pub fn seal(&mut self) -> Result<()> {
-        check_status!(unsafe { sys::napi_object_seal(self.0.env, self.0.value) })
+        check_status!(unsafe { libnode_sys::napi_object_seal(self.0.env, self.0.value) })
       }
     }
   };
@@ -714,20 +713,20 @@ macro_rules! impl_object_methods {
 
 pub trait NapiRaw {
   #[allow(clippy::missing_safety_doc)]
-  unsafe fn raw(&self) -> sys::napi_value;
+  unsafe fn raw(&self) -> libnode_sys::napi_value;
 }
 
 pub trait NapiValue: Sized + NapiRaw {
   #[allow(clippy::missing_safety_doc)]
   unsafe fn from_raw(
-    env: sys::napi_env,
-    value: sys::napi_value,
+    env: libnode_sys::napi_env,
+    value: libnode_sys::napi_value,
   ) -> Result<Self>;
 
   #[allow(clippy::missing_safety_doc)]
   unsafe fn from_raw_unchecked(
-    env: sys::napi_env,
-    value: sys::napi_value,
+    env: libnode_sys::napi_env,
+    value: libnode_sys::napi_value,
   ) -> Self;
 }
 
@@ -779,8 +778,8 @@ impl_napi_value_trait!(JsSymbol, Symbol);
 
 impl NapiValue for JsUnknown {
   unsafe fn from_raw(
-    env: sys::napi_env,
-    value: sys::napi_value,
+    env: libnode_sys::napi_env,
+    value: libnode_sys::napi_value,
   ) -> Result<Self> {
     Ok(JsUnknown(Value {
       env,
@@ -790,8 +789,8 @@ impl NapiValue for JsUnknown {
   }
 
   unsafe fn from_raw_unchecked(
-    env: sys::napi_env,
-    value: sys::napi_value,
+    env: libnode_sys::napi_env,
+    value: libnode_sys::napi_value,
   ) -> Self {
     JsUnknown(Value {
       env,
@@ -803,14 +802,14 @@ impl NapiValue for JsUnknown {
 
 impl NapiRaw for JsUnknown {
   /// get raw js value ptr
-  unsafe fn raw(&self) -> sys::napi_value {
+  unsafe fn raw(&self) -> libnode_sys::napi_value {
     self.0.value
   }
 }
 
 impl NapiRaw for &JsUnknown {
   /// get raw js value ptr
-  unsafe fn raw(&self) -> sys::napi_value {
+  unsafe fn raw(&self) -> libnode_sys::napi_value {
     self.0.value
   }
 }
@@ -834,7 +833,7 @@ impl JsUnknown {
 }
 
 unsafe extern "C" fn finalize_closures(
-  _env: sys::napi_env,
+  _env: libnode_sys::napi_env,
   data: *mut c_void,
   len: *mut c_void,
 ) {

@@ -17,7 +17,6 @@ use serde::ser;
 use serde_json::Error as SerdeJSONError;
 
 use crate::napi::bindgen_runtime::ToNapiValue;
-use crate::napi::check_status;
 use libnode_sys;
 use crate::napi::Env;
 use crate::napi::JsUnknown;
@@ -34,25 +33,25 @@ pub struct Error<S: AsRef<str> = Status> {
   pub status: S,
   pub reason: String,
   // Convert raw `JsError` into Error
-  pub(crate) maybe_raw: sys::napi_ref,
+  pub(crate) maybe_raw: libnode_sys::napi_ref,
 }
 
 impl<S: AsRef<str>> ToNapiValue for Error<S> {
   unsafe fn to_napi_value(
-    env: sys::napi_env,
+    env: libnode_sys::napi_env,
     val: Self,
-  ) -> Result<sys::napi_value> {
+  ) -> Result<libnode_sys::napi_value> {
     if val.maybe_raw.is_null() {
       let err = unsafe { JsError::from(val).into_value(env) };
       Ok(err)
     } else {
       let mut value = std::ptr::null_mut();
       check_status!(
-        unsafe { sys::napi_get_reference_value(env, val.maybe_raw, &mut value) },
+        unsafe { libnode_sys::napi_get_reference_value(env, val.maybe_raw, &mut value) },
         "Get error reference in `to_napi_value` failed"
       )?;
       check_status!(
-        unsafe { sys::napi_delete_reference(env, val.maybe_raw) },
+        unsafe { libnode_sys::napi_delete_reference(env, val.maybe_raw) },
         "Delete error reference in `to_napi_value` failed"
       )?;
       Ok(value)
@@ -95,8 +94,8 @@ impl From<SerdeJSONError> for Error {
 impl From<JsUnknown> for Error {
   fn from(value: JsUnknown) -> Self {
     let mut result = std::ptr::null_mut();
-    let status = unsafe { sys::napi_create_reference(value.0.env, value.0.value, 1, &mut result) };
-    if status != sys::Status::napi_ok {
+    let status = unsafe { libnode_sys::napi_create_reference(value.0.env, value.0.value, 1, &mut result) };
+    if status != libnode_sys::Status::napi_ok {
       return Error::new(
         Status::from(status),
         "Create Error reference failed".to_owned(),
@@ -201,10 +200,10 @@ pub struct ExtendedErrorInfo {
   pub error_code: Status,
 }
 
-impl TryFrom<sys::napi_extended_error_info> for ExtendedErrorInfo {
+impl TryFrom<libnode_sys::napi_extended_error_info> for ExtendedErrorInfo {
   type Error = Error;
 
-  fn try_from(value: sys::napi_extended_error_info) -> Result<Self> {
+  fn try_from(value: libnode_sys::napi_extended_error_info) -> Result<Self> {
     Ok(Self {
       message: unsafe {
         CString::from_raw(value.error_message as *mut c_char)
@@ -241,25 +240,25 @@ macro_rules! impl_object_methods {
       /// This function is safety if env is not null ptr.
       pub unsafe fn into_value(
         self,
-        env: sys::napi_env,
-      ) -> sys::napi_value {
+        env: libnode_sys::napi_env,
+      ) -> libnode_sys::napi_value {
         if !self.0.maybe_raw.is_null() {
           let mut err = ptr::null_mut();
           let get_err_status =
-            unsafe { sys::napi_get_reference_value(env, self.0.maybe_raw, &mut err) };
+            unsafe { libnode_sys::napi_get_reference_value(env, self.0.maybe_raw, &mut err) };
           debug_assert!(
-            get_err_status == sys::Status::napi_ok,
+            get_err_status == libnode_sys::Status::napi_ok,
             "Get Error from Reference failed"
           );
-          let delete_err_status = unsafe { sys::napi_delete_reference(env, self.0.maybe_raw) };
+          let delete_err_status = unsafe { libnode_sys::napi_delete_reference(env, self.0.maybe_raw) };
           debug_assert!(
-            delete_err_status == sys::Status::napi_ok,
+            delete_err_status == libnode_sys::Status::napi_ok,
             "Delete Error Reference failed"
           );
           let mut is_error = false;
-          let is_error_status = unsafe { sys::napi_is_error(env, err, &mut is_error) };
+          let is_error_status = unsafe { libnode_sys::napi_is_error(env, err, &mut is_error) };
           debug_assert!(
-            is_error_status == sys::Status::napi_ok,
+            is_error_status == libnode_sys::Status::napi_ok,
             "Check Error failed"
           );
           // make sure ref_value is a valid error at first and avoid throw error failed.
@@ -275,25 +274,25 @@ macro_rules! impl_object_methods {
         let mut reason_string = ptr::null_mut();
         let mut js_error = ptr::null_mut();
         let create_code_status = unsafe {
-          sys::napi_create_string_utf8(
+          libnode_sys::napi_create_string_utf8(
             env,
             error_status.as_ptr().cast(),
             status_len as isize,
             &mut error_code,
           )
         };
-        debug_assert!(create_code_status == sys::Status::napi_ok);
+        debug_assert!(create_code_status == libnode_sys::Status::napi_ok);
         let create_reason_status = unsafe {
-          sys::napi_create_string_utf8(
+          libnode_sys::napi_create_string_utf8(
             env,
             self.0.reason.as_ptr().cast(),
             reason_len as isize,
             &mut reason_string,
           )
         };
-        debug_assert!(create_reason_status == sys::Status::napi_ok);
+        debug_assert!(create_reason_status == libnode_sys::Status::napi_ok);
         let create_error_status = unsafe { $kind(env, error_code, reason_string, &mut js_error) };
-        debug_assert!(create_error_status == sys::Status::napi_ok);
+        debug_assert!(create_error_status == libnode_sys::Status::napi_ok);
         js_error
       }
 
@@ -310,7 +309,7 @@ macro_rules! impl_object_methods {
       /// This function is safety if env is not null ptr.
       pub unsafe fn throw_into(
         self,
-        env: sys::napi_env,
+        env: libnode_sys::napi_env,
       ) {
         #[cfg(debug_assertions)]
         let reason = self.0.reason.clone();
@@ -337,11 +336,11 @@ macro_rules! impl_object_methods {
           false => unsafe { self.into_value(env) },
         };
         #[cfg(debug_assertions)]
-        let throw_status = unsafe { sys::napi_throw(env, js_error) };
-        unsafe { sys::napi_throw(env, js_error) };
+        let throw_status = unsafe { libnode_sys::napi_throw(env, js_error) };
+        unsafe { libnode_sys::napi_throw(env, js_error) };
         #[cfg(debug_assertions)]
         assert!(
-          throw_status == sys::Status::napi_ok,
+          throw_status == libnode_sys::Status::napi_ok,
           "Throw error failed, status: [{}], raw message: \"{}\", raw status: [{}]",
           Status::from(throw_status),
           reason,
@@ -358,36 +357,36 @@ macro_rules! impl_object_methods {
 
     impl crate::napi::bindgen_prelude::ToNapiValue for $js_value {
       unsafe fn to_napi_value(
-        env: sys::napi_env,
+        env: libnode_sys::napi_env,
         val: Self,
-      ) -> Result<sys::napi_value> {
+      ) -> Result<libnode_sys::napi_value> {
         unsafe { ToNapiValue::to_napi_value(env, val.0) }
       }
     }
   };
 }
 
-impl_object_methods!(JsError, sys::napi_create_error);
-impl_object_methods!(JsTypeError, sys::napi_create_type_error);
-impl_object_methods!(JsRangeError, sys::napi_create_range_error);
-impl_object_methods!(JsSyntaxError, sys::node_api_create_syntax_error);
+impl_object_methods!(JsError, libnode_sys::napi_create_error);
+impl_object_methods!(JsTypeError, libnode_sys::napi_create_type_error);
+impl_object_methods!(JsRangeError, libnode_sys::napi_create_range_error);
+impl_object_methods!(JsSyntaxError, libnode_sys::node_api_create_syntax_error);
 
 #[doc(hidden)]
 #[macro_export]
-macro_rules! error {
+macro_rules! _error {
   ($status:expr, $($msg:tt)*) => {
     $crate::napi::Error::new($status, format!($($msg)*))
   };
 }
+pub use _error as error;
 
 #[doc(hidden)]
 #[macro_export]
-macro_rules! check_status {
+macro_rules! _check_status {
   ($code:expr) => {{
     let c = $code;
     match c {
-      $libnode_sys::
-Status::napi_ok => Ok(()),
+      libnode_sys::Status::napi_ok => Ok(()),
       _ => Err($crate::napi::Error::new($crate::napi::Status::from(c), "".to_owned())),
     }
   }};
@@ -395,8 +394,7 @@ Status::napi_ok => Ok(()),
   ($code:expr, $($msg:tt)*) => {{
     let c = $code;
     match c {
-      $libnode_sys::
-Status::napi_ok => Ok(()),
+      libnode_sys::Status::napi_ok => Ok(()),
       _ => Err($crate::napi::Error::new($crate::napi::Status::from(c), format!($($msg)*))),
     }
   }};
@@ -404,21 +402,20 @@ Status::napi_ok => Ok(()),
   ($code:expr, $msg:expr, $env:expr, $val:expr) => {{
     let c = $code;
     match c {
-      $libnode_sys::
-Status::napi_ok => Ok(()),
+      libnode_sys::Status::napi_ok => Ok(()),
       _ => Err($crate::napi::Error::new($crate::napi::Status::from(c), format!($msg, $crate::napi::type_of!($env, $val)?))),
     }
   }};
 }
+pub use _check_status as check_status;
 
 #[doc(hidden)]
 #[macro_export]
-macro_rules! check_status_and_type {
+macro_rules! _check_status_and_type {
   ($code:expr, $env:ident, $val:ident, $msg:expr) => {{
     let c = $code;
     match c {
-      $libnode_sys::
-Status::napi_ok => Ok(()),
+      libnode_sys::Status::napi_ok => Ok(()),
       _ => {
         use $crate::napi::js_values::NapiValue;
         let value_type = $crate::napi::type_of!($env, $val)?;
@@ -466,24 +463,21 @@ Status::napi_ok => Ok(()),
     }
   }};
 }
+pub use _check_status_and_type as check_status_and_type;
 
 #[doc(hidden)]
 #[macro_export]
-macro_rules! check_pending_exception {
+macro_rules! _check_pending_exception {
   ($env:expr, $code:expr) => {{
     use $crate::napi::NapiValue;
     let c = $code;
     match c {
-      $libnode_sys::
-Status::napi_ok => Ok(()),
-      $libnode_sys::
-Status::napi_pending_exception => {
+      libnode_sys::Status::napi_ok => Ok(()),
+      libnode_sys::Status::napi_pending_exception => {
         let mut error_result = std::ptr::null_mut();
         assert_eq!(
-          unsafe { $libnode_sys::
-napi_get_and_clear_last_exception($env, &mut error_result) },
-          $libnode_sys::
-Status::napi_ok
+          unsafe { libnode_sys::napi_get_and_clear_last_exception($env, &mut error_result) },
+          libnode_sys::Status::napi_ok
         );
         return Err($crate::napi::Error::from(unsafe {
           $crate::napi::bindgen_prelude::Unknown::from_raw_unchecked($env, error_result)
@@ -497,16 +491,12 @@ Status::napi_ok
     use $crate::napi::NapiValue;
     let c = $code;
     match c {
-      $libnode_sys::
-Status::napi_ok => Ok(()),
-      $libnode_sys::
-Status::napi_pending_exception => {
+      libnode_sys::Status::napi_ok => Ok(()),
+      libnode_sys::Status::napi_pending_exception => {
         let mut error_result = std::ptr::null_mut();
         assert_eq!(
-          unsafe { $libnode_sys::
-napi_get_and_clear_last_exception($env, &mut error_result) },
-          $libnode_sys::
-Status::napi_ok
+          unsafe { libnode_sys::napi_get_and_clear_last_exception($env, &mut error_result) },
+          libnode_sys::Status::napi_ok
         );
         return Err($crate::napi::Error::from(unsafe {
           $crate::napi::bindgen_prelude::Unknown::from_raw_unchecked($env, error_result)
@@ -516,3 +506,4 @@ Status::napi_ok
     }
   }};
 }
+pub use _check_pending_exception as check_pending_exception;

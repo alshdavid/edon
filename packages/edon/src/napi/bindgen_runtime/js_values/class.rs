@@ -17,14 +17,14 @@ use crate::napi::ValueType;
 pub type This<T = Object> = T;
 
 pub struct ClassInstance<T: 'static> {
-  pub value: sys::napi_value,
+  pub value: libnode_sys::napi_value,
   inner: &'static mut T,
 }
 
 impl<T: 'static> ClassInstance<T> {
   #[doc(hidden)]
   pub fn new(
-    value: sys::napi_value,
+    value: libnode_sys::napi_value,
     inner: &'static mut T,
   ) -> Self {
     Self { value, inner }
@@ -39,7 +39,7 @@ impl<T: 'static> ClassInstance<T> {
 }
 
 impl<T: 'static> NapiRaw for ClassInstance<T> {
-  unsafe fn raw(&self) -> sys::napi_value {
+  unsafe fn raw(&self) -> libnode_sys::napi_value {
     self.value
   }
 }
@@ -62,21 +62,21 @@ where
   &'static T: ValidateNapiValue,
 {
   unsafe fn validate(
-    env: sys::napi_env,
-    napi_val: sys::napi_value,
-  ) -> crate::napi::Result<sys::napi_value> {
+    env: libnode_sys::napi_env,
+    napi_val: libnode_sys::napi_value,
+  ) -> crate::napi::Result<libnode_sys::napi_value> {
     unsafe { <&T>::validate(env, napi_val) }
   }
 }
 
 impl<T: 'static> FromNapiValue for ClassInstance<T> {
   unsafe fn from_napi_value(
-    env: sys::napi_env,
-    napi_val: sys::napi_value,
+    env: libnode_sys::napi_env,
+    napi_val: libnode_sys::napi_value,
   ) -> crate::napi::Result<Self> {
     let mut value = ptr::null_mut();
     check_status!(
-      unsafe { sys::napi_unwrap(env, napi_val, &mut value) },
+      unsafe { libnode_sys::napi_unwrap(env, napi_val, &mut value) },
       "Unwrap value [{}] from class failed",
       type_name::<T>(),
     )?;

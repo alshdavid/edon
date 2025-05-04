@@ -27,14 +27,14 @@ impl ValidateNapiValue for String {}
 
 impl ToNapiValue for &String {
   unsafe fn to_napi_value(
-    env: sys::napi_env,
+    env: libnode_sys::napi_env,
     val: Self,
-  ) -> Result<sys::napi_value> {
+  ) -> Result<libnode_sys::napi_value> {
     let mut ptr = ptr::null_mut();
 
     check_status!(
       unsafe {
-        sys::napi_create_string_utf8(env, val.as_ptr().cast(), val.len() as isize, &mut ptr)
+        libnode_sys::napi_create_string_utf8(env, val.as_ptr().cast(), val.len() as isize, &mut ptr)
       },
       "Failed to convert rust `String` into napi `string`"
     )?;
@@ -46,9 +46,9 @@ impl ToNapiValue for &String {
 impl ToNapiValue for String {
   #[inline]
   unsafe fn to_napi_value(
-    env: sys::napi_env,
+    env: libnode_sys::napi_env,
     val: Self,
-  ) -> Result<sys::napi_value> {
+  ) -> Result<libnode_sys::napi_value> {
     #[allow(clippy::needless_borrows_for_generic_args)]
     unsafe {
       ToNapiValue::to_napi_value(env, &val)
@@ -58,13 +58,13 @@ impl ToNapiValue for String {
 
 impl FromNapiValue for String {
   unsafe fn from_napi_value(
-    env: sys::napi_env,
-    napi_val: sys::napi_value,
+    env: libnode_sys::napi_env,
+    napi_val: libnode_sys::napi_value,
   ) -> Result<Self> {
     let mut len = 0;
 
     check_status_and_type!(
-      unsafe { sys::napi_get_value_string_utf8(env, napi_val, ptr::null_mut(), 0, &mut len) },
+      unsafe { libnode_sys::napi_get_value_string_utf8(env, napi_val, ptr::null_mut(), 0, &mut len) },
       env,
       napi_val,
       "Failed to convert JavaScript value `{}` into rust type `String`"
@@ -79,7 +79,7 @@ impl FromNapiValue for String {
 
     check_status_and_type!(
       unsafe {
-        sys::napi_get_value_string_utf8(env, napi_val, buf_ptr, len, &mut written_char_count)
+        libnode_sys::napi_get_value_string_utf8(env, napi_val, buf_ptr, len, &mut written_char_count)
       },
       env,
       napi_val,
@@ -107,13 +107,13 @@ impl ValidateNapiValue for &str {}
 
 impl FromNapiValue for &str {
   unsafe fn from_napi_value(
-    env: sys::napi_env,
-    napi_val: sys::napi_value,
+    env: libnode_sys::napi_env,
+    napi_val: libnode_sys::napi_value,
   ) -> Result<Self> {
     let mut len = 0;
 
     check_status_and_type!(
-      unsafe { sys::napi_get_value_string_utf8(env, napi_val, ptr::null_mut(), 0, &mut len) },
+      unsafe { libnode_sys::napi_get_value_string_utf8(env, napi_val, ptr::null_mut(), 0, &mut len) },
       env,
       napi_val,
       "Failed to convert napi `{}` into rust type `String`"
@@ -127,7 +127,7 @@ impl FromNapiValue for &str {
 
     check_status_and_type!(
       unsafe {
-        sys::napi_get_value_string_utf8(env, napi_val, buf_ptr, len, &mut written_char_count)
+        libnode_sys::napi_get_value_string_utf8(env, napi_val, buf_ptr, len, &mut written_char_count)
       },
       env,
       napi_val,
@@ -142,7 +142,7 @@ impl FromNapiValue for &str {
     // FIXME: This implementation should be removed in next major release.
     let mut temporary_external_object = ptr::null_mut();
     check_status!(unsafe {
-      sys::napi_create_external(
+      libnode_sys::napi_create_external(
         env,
         buf_ptr as *mut c_void,
         Some(release_string),
@@ -164,9 +164,9 @@ impl FromNapiValue for &str {
 
 impl ToNapiValue for &str {
   unsafe fn to_napi_value(
-    env: sys::napi_env,
+    env: libnode_sys::napi_env,
     val: Self,
-  ) -> Result<sys::napi_value> {
+  ) -> Result<libnode_sys::napi_value> {
     unsafe { String::to_napi_value(env, val.to_owned()) }
   }
 }
@@ -211,13 +211,13 @@ impl TypeName for Utf16String {
 
 impl FromNapiValue for Utf16String {
   unsafe fn from_napi_value(
-    env: sys::napi_env,
-    napi_val: sys::napi_value,
+    env: libnode_sys::napi_env,
+    napi_val: libnode_sys::napi_value,
   ) -> Result<Self> {
     let mut len = 0;
 
     check_status!(
-      unsafe { sys::napi_get_value_string_utf16(env, napi_val, ptr::null_mut(), 0, &mut len) },
+      unsafe { libnode_sys::napi_get_value_string_utf16(env, napi_val, ptr::null_mut(), 0, &mut len) },
       "Failed to convert napi `utf16 string` into rust type `String`",
     )?;
 
@@ -228,7 +228,7 @@ impl FromNapiValue for Utf16String {
 
     check_status!(
       unsafe {
-        sys::napi_get_value_string_utf16(
+        libnode_sys::napi_get_value_string_utf16(
           env,
           napi_val,
           ret.as_mut_ptr(),
@@ -253,16 +253,16 @@ impl FromNapiValue for Utf16String {
 
 impl ToNapiValue for Utf16String {
   unsafe fn to_napi_value(
-    env: sys::napi_env,
+    env: libnode_sys::napi_env,
     val: Utf16String,
-  ) -> Result<sys::napi_value> {
+  ) -> Result<libnode_sys::napi_value> {
     let mut ptr = ptr::null_mut();
 
     let encoded = val.0.encode_utf16().collect::<Vec<_>>();
 
     check_status!(
       unsafe {
-        sys::napi_create_string_utf16(
+        libnode_sys::napi_create_string_utf16(
           env,
           encoded.as_ptr() as *const _,
           encoded.len() as isize,
@@ -277,7 +277,7 @@ impl ToNapiValue for Utf16String {
 }
 
 unsafe extern "C" fn release_string(
-  _env: sys::napi_env,
+  _env: libnode_sys::napi_env,
   data: *mut c_void,
   len: *mut c_void,
 ) {

@@ -9,7 +9,7 @@ use crate::napi::Env;
 use crate::napi::Result;
 
 pub struct Ref<T> {
-  pub(crate) raw_ref: sys::napi_ref,
+  pub(crate) raw_ref: libnode_sys::napi_ref,
   pub(crate) count: u32,
   pub(crate) inner: T,
 }
@@ -27,7 +27,7 @@ impl<T> Ref<T> {
     let mut raw_ref = ptr::null_mut();
     assert_ne!(ref_count, 0, "Initial `ref_count` must be > 0");
     check_status!(unsafe {
-      sys::napi_create_reference(js_value.env, js_value.value, ref_count, &mut raw_ref)
+      libnode_sys::napi_create_reference(js_value.env, js_value.value, ref_count, &mut raw_ref)
     })?;
     Ok(Ref {
       raw_ref,
@@ -40,7 +40,7 @@ impl<T> Ref<T> {
     &mut self,
     env: &Env,
   ) -> Result<u32> {
-    check_status!(unsafe { sys::napi_reference_ref(env.0, self.raw_ref, &mut self.count) })?;
+    check_status!(unsafe { libnode_sys::napi_reference_ref(env.0, self.raw_ref, &mut self.count) })?;
     Ok(self.count)
   }
 
@@ -48,10 +48,10 @@ impl<T> Ref<T> {
     &mut self,
     env: Env,
   ) -> Result<u32> {
-    check_status!(unsafe { sys::napi_reference_unref(env.0, self.raw_ref, &mut self.count) })?;
+    check_status!(unsafe { libnode_sys::napi_reference_unref(env.0, self.raw_ref, &mut self.count) })?;
 
     if self.count == 0 {
-      check_status!(unsafe { sys::napi_delete_reference(env.0, self.raw_ref) })?;
+      check_status!(unsafe { libnode_sys::napi_delete_reference(env.0, self.raw_ref) })?;
     }
     Ok(self.count)
   }
@@ -77,12 +77,12 @@ impl<T> Drop for Ref<T> {
 
 impl<T: 'static> ToNapiValue for Ref<T> {
   unsafe fn to_napi_value(
-    env: sys::napi_env,
+    env: libnode_sys::napi_env,
     val: Self,
-  ) -> Result<sys::napi_value> {
+  ) -> Result<libnode_sys::napi_value> {
     let mut result = ptr::null_mut();
     check_status!(
-      unsafe { sys::napi_get_reference_value(env, val.raw_ref, &mut result) },
+      unsafe { libnode_sys::napi_get_reference_value(env, val.raw_ref, &mut result) },
       "Failed to get reference value"
     )?;
     Ok(result)

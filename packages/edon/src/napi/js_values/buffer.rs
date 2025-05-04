@@ -30,11 +30,11 @@ impl TypeName for JsBuffer {
 
 impl ValidateNapiValue for JsBuffer {
   unsafe fn validate(
-    env: sys::napi_env,
-    napi_val: sys::napi_value,
-  ) -> Result<sys::napi_value> {
+    env: libnode_sys::napi_env,
+    napi_val: libnode_sys::napi_value,
+  ) -> Result<libnode_sys::napi_value> {
     let mut is_buffer = false;
-    check_status!(unsafe { sys::napi_is_buffer(env, napi_val, &mut is_buffer) })?;
+    check_status!(unsafe { libnode_sys::napi_is_buffer(env, napi_val, &mut is_buffer) })?;
     if !is_buffer {
       return Err(Error::new(
         Status::InvalidArg,
@@ -55,7 +55,7 @@ impl JsBuffer {
     let mut data = ptr::null_mut();
     let mut len: usize = 0;
     check_status!(unsafe {
-      sys::napi_get_buffer_info(self.0.env, self.0.value, &mut data, &mut len)
+      libnode_sys::napi_get_buffer_info(self.0.env, self.0.value, &mut data, &mut len)
     })?;
     Ok(JsBufferValue {
       data: mem::ManuallyDrop::new(unsafe { Vec::from_raw_parts(data as *mut _, len, len) }),

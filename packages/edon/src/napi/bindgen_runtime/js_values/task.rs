@@ -65,20 +65,20 @@ impl<T: Task> AsyncTask<T> {
 
 /// <https://developer.mozilla.org/zh-CN/docs/Web/API/AbortController>
 pub struct AbortSignal {
-  raw_work: Rc<AtomicPtr<sys::napi_async_work__>>,
-  raw_deferred: Rc<AtomicPtr<sys::napi_deferred__>>,
+  raw_work: Rc<AtomicPtr<libnode_sys::napi_async_work__>>,
+  raw_deferred: Rc<AtomicPtr<libnode_sys::napi_deferred__>>,
   status: Rc<AtomicU8>,
 }
 
 impl FromNapiValue for AbortSignal {
   unsafe fn from_napi_value(
-    env: sys::napi_env,
-    napi_val: sys::napi_value,
+    env: libnode_sys::napi_env,
+    napi_val: libnode_sys::napi_value,
   ) -> crate::napi::Result<Self> {
     let mut signal = unsafe { JsObject::from_raw_unchecked(env, napi_val) };
-    let async_work_inner: Rc<AtomicPtr<sys::napi_async_work__>> =
+    let async_work_inner: Rc<AtomicPtr<libnode_sys::napi_async_work__>> =
       Rc::new(AtomicPtr::new(ptr::null_mut()));
-    let raw_promise: Rc<AtomicPtr<sys::napi_deferred__>> = Rc::new(AtomicPtr::new(ptr::null_mut()));
+    let raw_promise: Rc<AtomicPtr<libnode_sys::napi_deferred__>> = Rc::new(AtomicPtr::new(ptr::null_mut()));
     let task_status = Rc::new(AtomicU8::new(0));
     let abort_controller = AbortSignal {
       raw_work: async_work_inner.clone(),
@@ -87,7 +87,7 @@ impl FromNapiValue for AbortSignal {
     };
     let js_env = unsafe { Env::from_raw(env) };
     check_status!(unsafe {
-      sys::napi_wrap(
+      libnode_sys::napi_wrap(
         env,
         signal.0.value,
         Box::into_raw(Box::new(abort_controller)).cast(),
@@ -106,12 +106,12 @@ impl FromNapiValue for AbortSignal {
 }
 
 extern "C" fn on_abort(
-  env: sys::napi_env,
-  callback_info: sys::napi_callback_info,
-) -> sys::napi_value {
+  env: libnode_sys::napi_env,
+  callback_info: libnode_sys::napi_callback_info,
+) -> libnode_sys::napi_value {
   let mut this = ptr::null_mut();
   unsafe {
-    let get_cb_info_status = sys::napi_get_cb_info(
+    let get_cb_info_status = libnode_sys::napi_get_cb_info(
       env,
       callback_info,
       &mut 0,
@@ -121,15 +121,15 @@ extern "C" fn on_abort(
     );
     debug_assert_eq!(
       get_cb_info_status,
-      sys::Status::napi_ok,
+      libnode_sys::Status::napi_ok,
       "{}",
       "Get callback info in AbortController abort callback failed"
     );
     let mut async_task = ptr::null_mut();
-    let status = sys::napi_unwrap(env, this, &mut async_task);
+    let status = libnode_sys::napi_unwrap(env, this, &mut async_task);
     debug_assert_eq!(
       status,
-      sys::Status::napi_ok,
+      libnode_sys::Status::napi_ok,
       "{}",
       "Unwrap async_task from AbortSignal failed"
     );
@@ -140,15 +140,15 @@ extern "C" fn on_abort(
     }
     let raw_async_work = abort_controller.raw_work.load(Ordering::Relaxed);
     let deferred = abort_controller.raw_deferred.load(Ordering::Relaxed);
-    sys::napi_cancel_async_work(env, raw_async_work);
+    libnode_sys::napi_cancel_async_work(env, raw_async_work);
     // abort function must be called from JavaScript main thread, so Relaxed Ordering is ok.
     abort_controller.status.store(2, Ordering::Relaxed);
     let abort_error = Error::new(Status::Cancelled, "AbortError".to_owned());
     let reject_status =
-      sys::napi_reject_deferred(env, deferred, JsError::from(abort_error).into_value(env));
+      libnode_sys::napi_reject_deferred(env, deferred, JsError::from(abort_error).into_value(env));
     debug_assert_eq!(
       reject_status,
-      sys::Status::napi_ok,
+      libnode_sys::Status::napi_ok,
       "{}",
       "Reject AbortError failed"
     );
@@ -158,9 +158,9 @@ extern "C" fn on_abort(
 
 impl<T: Task> ToNapiValue for AsyncTask<T> {
   unsafe fn to_napi_value(
-    env: sys::napi_env,
+    env: libnode_sys::napi_env,
     val: Self,
-  ) -> crate::napi::Result<sys::napi_value> {
+  ) -> crate::napi::Result<libnode_sys::napi_value> {
     if let Some(abort_controller) = val.abort_signal {
       let async_promise = async_work::run(env, val.inner, Some(abort_controller.status.clone()))?;
       abort_controller
@@ -178,7 +178,7 @@ impl<T: Task> ToNapiValue for AsyncTask<T> {
 }
 
 unsafe extern "C" fn async_task_abort_controller_finalize(
-  _env: sys::napi_env,
+  _env: libnode_sys::napi_env,
   finalize_data: *mut c_void,
   _finalize_hint: *mut c_void,
 ) {

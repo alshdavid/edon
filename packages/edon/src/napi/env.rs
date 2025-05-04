@@ -39,7 +39,7 @@ use crate::napi::Result;
 use crate::napi::Status;
 use crate::napi::ValueType;
 
-pub type Callback = unsafe extern "C" fn(sys::napi_env, sys::napi_callback_info) -> sys::napi_value;
+pub type Callback = unsafe extern "C" fn(libnode_sys::napi_env, libnode_sys::napi_callback_info) -> libnode_sys::napi_value;
 
 pub(crate) static EMPTY_VEC: Vec<u8> = vec![];
 
@@ -53,17 +53,17 @@ pub(crate) static EMPTY_VEC: Vec<u8> = vec![];
 /// The `Env` becomes invalid when an instance of a native addon is unloaded.
 ///
 /// Notification of this event is delivered through the callbacks given to `Env::add_env_cleanup_hook` and `Env::set_instance_data`.
-pub struct Env(pub(crate) sys::napi_env);
+pub struct Env(pub(crate) libnode_sys::napi_env);
 
-impl From<sys::napi_env> for Env {
-  fn from(env: sys::napi_env) -> Self {
+impl From<libnode_sys::napi_env> for Env {
+  fn from(env: libnode_sys::napi_env) -> Self {
     Env(env)
   }
 }
 
 impl Env {
   #[allow(clippy::missing_safety_doc)]
-  pub unsafe fn from_raw(env: sys::napi_env) -> Self {
+  pub unsafe fn from_raw(env: libnode_sys::napi_env) -> Self {
     Env(env)
   }
 
@@ -72,7 +72,7 @@ impl Env {
     value: bool,
   ) -> Result<JsBoolean> {
     let mut raw_value = ptr::null_mut();
-    check_status!(unsafe { sys::napi_get_boolean(self.0, value, &mut raw_value) })?;
+    check_status!(unsafe { libnode_sys::napi_get_boolean(self.0, value, &mut raw_value) })?;
     Ok(unsafe { JsBoolean::from_raw_unchecked(self.0, raw_value) })
   }
 
@@ -82,7 +82,7 @@ impl Env {
   ) -> Result<JsNumber> {
     let mut raw_value = ptr::null_mut();
     check_status!(unsafe {
-      sys::napi_create_int32(self.0, int, (&mut raw_value) as *mut sys::napi_value)
+      libnode_sys::napi_create_int32(self.0, int, (&mut raw_value) as *mut libnode_sys::napi_value)
     })?;
     Ok(unsafe { JsNumber::from_raw_unchecked(self.0, raw_value) })
   }
@@ -93,7 +93,7 @@ impl Env {
   ) -> Result<JsNumber> {
     let mut raw_value = ptr::null_mut();
     check_status!(unsafe {
-      sys::napi_create_int64(self.0, int, (&mut raw_value) as *mut sys::napi_value)
+      libnode_sys::napi_create_int64(self.0, int, (&mut raw_value) as *mut libnode_sys::napi_value)
     })?;
     Ok(unsafe { JsNumber::from_raw_unchecked(self.0, raw_value) })
   }
@@ -103,7 +103,7 @@ impl Env {
     number: u32,
   ) -> Result<JsNumber> {
     let mut raw_value = ptr::null_mut();
-    check_status!(unsafe { sys::napi_create_uint32(self.0, number, &mut raw_value) })?;
+    check_status!(unsafe { libnode_sys::napi_create_uint32(self.0, number, &mut raw_value) })?;
     Ok(unsafe { JsNumber::from_raw_unchecked(self.0, raw_value) })
   }
 
@@ -113,7 +113,7 @@ impl Env {
   ) -> Result<JsNumber> {
     let mut raw_value = ptr::null_mut();
     check_status!(unsafe {
-      sys::napi_create_double(self.0, double, (&mut raw_value) as *mut sys::napi_value)
+      libnode_sys::napi_create_double(self.0, double, (&mut raw_value) as *mut libnode_sys::napi_value)
     })?;
     Ok(unsafe { JsNumber::from_raw_unchecked(self.0, raw_value) })
   }
@@ -124,7 +124,7 @@ impl Env {
     value: i64,
   ) -> Result<JsBigInt> {
     let mut raw_value = ptr::null_mut();
-    check_status!(unsafe { sys::napi_create_bigint_int64(self.0, value, &mut raw_value) })?;
+    check_status!(unsafe { libnode_sys::napi_create_bigint_int64(self.0, value, &mut raw_value) })?;
     Ok(JsBigInt::from_raw_unchecked(self.0, raw_value, 1))
   }
 
@@ -133,7 +133,7 @@ impl Env {
     value: u64,
   ) -> Result<JsBigInt> {
     let mut raw_value = ptr::null_mut();
-    check_status!(unsafe { sys::napi_create_bigint_uint64(self.0, value, &mut raw_value) })?;
+    check_status!(unsafe { libnode_sys::napi_create_bigint_uint64(self.0, value, &mut raw_value) })?;
     Ok(JsBigInt::from_raw_unchecked(self.0, raw_value, 1))
   }
 
@@ -145,7 +145,7 @@ impl Env {
     let sign_bit = i32::from(value <= 0);
     let words = &value as *const i128 as *const u64;
     check_status!(unsafe {
-      sys::napi_create_bigint_words(self.0, sign_bit, 2, words, &mut raw_value)
+      libnode_sys::napi_create_bigint_words(self.0, sign_bit, 2, words, &mut raw_value)
     })?;
     Ok(JsBigInt::from_raw_unchecked(self.0, raw_value, 2))
   }
@@ -156,7 +156,7 @@ impl Env {
   ) -> Result<JsBigInt> {
     let mut raw_value = ptr::null_mut();
     let words = &value as *const u128 as *const u64;
-    check_status!(unsafe { sys::napi_create_bigint_words(self.0, 0, 2, words, &mut raw_value) })?;
+    check_status!(unsafe { libnode_sys::napi_create_bigint_words(self.0, 0, 2, words, &mut raw_value) })?;
     Ok(JsBigInt::from_raw_unchecked(self.0, raw_value, 2))
   }
 
@@ -171,7 +171,7 @@ impl Env {
     let mut raw_value = ptr::null_mut();
     let len = words.len();
     check_status!(unsafe {
-      sys::napi_create_bigint_words(
+      libnode_sys::napi_create_bigint_words(
         self.0,
         match sign_bit {
           true => 1,
@@ -212,7 +212,7 @@ impl Env {
   ) -> Result<JsString> {
     let mut raw_value = ptr::null_mut();
     check_status!(unsafe {
-      sys::napi_create_string_utf8(self.0, data_ptr, len as isize, &mut raw_value)
+      libnode_sys::napi_create_string_utf8(self.0, data_ptr, len as isize, &mut raw_value)
     })?;
     Ok(unsafe { JsString::from_raw_unchecked(self.0, raw_value) })
   }
@@ -223,7 +223,7 @@ impl Env {
   ) -> Result<JsString> {
     let mut raw_value = ptr::null_mut();
     check_status!(unsafe {
-      sys::napi_create_string_utf16(self.0, chars.as_ptr(), chars.len() as isize, &mut raw_value)
+      libnode_sys::napi_create_string_utf16(self.0, chars.as_ptr(), chars.len() as isize, &mut raw_value)
     })?;
     Ok(unsafe { JsString::from_raw_unchecked(self.0, raw_value) })
   }
@@ -234,7 +234,7 @@ impl Env {
   ) -> Result<JsString> {
     let mut raw_value = ptr::null_mut();
     check_status!(unsafe {
-      sys::napi_create_string_latin1(
+      libnode_sys::napi_create_string_latin1(
         self.0,
         chars.as_ptr() as *const _,
         chars.len() as isize,
@@ -249,7 +249,7 @@ impl Env {
     description: JsString,
   ) -> Result<JsSymbol> {
     let mut result = ptr::null_mut();
-    check_status!(unsafe { sys::napi_create_symbol(self.0, description.0.value, &mut result) })?;
+    check_status!(unsafe { libnode_sys::napi_create_symbol(self.0, description.0.value, &mut result) })?;
     Ok(unsafe { JsSymbol::from_raw_unchecked(self.0, result) })
   }
 
@@ -259,7 +259,7 @@ impl Env {
   ) -> Result<JsSymbol> {
     let mut result = ptr::null_mut();
     check_status!(unsafe {
-      sys::napi_create_symbol(
+      libnode_sys::napi_create_symbol(
         self.0,
         description
           .and_then(|desc| self.create_string(desc).ok())
@@ -273,13 +273,13 @@ impl Env {
 
   pub fn create_object(&self) -> Result<JsObject> {
     let mut raw_value = ptr::null_mut();
-    check_status!(unsafe { sys::napi_create_object(self.0, &mut raw_value) })?;
+    check_status!(unsafe { libnode_sys::napi_create_object(self.0, &mut raw_value) })?;
     Ok(unsafe { JsObject::from_raw_unchecked(self.0, raw_value) })
   }
 
   pub fn create_empty_array(&self) -> Result<JsObject> {
     let mut raw_value = ptr::null_mut();
-    check_status!(unsafe { sys::napi_create_array(self.0, &mut raw_value) })?;
+    check_status!(unsafe { libnode_sys::napi_create_array(self.0, &mut raw_value) })?;
     Ok(unsafe { JsObject::from_raw_unchecked(self.0, raw_value) })
   }
 
@@ -288,7 +288,7 @@ impl Env {
     length: usize,
   ) -> Result<JsObject> {
     let mut raw_value = ptr::null_mut();
-    check_status!(unsafe { sys::napi_create_array_with_length(self.0, length, &mut raw_value) })?;
+    check_status!(unsafe { libnode_sys::napi_create_array_with_length(self.0, length, &mut raw_value) })?;
     Ok(unsafe { JsObject::from_raw_unchecked(self.0, raw_value) })
   }
 
@@ -300,7 +300,7 @@ impl Env {
     let mut raw_value = ptr::null_mut();
     let mut data_ptr = ptr::null_mut();
     check_status!(unsafe {
-      sys::napi_create_buffer(self.0, length, &mut data_ptr, &mut raw_value)
+      libnode_sys::napi_create_buffer(self.0, length, &mut data_ptr, &mut raw_value)
     })?;
 
     Ok(JsBufferValue::new(
@@ -329,9 +329,9 @@ impl Env {
         // Rust uses 0x1 as the data pointer for empty buffers,
         // but NAPI/V8 only allows multiple buffers to have
         // the same data pointer if it's 0x0.
-        sys::napi_create_buffer(self.0, length, ptr::null_mut(), &mut raw_value)
+        libnode_sys::napi_create_buffer(self.0, length, ptr::null_mut(), &mut raw_value)
       } else {
-        let status = sys::napi_create_external_buffer(
+        let status = libnode_sys::napi_create_external_buffer(
           self.0,
           length,
           data_ptr.cast(),
@@ -340,10 +340,10 @@ impl Env {
           &mut raw_value,
         );
         // electron doesn't support external buffers
-        if status == sys::Status::napi_no_external_buffers_allowed {
+        if status == libnode_sys::Status::napi_no_external_buffers_allowed {
           drop(Box::from_raw(hint_ptr));
           let mut dest_data_ptr = ptr::null_mut();
-          let status = sys::napi_create_buffer_copy(
+          let status = libnode_sys::napi_create_buffer_copy(
             self.0,
             length,
             data.as_ptr().cast(),
@@ -401,14 +401,14 @@ impl Env {
     }
     let hint_ptr = Box::into_raw(Box::new((hint, finalize_callback)));
     unsafe {
-      let status = sys::napi_create_external_buffer(
+      let status = libnode_sys::napi_create_external_buffer(
         self.0,
         length,
         data as *mut c_void,
         Some(
           raw_finalize_with_custom_callback::<Hint, Finalize>
             as unsafe extern "C" fn(
-              env: sys::napi_env,
+              env: libnode_sys::napi_env,
               finalize_data: *mut c_void,
               finalize_hint: *mut c_void,
             ),
@@ -416,10 +416,10 @@ impl Env {
         hint_ptr.cast(),
         &mut raw_value,
       );
-      if status == sys::Status::napi_no_external_buffers_allowed {
+      if status == libnode_sys::Status::napi_no_external_buffers_allowed {
         let (hint, finalize) = *Box::from_raw(hint_ptr);
         let mut result_data = ptr::null_mut();
-        let status = sys::napi_create_buffer_copy(
+        let status = libnode_sys::napi_create_buffer_copy(
           self.0,
           length,
           data.cast(),
@@ -454,7 +454,7 @@ impl Env {
     size: i64,
   ) -> Result<i64> {
     let mut changed = 0i64;
-    check_status!(unsafe { sys::napi_adjust_external_memory(self.0, size, &mut changed) })?;
+    check_status!(unsafe { libnode_sys::napi_adjust_external_memory(self.0, size, &mut changed) })?;
     Ok(changed)
   }
 
@@ -482,7 +482,7 @@ impl Env {
     let mut copy_data = ptr::null_mut();
     let mut raw_value = ptr::null_mut();
     check_status!(unsafe {
-      sys::napi_create_buffer_copy(
+      libnode_sys::napi_create_buffer_copy(
         self.0,
         length,
         data_ptr as *mut c_void,
@@ -507,7 +507,7 @@ impl Env {
     let mut raw_value = ptr::null_mut();
     let mut data_ptr = ptr::null_mut();
     check_status!(unsafe {
-      sys::napi_create_arraybuffer(self.0, length, &mut data_ptr, &mut raw_value)
+      libnode_sys::napi_create_arraybuffer(self.0, length, &mut data_ptr, &mut raw_value)
     })?;
 
     Ok(JsArrayBufferValue::new(
@@ -529,10 +529,10 @@ impl Env {
         // Rust uses 0x1 as the data pointer for empty buffers,
         // but NAPI/V8 only allows multiple buffers to have
         // the same data pointer if it's 0x0.
-        sys::napi_create_arraybuffer(self.0, length, ptr::null_mut(), &mut raw_value)
+        libnode_sys::napi_create_arraybuffer(self.0, length, ptr::null_mut(), &mut raw_value)
       } else {
         let hint_ptr = Box::into_raw(Box::new((length, data.capacity())));
-        let status = sys::napi_create_external_arraybuffer(
+        let status = libnode_sys::napi_create_external_arraybuffer(
           self.0,
           data_ptr.cast(),
           length,
@@ -540,11 +540,11 @@ impl Env {
           hint_ptr.cast(),
           &mut raw_value,
         );
-        if status == sys::Status::napi_no_external_buffers_allowed {
+        if status == libnode_sys::Status::napi_no_external_buffers_allowed {
           drop(Box::from_raw(hint_ptr));
           let mut underlying_data = ptr::null_mut();
           let status =
-            sys::napi_create_arraybuffer(self.0, length, &mut underlying_data, &mut raw_value);
+            libnode_sys::napi_create_arraybuffer(self.0, length, &mut underlying_data, &mut raw_value);
           ptr::copy_nonoverlapping(data_ptr, underlying_data.cast(), length);
           status
         } else {
@@ -593,7 +593,7 @@ impl Env {
     let mut raw_value = ptr::null_mut();
     let hint_ptr = Box::into_raw(Box::new((hint, finalize_callback)));
     unsafe {
-      let status = sys::napi_create_external_arraybuffer(
+      let status = libnode_sys::napi_create_external_arraybuffer(
         self.0,
         if length == 0 {
           // Rust uses 0x1 as the data pointer for empty buffers,
@@ -607,7 +607,7 @@ impl Env {
         Some(
           raw_finalize_with_custom_callback::<Hint, Finalize>
             as unsafe extern "C" fn(
-              env: sys::napi_env,
+              env: libnode_sys::napi_env,
               finalize_data: *mut c_void,
               finalize_hint: *mut c_void,
             ),
@@ -615,11 +615,11 @@ impl Env {
         hint_ptr.cast(),
         &mut raw_value,
       );
-      if status == sys::Status::napi_no_external_buffers_allowed {
+      if status == libnode_sys::Status::napi_no_external_buffers_allowed {
         let (hint, finalize) = *Box::from_raw(hint_ptr);
         let mut underlying_data = ptr::null_mut();
         let status =
-          sys::napi_create_arraybuffer(self.0, length, &mut underlying_data, &mut raw_value);
+          libnode_sys::napi_create_arraybuffer(self.0, length, &mut underlying_data, &mut raw_value);
         ptr::copy_nonoverlapping(data, underlying_data.cast(), length);
         finalize(hint, *self);
         check_status!(status)?;
@@ -654,7 +654,7 @@ impl Env {
     let len = name.len();
     let name = CString::new(name)?;
     check_status!(unsafe {
-      sys::napi_create_function(
+      libnode_sys::napi_create_function(
         self.0,
         name.as_ptr(),
         len as isize,
@@ -682,7 +682,7 @@ impl Env {
     let len = name.len();
     let name = CString::new(name)?;
     check_status!(unsafe {
-      sys::napi_create_function(
+      libnode_sys::napi_create_function(
         self.0,
         name.as_ptr(),
         len as isize,
@@ -701,7 +701,7 @@ impl Env {
     //
     // To solve that, according to the docs, we need to attach a finalizer:
     check_status!(unsafe {
-      sys::napi_add_finalizer(
+      libnode_sys::napi_add_finalizer(
         self.0,
         raw_result,
         closure_data_ptr.cast(),
@@ -723,7 +723,7 @@ impl Env {
   /// This API can be called even if there is a pending JavaScript exception.
   pub fn get_last_error_info(&self) -> Result<ExtendedErrorInfo> {
     let mut raw_extended_error = ptr::null();
-    check_status!(unsafe { sys::napi_get_last_error_info(self.0, &mut raw_extended_error) })?;
+    check_status!(unsafe { libnode_sys::napi_get_last_error_info(self.0, &mut raw_extended_error) })?;
     unsafe { ptr::read(raw_extended_error) }.try_into()
   }
 
@@ -732,7 +732,7 @@ impl Env {
     &self,
     value: T,
   ) -> Result<()> {
-    check_status!(unsafe { sys::napi_throw(self.0, value.raw()) })
+    check_status!(unsafe { libnode_sys::napi_throw(self.0, value.raw()) })
   }
 
   /// This API throws a JavaScript Error with the text provided.
@@ -744,7 +744,7 @@ impl Env {
     let code = code.and_then(|s| CString::new(s).ok());
     let msg = CString::new(msg)?;
     check_status!(unsafe {
-      sys::napi_throw_error(
+      libnode_sys::napi_throw_error(
         self.0,
         code.as_ref().map(|s| s.as_ptr()).unwrap_or(ptr::null_mut()),
         msg.as_ptr(),
@@ -761,7 +761,7 @@ impl Env {
     let code = code.and_then(|s| CString::new(s).ok());
     let msg = CString::new(msg)?;
     check_status!(unsafe {
-      sys::napi_throw_range_error(
+      libnode_sys::napi_throw_range_error(
         self.0,
         code.as_ref().map(|s| s.as_ptr()).unwrap_or(ptr::null_mut()),
         msg.as_ptr(),
@@ -778,7 +778,7 @@ impl Env {
     let code = code.and_then(|s| CString::new(s).ok());
     let msg = CString::new(msg)?;
     check_status!(unsafe {
-      sys::napi_throw_type_error(
+      libnode_sys::napi_throw_type_error(
         self.0,
         code.as_ref().map(|s| s.as_ptr()).unwrap_or(ptr::null_mut()),
         msg.as_ptr(),
@@ -801,7 +801,7 @@ impl Env {
     let msg_ptr = msg.as_ptr();
     check_status_or_throw!(
       self.0,
-      unsafe { sys::node_api_throw_syntax_error(self.0, code_ptr, msg_ptr,) },
+      unsafe { libnode_sys::node_api_throw_syntax_error(self.0, code_ptr, msg_ptr,) },
       "Throw syntax error failed"
     );
   }
@@ -823,7 +823,7 @@ impl Env {
       CString::new(message).expect(format!("Convert [{message}] to CString failed").as_str());
 
     unsafe {
-      sys::napi_fatal_error(
+      libnode_sys::napi_fatal_error(
         location.as_ptr(),
         location_len as isize,
         message.as_ptr(),
@@ -841,7 +841,7 @@ impl Env {
   ) {
     unsafe {
       let js_error = JsError::from(err).into_value(self.0);
-      debug_assert!(sys::napi_fatal_exception(self.0, js_error) == sys::Status::napi_ok);
+      debug_assert!(libnode_sys::napi_fatal_exception(self.0, js_error) == libnode_sys::Status::napi_ok);
     };
   }
 
@@ -856,10 +856,10 @@ impl Env {
     let raw_properties = properties
       .iter()
       .map(|prop| prop.raw())
-      .collect::<Vec<sys::napi_property_descriptor>>();
+      .collect::<Vec<libnode_sys::napi_property_descriptor>>();
     let c_name = CString::new(name)?;
     check_status!(unsafe {
-      sys::napi_define_class(
+      libnode_sys::napi_define_class(
         self.0,
         c_name.as_ptr() as *const c_char,
         name.len() as isize,
@@ -881,7 +881,7 @@ impl Env {
     native_object: T,
   ) -> Result<()> {
     check_status!(unsafe {
-      sys::napi_wrap(
+      libnode_sys::napi_wrap(
         self.0,
         js_object.0.value,
         Box::into_raw(Box::new(TaggedObject::new(native_object))).cast(),
@@ -898,7 +898,7 @@ impl Env {
   ) -> Result<&mut T> {
     unsafe {
       let mut unknown_tagged_object: *mut c_void = ptr::null_mut();
-      check_status!(sys::napi_unwrap(
+      check_status!(libnode_sys::napi_unwrap(
         self.0,
         js_object.0.value,
         &mut unknown_tagged_object,
@@ -931,7 +931,7 @@ impl Env {
   ) -> Result<()> {
     unsafe {
       let mut unknown_tagged_object = ptr::null_mut();
-      check_status!(sys::napi_remove_wrap(
+      check_status!(libnode_sys::napi_remove_wrap(
         self.0,
         js_object.0.value,
         &mut unknown_tagged_object,
@@ -964,7 +964,7 @@ impl Env {
     let initial_ref_count = 1;
     let raw_value = unsafe { value.raw() };
     check_status!(unsafe {
-      sys::napi_create_reference(self.0, raw_value, initial_ref_count, &mut raw_ref)
+      libnode_sys::napi_create_reference(self.0, raw_value, initial_ref_count, &mut raw_ref)
     })?;
     Ok(Ref {
       raw_ref,
@@ -985,7 +985,7 @@ impl Env {
     let mut raw_ref = ptr::null_mut();
     let raw_value = unsafe { value.raw() };
     check_status!(unsafe {
-      sys::napi_create_reference(self.0, raw_value, ref_count, &mut raw_ref)
+      libnode_sys::napi_create_reference(self.0, raw_value, ref_count, &mut raw_ref)
     })?;
     Ok(Ref {
       raw_ref,
@@ -1006,7 +1006,7 @@ impl Env {
   {
     let mut js_value = ptr::null_mut();
     check_status!(unsafe {
-      sys::napi_get_reference_value(self.0, reference.raw_ref, &mut js_value)
+      libnode_sys::napi_get_reference_value(self.0, reference.raw_ref, &mut js_value)
     })?;
     unsafe { T::from_raw(self.0, js_value) }
   }
@@ -1025,7 +1025,7 @@ impl Env {
   {
     let mut js_value = ptr::null_mut();
     check_status!(unsafe {
-      sys::napi_get_reference_value(self.0, reference.raw_ref, &mut js_value)
+      libnode_sys::napi_get_reference_value(self.0, reference.raw_ref, &mut js_value)
     })?;
     Ok(unsafe { T::from_raw_unchecked(self.0, js_value) })
   }
@@ -1042,7 +1042,7 @@ impl Env {
   ) -> Result<JsExternal> {
     let mut object_value = ptr::null_mut();
     check_status!(unsafe {
-      sys::napi_create_external(
+      libnode_sys::napi_create_external(
         self.0,
         Box::into_raw(Box::new(TaggedObject::new(native_object))).cast(),
         Some(raw_finalize::<T>),
@@ -1054,7 +1054,7 @@ impl Env {
       if changed != 0 {
         let mut adjusted_value = 0i64;
         check_status!(unsafe {
-          sys::napi_adjust_external_memory(self.0, changed, &mut adjusted_value)
+          libnode_sys::napi_adjust_external_memory(self.0, changed, &mut adjusted_value)
         })?;
       }
     };
@@ -1067,7 +1067,7 @@ impl Env {
   ) -> Result<&mut T> {
     unsafe {
       let mut unknown_tagged_object = ptr::null_mut();
-      check_status!(sys::napi_get_value_external(
+      check_status!(libnode_sys::napi_get_value_external(
         self.0,
         js_external.0.value,
         &mut unknown_tagged_object,
@@ -1099,7 +1099,7 @@ impl Env {
     let reason_string = self.create_string(reason.as_str())?;
     let mut result = ptr::null_mut();
     check_status!(unsafe {
-      sys::napi_create_error(self.0, ptr::null_mut(), reason_string.0.value, &mut result)
+      libnode_sys::napi_create_error(self.0, ptr::null_mut(), reason_string.0.value, &mut result)
     })?;
     Ok(unsafe { JsObject::from_raw_unchecked(self.0, result) })
   }
@@ -1120,11 +1120,11 @@ impl Env {
     F: FnOnce() -> Result<T>,
   {
     let mut handle_scope = ptr::null_mut();
-    check_status!(unsafe { sys::napi_open_handle_scope(self.0, &mut handle_scope) })?;
+    check_status!(unsafe { libnode_sys::napi_open_handle_scope(self.0, &mut handle_scope) })?;
 
     let result = executor();
 
-    check_status!(unsafe { sys::napi_close_handle_scope(self.0, handle_scope) })?;
+    check_status!(unsafe { libnode_sys::napi_close_handle_scope(self.0, handle_scope) })?;
     result
   }
 
@@ -1139,7 +1139,7 @@ impl Env {
   ) -> Result<V> {
     let s = self.create_string(script.as_ref())?;
     let mut raw_value = ptr::null_mut();
-    check_status!(unsafe { sys::napi_run_script(self.0, s.raw(), &mut raw_value) })?;
+    check_status!(unsafe { libnode_sys::napi_run_script(self.0, s.raw(), &mut raw_value) })?;
     unsafe { V::from_napi_value(self.0, raw_value) }
   }
 
@@ -1156,9 +1156,9 @@ impl Env {
       .map_err(|e| Error::new(Status::InvalidArg, format!("{e}")))
   }
 
-  pub fn get_uv_event_loop(&self) -> Result<*mut sys::uv_loop_s> {
-    let mut uv_loop: *mut sys::uv_loop_s = ptr::null_mut();
-    check_status!(unsafe { sys::napi_get_uv_event_loop(self.0, &mut uv_loop) })?;
+  pub fn get_uv_event_loop(&self) -> Result<*mut libnode_sys::uv_loop_s> {
+    let mut uv_loop: *mut libnode_sys::uv_loop_s = ptr::null_mut();
+    check_status!(unsafe { libnode_sys::napi_get_uv_event_loop(self.0, &mut uv_loop) })?;
     Ok(uv_loop)
   }
 
@@ -1177,7 +1177,7 @@ impl Env {
     };
     let hook_ref = Box::leak(Box::new(hook));
     check_status!(unsafe {
-      sys::napi_add_env_cleanup_hook(
+      libnode_sys::napi_add_env_cleanup_hook(
         self.0,
         Some(cleanup_env::<T>),
         hook_ref as *mut CleanupEnvHookData<T> as *mut _,
@@ -1194,7 +1194,7 @@ impl Env {
     T: 'static,
   {
     check_status!(unsafe {
-      sys::napi_remove_env_cleanup_hook(self.0, Some(cleanup_env::<T>), hook.0 as *mut _)
+      libnode_sys::napi_remove_env_cleanup_hook(self.0, Some(cleanup_env::<T>), hook.0 as *mut _)
     })
   }
 
@@ -1228,7 +1228,7 @@ impl Env {
     time: f64,
   ) -> Result<JsDate> {
     let mut js_value = ptr::null_mut();
-    check_status!(unsafe { sys::napi_create_date(self.0, time, &mut js_value) })?;
+    check_status!(unsafe { libnode_sys::napi_create_date(self.0, time, &mut js_value) })?;
     Ok(unsafe { JsDate::from_raw_unchecked(self.0, js_value) })
   }
 
@@ -1249,14 +1249,14 @@ impl Env {
     F: FnOnce(FinalizeContext<T, Hint>),
   {
     check_status!(unsafe {
-      sys::napi_set_instance_data(
+      libnode_sys::napi_set_instance_data(
         self.0,
         Box::leak(Box::new((TaggedObject::new(native), finalize_cb))) as *mut (TaggedObject<T>, F)
           as *mut c_void,
         Some(
           set_instance_finalize_callback::<T, Hint, F>
             as unsafe extern "C" fn(
-              env: sys::napi_env,
+              env: libnode_sys::napi_env,
               finalize_data: *mut c_void,
               finalize_hint: *mut c_void,
             ),
@@ -1275,7 +1275,7 @@ impl Env {
   {
     let mut unknown_tagged_object: *mut c_void = ptr::null_mut();
     unsafe {
-      check_status!(sys::napi_get_instance_data(
+      check_status!(libnode_sys::napi_get_instance_data(
         self.0,
         &mut unknown_tagged_object
       ))?;
@@ -1319,11 +1319,11 @@ impl Env {
   {
     let mut handle = ptr::null_mut();
     check_status!(unsafe {
-      sys::napi_add_async_cleanup_hook(
+      libnode_sys::napi_add_async_cleanup_hook(
         self.0,
         Some(
           async_finalize::<Arg, F>
-            as unsafe extern "C" fn(handle: sys::napi_async_cleanup_hook_handle, data: *mut c_void),
+            as unsafe extern "C" fn(handle: libnode_sys::napi_async_cleanup_hook_handle, data: *mut c_void),
         ),
         Box::leak(Box::new((arg, cleanup_fn))) as *mut (Arg, F) as *mut c_void,
         &mut handle,
@@ -1345,11 +1345,11 @@ impl Env {
     Arg: 'static,
   {
     check_status!(unsafe {
-      sys::napi_add_async_cleanup_hook(
+      libnode_sys::napi_add_async_cleanup_hook(
         self.0,
         Some(
           async_finalize::<Arg, F>
-            as unsafe extern "C" fn(handle: sys::napi_async_cleanup_hook_handle, data: *mut c_void),
+            as unsafe extern "C" fn(handle: libnode_sys::napi_async_cleanup_hook_handle, data: *mut c_void),
         ),
         Box::leak(Box::new((arg, cleanup_fn))) as *mut (Arg, F) as *mut c_void,
         ptr::null_mut(),
@@ -1365,7 +1365,7 @@ impl Env {
     let len = description.len();
     let description = CString::new(description)?;
     check_status!(unsafe {
-      sys::node_api_symbol_for(self.0, description.as_ptr(), len as isize, &mut result)
+      libnode_sys::node_api_symbol_for(self.0, description.as_ptr(), len as isize, &mut result)
     })?;
 
     Ok(unsafe { JsSymbol::from_raw_unchecked(self.0, result) })
@@ -1381,7 +1381,7 @@ impl Env {
   pub fn get_module_file_name(&self) -> Result<String> {
     let mut char_ptr = ptr::null();
     check_status!(
-      unsafe { sys::node_api_get_module_file_name(self.0, &mut char_ptr) },
+      unsafe { libnode_sys::node_api_get_module_file_name(self.0, &mut char_ptr) },
       "call node_api_get_module_file_name failed"
     )?;
     // SAFETY: This is safe because `char_ptr` is guaranteed to not be `null`, and point to
@@ -1461,19 +1461,19 @@ impl Env {
     b: B,
   ) -> Result<bool> {
     let mut result = false;
-    check_status!(unsafe { sys::napi_strict_equals(self.0, a.raw(), b.raw(), &mut result) })?;
+    check_status!(unsafe { libnode_sys::napi_strict_equals(self.0, a.raw(), b.raw(), &mut result) })?;
     Ok(result)
   }
 
   pub fn get_node_version(&self) -> Result<NodeVersion> {
     let mut result = ptr::null();
-    check_status!(unsafe { sys::napi_get_node_version(self.0, &mut result) })?;
+    check_status!(unsafe { libnode_sys::napi_get_node_version(self.0, &mut result) })?;
     let version = unsafe { *result };
     version.try_into()
   }
 
   /// get raw env ptr
-  pub fn raw(&self) -> sys::napi_env {
+  pub fn raw(&self) -> libnode_sys::napi_env {
     self.0
   }
 }
@@ -1486,7 +1486,7 @@ pub fn noop_finalize<Hint>(
 }
 
 unsafe extern "C" fn drop_buffer(
-  _env: sys::napi_env,
+  _env: libnode_sys::napi_env,
   finalize_data: *mut c_void,
   hint: *mut c_void,
 ) {
@@ -1496,7 +1496,7 @@ unsafe extern "C" fn drop_buffer(
 }
 
 pub(crate) unsafe extern "C" fn raw_finalize<T>(
-  env: sys::napi_env,
+  env: libnode_sys::napi_env,
   finalize_data: *mut c_void,
   finalize_hint: *mut c_void,
 ) {
@@ -1508,9 +1508,9 @@ pub(crate) unsafe extern "C" fn raw_finalize<T>(
     if let Some(changed) = size_hint {
       if changed != 0 {
         let mut adjusted = 0i64;
-        let status = unsafe { sys::napi_adjust_external_memory(env, -changed, &mut adjusted) };
+        let status = unsafe { libnode_sys::napi_adjust_external_memory(env, -changed, &mut adjusted) };
         debug_assert!(
-          status == sys::Status::napi_ok,
+          status == libnode_sys::Status::napi_ok,
           "Calling napi_adjust_external_memory failed"
         );
       }
@@ -1519,7 +1519,7 @@ pub(crate) unsafe extern "C" fn raw_finalize<T>(
 }
 
 unsafe extern "C" fn set_instance_finalize_callback<T, Hint, F>(
-  raw_env: sys::napi_env,
+  raw_env: libnode_sys::napi_env,
   finalize_data: *mut c_void,
   finalize_hint: *mut c_void,
 ) where
@@ -1543,7 +1543,7 @@ unsafe extern "C" fn cleanup_env<T: 'static>(hook_data: *mut c_void) {
 }
 
 unsafe extern "C" fn raw_finalize_with_custom_callback<Hint, Finalize>(
-  env: sys::napi_env,
+  env: libnode_sys::napi_env,
   _finalize_data: *mut c_void,
   finalize_hint: *mut c_void,
 ) where
@@ -1554,7 +1554,7 @@ unsafe extern "C" fn raw_finalize_with_custom_callback<Hint, Finalize>(
 }
 
 unsafe extern "C" fn async_finalize<Arg, F>(
-  handle: sys::napi_async_cleanup_hook_handle,
+  handle: libnode_sys::napi_async_cleanup_hook_handle,
   data: *mut c_void,
 ) where
   Arg: 'static,
@@ -1563,9 +1563,9 @@ unsafe extern "C" fn async_finalize<Arg, F>(
   let (arg, callback) = unsafe { *Box::from_raw(data as *mut (Arg, F)) };
   callback(arg);
   if !handle.is_null() {
-    let status = unsafe { sys::napi_remove_async_cleanup_hook(handle) };
+    let status = unsafe { libnode_sys::napi_remove_async_cleanup_hook(handle) };
     assert!(
-      status == sys::Status::napi_ok,
+      status == libnode_sys::Status::napi_ok,
       "Remove async cleanup hook failed after async cleanup callback"
     );
   }
@@ -1577,7 +1577,7 @@ pub(crate) unsafe extern "C" fn trampoline<
 >(
   raw_env: libnode_sys::napi_env,
   cb_info: libnode_sys::napi_callback_info,
-) -> sys::napi_value {
+) -> libnode_sys::napi_value {
   use crate::napi::CallContext;
 
   let (raw_this, raw_args, closure_data_ptr, argc) = {
@@ -1641,9 +1641,9 @@ pub(crate) unsafe extern "C" fn trampoline_setter<
   V: FromNapiValue,
   F: Fn(Env, crate::napi::bindgen_runtime::Object, V) -> Result<()>,
 >(
-  raw_env: sys::napi_env,
-  cb_info: sys::napi_callback_info,
-) -> sys::napi_value {
+  raw_env: libnode_sys::napi_env,
+  cb_info: libnode_sys::napi_callback_info,
+) -> libnode_sys::napi_value {
   use crate::napi::bindgen_runtime::Object;
 
   let (raw_args, raw_this, closure_data_ptr) = {
@@ -1653,7 +1653,7 @@ pub(crate) unsafe extern "C" fn trampoline_setter<
     let mut data_ptr = ptr::null_mut();
 
     let status = unsafe {
-      sys::napi_get_cb_info(
+      libnode_sys::napi_get_cb_info(
         raw_env,
         cb_info,
         &mut argc,
@@ -1696,15 +1696,15 @@ pub(crate) unsafe extern "C" fn trampoline_getter<
   R: ToNapiValue,
   F: Fn(Env, crate::napi::bindgen_runtime::This) -> Result<R>,
 >(
-  raw_env: sys::napi_env,
-  cb_info: sys::napi_callback_info,
-) -> sys::napi_value {
+  raw_env: libnode_sys::napi_env,
+  cb_info: libnode_sys::napi_callback_info,
+) -> libnode_sys::napi_value {
   let (raw_this, closure_data_ptr) = {
     let mut raw_this = ptr::null_mut();
     let mut data_ptr = ptr::null_mut();
 
     let status = unsafe {
-      sys::napi_get_cb_info(
+      libnode_sys::napi_get_cb_info(
         raw_env,
         cb_info,
         &mut 0,
@@ -1735,7 +1735,7 @@ pub(crate) unsafe extern "C" fn trampoline_getter<
 }
 
 pub(crate) unsafe extern "C" fn finalize_box_trampoline<F>(
-  _raw_env: sys::napi_env,
+  _raw_env: libnode_sys::napi_env,
   closure_data_ptr: *mut c_void,
   _finalize_hint: *mut c_void,
 ) {

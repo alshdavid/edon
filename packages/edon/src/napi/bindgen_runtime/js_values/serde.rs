@@ -18,9 +18,9 @@ use crate::napi::ValueType;
 
 impl ToNapiValue for Value {
   unsafe fn to_napi_value(
-    env: sys::napi_env,
+    env: libnode_sys::napi_env,
     val: Self,
-  ) -> Result<sys::napi_value> {
+  ) -> Result<libnode_sys::napi_value> {
     match val {
       Value::Null => unsafe { Null::to_napi_value(env, Null) },
       Value::Bool(b) => unsafe { bool::to_napi_value(env, b) },
@@ -34,8 +34,8 @@ impl ToNapiValue for Value {
 
 impl FromNapiValue for Value {
   unsafe fn from_napi_value(
-    env: sys::napi_env,
-    napi_val: sys::napi_value,
+    env: libnode_sys::napi_env,
+    napi_val: libnode_sys::napi_value,
   ) -> Result<Self> {
     let ty = type_of!(env, napi_val)?;
     let val = match ty {
@@ -45,7 +45,7 @@ impl FromNapiValue for Value {
       ValueType::Object => {
         let mut is_arr = false;
         check_status!(
-          unsafe { sys::napi_is_array(env, napi_val, &mut is_arr) },
+          unsafe { libnode_sys::napi_is_array(env, napi_val, &mut is_arr) },
           "Failed to detect whether given js is an array"
         )?;
 
@@ -95,9 +95,9 @@ impl FromNapiValue for Value {
 
 impl ToNapiValue for Map<String, Value> {
   unsafe fn to_napi_value(
-    env: sys::napi_env,
+    env: libnode_sys::napi_env,
     val: Self,
-  ) -> Result<sys::napi_value> {
+  ) -> Result<libnode_sys::napi_value> {
     let mut obj = Object::new(env)?;
 
     for (k, v) in val.into_iter() {
@@ -110,8 +110,8 @@ impl ToNapiValue for Map<String, Value> {
 
 impl FromNapiValue for Map<String, Value> {
   unsafe fn from_napi_value(
-    env: sys::napi_env,
-    napi_val: sys::napi_value,
+    env: libnode_sys::napi_env,
+    napi_val: libnode_sys::napi_value,
   ) -> Result<Self> {
     let obj = JsObject(crate::napi::Value {
       env,
@@ -132,9 +132,9 @@ impl FromNapiValue for Map<String, Value> {
 
 impl ToNapiValue for Number {
   unsafe fn to_napi_value(
-    env: sys::napi_env,
+    env: libnode_sys::napi_env,
     n: Self,
-  ) -> Result<sys::napi_value> {
+  ) -> Result<libnode_sys::napi_value> {
     const MAX_SAFE_INT: i64 = 9007199254740991i64; // 2 ^ 53 - 1
     if n.is_i64() {
       let n = n.as_i64().unwrap();
@@ -165,8 +165,8 @@ impl ToNapiValue for Number {
 
 impl FromNapiValue for Number {
   unsafe fn from_napi_value(
-    env: sys::napi_env,
-    napi_val: sys::napi_value,
+    env: libnode_sys::napi_env,
+    napi_val: libnode_sys::napi_value,
   ) -> Result<Self> {
     let n = unsafe { f64::from_napi_value(env, napi_val)? };
     // Try to auto-convert to integers

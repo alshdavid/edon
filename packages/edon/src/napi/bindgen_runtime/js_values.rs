@@ -64,9 +64,9 @@ pub trait ToNapiValue {
   ///
   /// this function called to convert rust values to napi values
   unsafe fn to_napi_value(
-    env: sys::napi_env,
+    env: libnode_sys::napi_env,
     val: Self,
-  ) -> Result<sys::napi_value>;
+  ) -> Result<libnode_sys::napi_value>;
 }
 
 impl TypeName for JsUnknown {
@@ -81,28 +81,28 @@ impl TypeName for JsUnknown {
 
 impl ValidateNapiValue for JsUnknown {}
 
-impl ToNapiValue for sys::napi_value {
+impl ToNapiValue for libnode_sys::napi_value {
   unsafe fn to_napi_value(
-    _env: sys::napi_env,
+    _env: libnode_sys::napi_env,
     val: Self,
-  ) -> Result<sys::napi_value> {
+  ) -> Result<libnode_sys::napi_value> {
     Ok(val)
   }
 }
 
 impl<T: NapiRaw> ToNapiValue for T {
   unsafe fn to_napi_value(
-    _env: sys::napi_env,
+    _env: libnode_sys::napi_env,
     val: Self,
-  ) -> Result<sys::napi_value> {
+  ) -> Result<libnode_sys::napi_value> {
     Ok(unsafe { NapiRaw::raw(&val) })
   }
 }
 
 impl<T: NapiValue> FromNapiValue for T {
   unsafe fn from_napi_value(
-    env: sys::napi_env,
-    napi_val: sys::napi_value,
+    env: libnode_sys::napi_env,
+    napi_val: libnode_sys::napi_value,
   ) -> Result<Self> {
     Ok(unsafe { T::from_raw_unchecked(env, napi_val) })
   }
@@ -113,8 +113,8 @@ pub trait FromNapiValue: Sized {
   ///
   /// this function called to convert napi values to native rust values
   unsafe fn from_napi_value(
-    env: sys::napi_env,
-    napi_val: sys::napi_value,
+    env: libnode_sys::napi_env,
+    napi_val: libnode_sys::napi_value,
   ) -> Result<Self>;
 
   fn from_unknown(value: JsUnknown) -> Result<Self> {
@@ -127,8 +127,8 @@ pub trait FromNapiRef {
   ///
   /// this function called to convert napi values to native rust values
   unsafe fn from_napi_ref(
-    env: sys::napi_env,
-    napi_val: sys::napi_value,
+    env: libnode_sys::napi_env,
+    napi_val: libnode_sys::napi_value,
   ) -> Result<&'static Self>;
 }
 
@@ -137,8 +137,8 @@ pub trait FromNapiMutRef {
   ///
   /// this function called to convert napi values to native rust values
   unsafe fn from_napi_mut_ref(
-    env: sys::napi_env,
-    napi_val: sys::napi_value,
+    env: libnode_sys::napi_env,
+    napi_val: libnode_sys::napi_value,
   ) -> Result<&'static mut Self>;
 }
 
@@ -150,9 +150,9 @@ pub trait ValidateNapiValue: TypeName {
   /// we need to return `Promise.reject(T)`, not the `T`.
   /// So we need to create `Promise.reject(T)` in this function.
   unsafe fn validate(
-    env: sys::napi_env,
-    napi_val: sys::napi_value,
-  ) -> Result<sys::napi_value> {
+    env: libnode_sys::napi_env,
+    napi_val: libnode_sys::napi_value,
+  ) -> Result<libnode_sys::napi_value> {
     let value_type = Self::value_type();
     if value_type == ValueType::Unknown {
       return Ok(ptr::null_mut());
@@ -160,7 +160,7 @@ pub trait ValidateNapiValue: TypeName {
 
     let mut result = -1;
     check_status!(
-      unsafe { sys::napi_typeof(env, napi_val, &mut result) },
+      unsafe { libnode_sys::napi_typeof(env, napi_val, &mut result) },
       "Failed to detect napi value type",
     )?;
 
@@ -188,12 +188,12 @@ impl<T: TypeName> TypeName for Option<T> {
 
 impl<T: ValidateNapiValue> ValidateNapiValue for Option<T> {
   unsafe fn validate(
-    env: sys::napi_env,
-    napi_val: sys::napi_value,
-  ) -> Result<sys::napi_value> {
+    env: libnode_sys::napi_env,
+    napi_val: libnode_sys::napi_value,
+  ) -> Result<libnode_sys::napi_value> {
     let mut result = -1;
     check_status!(
-      unsafe { sys::napi_typeof(env, napi_val, &mut result) },
+      unsafe { libnode_sys::napi_typeof(env, napi_val, &mut result) },
       "Failed to detect napi value type",
     )?;
 
@@ -220,18 +220,18 @@ where
   T: FromNapiValue,
 {
   unsafe fn from_napi_value(
-    env: sys::napi_env,
-    napi_val: sys::napi_value,
+    env: libnode_sys::napi_env,
+    napi_val: libnode_sys::napi_value,
   ) -> Result<Self> {
     let mut val_type = 0;
 
     check_status!(
-      unsafe { sys::napi_typeof(env, napi_val, &mut val_type) },
+      unsafe { libnode_sys::napi_typeof(env, napi_val, &mut val_type) },
       "Failed to convert napi value into rust type `Option<T>`",
     )?;
 
     match val_type {
-      sys::ValueType::napi_undefined | sys::ValueType::napi_null => Ok(None),
+      libnode_sys::ValueType::napi_undefined | libnode_sys::ValueType::napi_null => Ok(None),
       _ => Ok(Some(unsafe { T::from_napi_value(env, napi_val)? })),
     }
   }
@@ -242,15 +242,15 @@ where
   T: ToNapiValue,
 {
   unsafe fn to_napi_value(
-    env: sys::napi_env,
+    env: libnode_sys::napi_env,
     val: Self,
-  ) -> Result<sys::napi_value> {
+  ) -> Result<libnode_sys::napi_value> {
     match val {
       Some(val) => unsafe { T::to_napi_value(env, val) },
       None => {
         let mut ptr = ptr::null_mut();
         check_status!(
-          unsafe { sys::napi_get_null(env, &mut ptr) },
+          unsafe { libnode_sys::napi_get_null(env, &mut ptr) },
           "Failed to convert rust type `Option<T>` into napi value",
         )?;
         Ok(ptr)
@@ -264,9 +264,9 @@ where
   T: ToNapiValue,
 {
   unsafe fn to_napi_value(
-    env: sys::napi_env,
+    env: libnode_sys::napi_env,
     val: Self,
-  ) -> Result<sys::napi_value> {
+  ) -> Result<libnode_sys::napi_value> {
     match val {
       Ok(v) => unsafe { T::to_napi_value(env, v) },
       Err(e) => {
@@ -274,7 +274,7 @@ where
         let reason = unsafe { String::to_napi_value(env, e.reason.clone())? };
         let mut error = ptr::null_mut();
         check_status!(
-          unsafe { sys::napi_create_error(env, error_code, reason, &mut error) },
+          unsafe { libnode_sys::napi_create_error(env, error_code, reason, &mut error) },
           "Failed to create napi error"
         )?;
 
@@ -296,12 +296,12 @@ impl<T: TypeName> TypeName for Rc<T> {
 
 impl<T: ValidateNapiValue> ValidateNapiValue for Rc<T> {
   unsafe fn validate(
-    env: sys::napi_env,
-    napi_val: sys::napi_value,
-  ) -> Result<sys::napi_value> {
+    env: libnode_sys::napi_env,
+    napi_val: libnode_sys::napi_value,
+  ) -> Result<libnode_sys::napi_value> {
     let mut result = -1;
     check_status!(
-      unsafe { sys::napi_typeof(env, napi_val, &mut result) },
+      unsafe { libnode_sys::napi_typeof(env, napi_val, &mut result) },
       "Failed to detect napi value type",
     )?;
 
@@ -326,13 +326,13 @@ where
   T: FromNapiValue,
 {
   unsafe fn from_napi_value(
-    env: sys::napi_env,
-    napi_val: sys::napi_value,
+    env: libnode_sys::napi_env,
+    napi_val: libnode_sys::napi_value,
   ) -> Result<Self> {
     let mut val_type = 0;
 
     check_status!(
-      unsafe { sys::napi_typeof(env, napi_val, &mut val_type) },
+      unsafe { libnode_sys::napi_typeof(env, napi_val, &mut val_type) },
       "Failed to convert napi value into rust type `Rc<T>`",
     )?;
 
@@ -345,9 +345,9 @@ where
   T: ToNapiValue + Clone,
 {
   unsafe fn to_napi_value(
-    env: sys::napi_env,
+    env: libnode_sys::napi_env,
     val: Self,
-  ) -> Result<sys::napi_value> {
+  ) -> Result<libnode_sys::napi_value> {
     unsafe { T::to_napi_value(env, (*val).clone()) }
   }
 }
@@ -364,12 +364,12 @@ impl<T: TypeName> TypeName for Arc<T> {
 
 impl<T: ValidateNapiValue> ValidateNapiValue for Arc<T> {
   unsafe fn validate(
-    env: sys::napi_env,
-    napi_val: sys::napi_value,
-  ) -> Result<sys::napi_value> {
+    env: libnode_sys::napi_env,
+    napi_val: libnode_sys::napi_value,
+  ) -> Result<libnode_sys::napi_value> {
     let mut result = -1;
     check_status!(
-      unsafe { sys::napi_typeof(env, napi_val, &mut result) },
+      unsafe { libnode_sys::napi_typeof(env, napi_val, &mut result) },
       "Failed to detect napi value type",
     )?;
 
@@ -394,13 +394,13 @@ where
   T: FromNapiValue,
 {
   unsafe fn from_napi_value(
-    env: sys::napi_env,
-    napi_val: sys::napi_value,
+    env: libnode_sys::napi_env,
+    napi_val: libnode_sys::napi_value,
   ) -> Result<Self> {
     let mut val_type = 0;
 
     check_status!(
-      unsafe { sys::napi_typeof(env, napi_val, &mut val_type) },
+      unsafe { libnode_sys::napi_typeof(env, napi_val, &mut val_type) },
       "Failed to convert napi value into rust type `Arc<T>`",
     )?;
 
@@ -413,9 +413,9 @@ where
   T: ToNapiValue + Clone,
 {
   unsafe fn to_napi_value(
-    env: sys::napi_env,
+    env: libnode_sys::napi_env,
     val: Self,
-  ) -> Result<sys::napi_value> {
+  ) -> Result<libnode_sys::napi_value> {
     unsafe { T::to_napi_value(env, (*val).clone()) }
   }
 }
@@ -432,12 +432,12 @@ impl<T: TypeName> TypeName for Mutex<T> {
 
 impl<T: ValidateNapiValue> ValidateNapiValue for Mutex<T> {
   unsafe fn validate(
-    env: sys::napi_env,
-    napi_val: sys::napi_value,
-  ) -> Result<sys::napi_value> {
+    env: libnode_sys::napi_env,
+    napi_val: libnode_sys::napi_value,
+  ) -> Result<libnode_sys::napi_value> {
     let mut result = -1;
     check_status!(
-      unsafe { sys::napi_typeof(env, napi_val, &mut result) },
+      unsafe { libnode_sys::napi_typeof(env, napi_val, &mut result) },
       "Failed to detect napi value type",
     )?;
 
@@ -462,13 +462,13 @@ where
   T: FromNapiValue,
 {
   unsafe fn from_napi_value(
-    env: sys::napi_env,
-    napi_val: sys::napi_value,
+    env: libnode_sys::napi_env,
+    napi_val: libnode_sys::napi_value,
   ) -> Result<Self> {
     let mut val_type = 0;
 
     check_status!(
-      unsafe { sys::napi_typeof(env, napi_val, &mut val_type) },
+      unsafe { libnode_sys::napi_typeof(env, napi_val, &mut val_type) },
       "Failed to convert napi value into rust type `Mutex<T>`",
     )?;
 
@@ -481,9 +481,9 @@ where
   T: ToNapiValue + Clone,
 {
   unsafe fn to_napi_value(
-    env: sys::napi_env,
+    env: libnode_sys::napi_env,
     val: Self,
-  ) -> Result<sys::napi_value> {
+  ) -> Result<libnode_sys::napi_value> {
     unsafe {
       match val.lock() {
         Ok(inner) => T::to_napi_value(env, inner.clone()),

@@ -27,25 +27,25 @@ impl ValidateNapiValue for JsNumber {}
 impl JsNumber {
   pub fn get_uint32(&self) -> Result<u32> {
     let mut result = 0;
-    check_status!(unsafe { sys::napi_get_value_uint32(self.0.env, self.0.value, &mut result) })?;
+    check_status!(unsafe { libnode_sys::napi_get_value_uint32(self.0.env, self.0.value, &mut result) })?;
     Ok(result)
   }
 
   pub fn get_int32(&self) -> Result<i32> {
     let mut result = 0;
-    check_status!(unsafe { sys::napi_get_value_int32(self.0.env, self.0.value, &mut result) })?;
+    check_status!(unsafe { libnode_sys::napi_get_value_int32(self.0.env, self.0.value, &mut result) })?;
     Ok(result)
   }
 
   pub fn get_int64(&self) -> Result<i64> {
     let mut result = 0;
-    check_status!(unsafe { sys::napi_get_value_int64(self.0.env, self.0.value, &mut result) })?;
+    check_status!(unsafe { libnode_sys::napi_get_value_int64(self.0.env, self.0.value, &mut result) })?;
     Ok(result)
   }
 
   pub fn get_double(&self) -> Result<f64> {
     let mut result = 0_f64;
-    check_status!(unsafe { sys::napi_get_value_double(self.0.env, self.0.value, &mut result) })?;
+    check_status!(unsafe { libnode_sys::napi_get_value_double(self.0.env, self.0.value, &mut result) })?;
     Ok(result)
   }
 }
@@ -55,7 +55,7 @@ impl TryFrom<JsNumber> for u32 {
 
   fn try_from(value: JsNumber) -> Result<u32> {
     let mut result = 0;
-    check_status!(unsafe { sys::napi_get_value_uint32(value.0.env, value.0.value, &mut result) })?;
+    check_status!(unsafe { libnode_sys::napi_get_value_uint32(value.0.env, value.0.value, &mut result) })?;
     Ok(result)
   }
 }
@@ -65,7 +65,7 @@ impl TryFrom<JsNumber> for i32 {
 
   fn try_from(value: JsNumber) -> Result<i32> {
     let mut result = 0;
-    check_status!(unsafe { sys::napi_get_value_int32(value.0.env, value.0.value, &mut result) })?;
+    check_status!(unsafe { libnode_sys::napi_get_value_int32(value.0.env, value.0.value, &mut result) })?;
     Ok(result)
   }
 }
@@ -75,7 +75,7 @@ impl TryFrom<JsNumber> for i64 {
 
   fn try_from(value: JsNumber) -> Result<i64> {
     let mut result = 0;
-    check_status!(unsafe { sys::napi_get_value_int64(value.0.env, value.0.value, &mut result) })?;
+    check_status!(unsafe { libnode_sys::napi_get_value_int64(value.0.env, value.0.value, &mut result) })?;
     Ok(result)
   }
 }
@@ -85,7 +85,7 @@ impl TryFrom<JsNumber> for f64 {
 
   fn try_from(value: JsNumber) -> Result<f64> {
     let mut result = 0_f64;
-    check_status!(unsafe { sys::napi_get_value_double(value.0.env, value.0.value, &mut result) })?;
+    check_status!(unsafe { libnode_sys::napi_get_value_double(value.0.env, value.0.value, &mut result) })?;
     Ok(result)
   }
 }

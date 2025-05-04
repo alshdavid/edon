@@ -31,11 +31,11 @@ impl TypeName for JsArrayBuffer {
 
 impl ValidateNapiValue for JsArrayBuffer {
   unsafe fn validate(
-    env: sys::napi_env,
-    napi_val: sys::napi_value,
-  ) -> Result<sys::napi_value> {
+    env: libnode_sys::napi_env,
+    napi_val: libnode_sys::napi_value,
+  ) -> Result<libnode_sys::napi_value> {
     let mut is_array_buffer = false;
-    check_status!(unsafe { sys::napi_is_arraybuffer(env, napi_val, &mut is_array_buffer) })?;
+    check_status!(unsafe { libnode_sys::napi_is_arraybuffer(env, napi_val, &mut is_array_buffer) })?;
     if !is_array_buffer {
       return Err(Error::new(
         Status::InvalidArg,
@@ -111,40 +111,40 @@ pub enum TypedArrayType {
   Unknown = 1024,
 }
 
-impl From<sys::napi_typedarray_type> for TypedArrayType {
-  fn from(value: sys::napi_typedarray_type) -> Self {
+impl From<libnode_sys::napi_typedarray_type> for TypedArrayType {
+  fn from(value: libnode_sys::napi_typedarray_type) -> Self {
     match value {
-      sys::TypedarrayType::int8_array => Self::Int8,
-      sys::TypedarrayType::uint8_array => Self::Uint8,
-      sys::TypedarrayType::uint8_clamped_array => Self::Uint8Clamped,
-      sys::TypedarrayType::int16_array => Self::Int16,
-      sys::TypedarrayType::uint16_array => Self::Uint16,
-      sys::TypedarrayType::int32_array => Self::Int32,
-      sys::TypedarrayType::uint32_array => Self::Uint32,
-      sys::TypedarrayType::float32_array => Self::Float32,
-      sys::TypedarrayType::float64_array => Self::Float64,
-      sys::TypedarrayType::bigint64_array => Self::BigInt64,
-      sys::TypedarrayType::biguint64_array => Self::BigUint64,
+      libnode_sys::TypedarrayType::int8_array => Self::Int8,
+      libnode_sys::TypedarrayType::uint8_array => Self::Uint8,
+      libnode_sys::TypedarrayType::uint8_clamped_array => Self::Uint8Clamped,
+      libnode_sys::TypedarrayType::int16_array => Self::Int16,
+      libnode_sys::TypedarrayType::uint16_array => Self::Uint16,
+      libnode_sys::TypedarrayType::int32_array => Self::Int32,
+      libnode_sys::TypedarrayType::uint32_array => Self::Uint32,
+      libnode_sys::TypedarrayType::float32_array => Self::Float32,
+      libnode_sys::TypedarrayType::float64_array => Self::Float64,
+      libnode_sys::TypedarrayType::bigint64_array => Self::BigInt64,
+      libnode_sys::TypedarrayType::biguint64_array => Self::BigUint64,
       _ => Self::Unknown,
     }
   }
 }
 
-impl From<TypedArrayType> for sys::napi_typedarray_type {
-  fn from(value: TypedArrayType) -> sys::napi_typedarray_type {
+impl From<TypedArrayType> for libnode_sys::napi_typedarray_type {
+  fn from(value: TypedArrayType) -> libnode_sys::napi_typedarray_type {
     value as i32
   }
 }
 
 impl JsArrayBuffer {
   pub fn detach(self) -> Result<()> {
-    check_status!(unsafe { sys::napi_detach_arraybuffer(self.0.env, self.0.value) })
+    check_status!(unsafe { libnode_sys::napi_detach_arraybuffer(self.0.env, self.0.value) })
   }
 
   pub fn is_detached(&self) -> Result<bool> {
     let mut is_detached = false;
     check_status!(unsafe {
-      sys::napi_is_detached_arraybuffer(self.0.env, self.0.value, &mut is_detached)
+      libnode_sys::napi_is_detached_arraybuffer(self.0.env, self.0.value, &mut is_detached)
     })?;
     Ok(is_detached)
   }
@@ -153,7 +153,7 @@ impl JsArrayBuffer {
     let mut data = ptr::null_mut();
     let mut len: usize = 0;
     check_status!(unsafe {
-      sys::napi_get_arraybuffer_info(self.0.env, self.0.value, &mut data, &mut len)
+      libnode_sys::napi_get_arraybuffer_info(self.0.env, self.0.value, &mut data, &mut len)
     })?;
     Ok(JsArrayBufferValue {
       data,
@@ -170,7 +170,7 @@ impl JsArrayBuffer {
   ) -> Result<JsTypedArray> {
     let mut typedarray_value = ptr::null_mut();
     check_status!(unsafe {
-      sys::napi_create_typedarray(
+      libnode_sys::napi_create_typedarray(
         self.0.env,
         typedarray_type.into(),
         length,
@@ -193,7 +193,7 @@ impl JsArrayBuffer {
   ) -> Result<JsDataView> {
     let mut dataview_value = ptr::null_mut();
     check_status!(unsafe {
-      sys::napi_create_dataview(
+      libnode_sys::napi_create_dataview(
         self.0.env,
         length,
         self.0.value,
@@ -275,7 +275,7 @@ impl JsTypedArray {
     let mut arraybuffer_value = ptr::null_mut();
     let mut byte_offset = 0;
     check_status!(unsafe {
-      sys::napi_get_typedarray_info(
+      libnode_sys::napi_get_typedarray_info(
         self.0.env,
         self.0.value,
         &mut typedarray_type,
@@ -352,7 +352,7 @@ impl JsDataView {
     let mut data = ptr::null_mut();
 
     check_status!(unsafe {
-      sys::napi_get_dataview_info(
+      libnode_sys::napi_get_dataview_info(
         self.0.env,
         self.0.value,
         &mut length as *mut u64 as *mut _,

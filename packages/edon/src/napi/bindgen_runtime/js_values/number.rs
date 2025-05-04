@@ -1,5 +1,4 @@
 use super::check_status;
-use super::sys;
 use crate::napi::bindgen_prelude::ToNapiValue;
 use crate::napi::type_of;
 use crate::napi::Error;
@@ -26,7 +25,7 @@ macro_rules! impl_number_conversions {
           let val: $st = val.into();
 
           check_status!(
-            unsafe { sys::$create(env, val, &mut ptr) },
+            unsafe { libnode_sys::$create(env, val, &mut ptr) },
             "Failed to convert rust type `{}` into napi value",
             $name,
           )?;
@@ -40,7 +39,7 @@ macro_rules! impl_number_conversions {
           let mut ret = 0 as $st;
 
           check_status!(
-            unsafe { sys::$get(env, napi_val, &mut ret) },
+            unsafe { libnode_sys::$get(env, napi_val, &mut ret) },
             "Failed to convert napi value {:?} into rust type `{}`",
             type_of!(env, napi_val)?,
             $name,
@@ -74,7 +73,7 @@ napi_value> {
     let mut ptr = std::ptr::null_mut();
 
     check_status!(
-      unsafe { sys::napi_create_double(env, val.into(), &mut ptr) },
+      unsafe { libnode_sys::napi_create_double(env, val.into(), &mut ptr) },
       "Failed to convert rust type `f32` into napi value",
     )?;
 

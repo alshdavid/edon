@@ -41,11 +41,11 @@ pub enum ThreadsafeFunctionCallMode {
   Blocking,
 }
 
-impl From<ThreadsafeFunctionCallMode> for sys::napi_threadsafe_function_call_mode {
+impl From<ThreadsafeFunctionCallMode> for libnode_sys::napi_threadsafe_function_call_mode {
   fn from(value: ThreadsafeFunctionCallMode) -> Self {
     match value {
-      ThreadsafeFunctionCallMode::Blocking => sys::ThreadsafeFunctionCallMode::blocking,
-      ThreadsafeFunctionCallMode::NonBlocking => sys::ThreadsafeFunctionCallMode::nonblocking,
+      ThreadsafeFunctionCallMode::Blocking => libnode_sys::ThreadsafeFunctionCallMode::blocking,
+      ThreadsafeFunctionCallMode::NonBlocking => libnode_sys::ThreadsafeFunctionCallMode::nonblocking,
     }
   }
 }
@@ -113,14 +113,14 @@ type_level_enum! {
 }
 
 struct ThreadsafeFunctionHandle {
-  raw: AtomicPtr<sys::napi_threadsafe_function__>,
+  raw: AtomicPtr<libnode_sys::napi_threadsafe_function__>,
   aborted: RwLock<bool>,
   referred: AtomicBool,
 }
 
 impl ThreadsafeFunctionHandle {
   /// create a Arc to hold the `ThreadsafeFunctionHandle`
-  fn new(raw: sys::napi_threadsafe_function) -> Arc<Self> {
+  fn new(raw: libnode_sys::napi_threadsafe_function) -> Arc<Self> {
     Arc::new(Self {
       raw: AtomicPtr::new(raw),
       aborted: RwLock::new(false),
@@ -163,13 +163,13 @@ impl ThreadsafeFunctionHandle {
     Self::new(null_mut())
   }
 
-  fn get_raw(&self) -> sys::napi_threadsafe_function {
+  fn get_raw(&self) -> libnode_sys::napi_threadsafe_function {
     self.raw.load(Ordering::SeqCst)
   }
 
   fn set_raw(
     &self,
-    raw: sys::napi_threadsafe_function,
+    raw: libnode_sys::napi_threadsafe_function,
   ) {
     self.raw.store(raw, Ordering::SeqCst)
   }
@@ -180,13 +180,13 @@ impl Drop for ThreadsafeFunctionHandle {
     self.with_read_aborted(|aborted| {
       if !aborted {
         let release_status = unsafe {
-          sys::napi_release_threadsafe_function(
+          libnode_sys::napi_release_threadsafe_function(
             self.get_raw(),
-            sys::ThreadsafeFunctionReleaseMode::release,
+            libnode_sys::ThreadsafeFunctionReleaseMode::release,
           )
         };
         assert!(
-          release_status == sys::Status::napi_ok,
+          release_status == libnode_sys::Status::napi_ok,
           "Threadsafe Function release failed {}",
           Status::from(release_status)
         );
@@ -283,8 +283,8 @@ impl<T: ToNapiValue> JsValuesTupleIntoVec for T {
   #[allow(clippy::not_unsafe_ptr_arg_deref)]
   fn into_vec(
     self,
-    env: sys::napi_env,
-  ) -> Result<Vec<sys::napi_value>> {
+    env: libnode_sys::napi_env,
+  ) -> Result<Vec<libnode_sys::napi_value>> {
     Ok(vec![unsafe {
       <T as ToNapiValue>::to_napi_value(env, self)?
     }])
@@ -295,7 +295,7 @@ macro_rules! impl_js_value_tuple_to_vec {
   ($($ident:ident),*) => {
     impl<$($ident: ToNapiValue),*> JsValuesTupleIntoVec for ($($ident,)*) {
       #[allow(clippy::not_unsafe_ptr_arg_deref)]
-      fn into_vec(self, env: sys::napi_env) -> Result<Vec<sys::napi_value>> {
+      fn into_vec(self, env: libnode_sys::napi_env) -> Result<Vec<libnode_sys::napi_value>> {
         #[allow(non_snake_case)]
         let ($($ident,)*) = self;
         Ok(vec![$(unsafe { <$ident as ToNapiValue>::to_napi_value(env, $ident)? }),*])
@@ -339,8 +339,8 @@ impl<T: JsValuesTupleIntoVec + 'static, ES: ErrorStrategy::T> FromNapiValue
   for ThreadsafeFunction<T, ES>
 {
   unsafe fn from_napi_value(
-    env: sys::napi_env,
-    napi_val: sys::napi_value,
+    env: libnode_sys::napi_env,
+    napi_val: libnode_sys::napi_value,
   ) -> Result<Self> {
     Self::create(env, napi_val, 0, |ctx| ctx.value.into_vec(ctx.env.0))
   }
@@ -353,8 +353,8 @@ impl<T: 'static, ES: ErrorStrategy::T> ThreadsafeFunction<T, ES> {
     V: ToNapiValue,
     R: 'static + Send + FnMut(ThreadSafeCallContext<T>) -> Result<Vec<V>>,
   >(
-    env: sys::napi_env,
-    func: sys::napi_value,
+    env: libnode_sys::napi_env,
+    func: libnode_sys::napi_value,
     max_queue_size: usize,
     callback: R,
   ) -> Result<Self> {
@@ -363,14 +363,14 @@ impl<T: 'static, ES: ErrorStrategy::T> ThreadsafeFunction<T, ES> {
     let len = s.len();
     let s = CString::new(s)?;
     check_status!(unsafe {
-      sys::napi_create_string_utf8(env, s.as_ptr(), len as isize, &mut async_resource_name)
+      libnode_sys::napi_create_string_utf8(env, s.as_ptr(), len as isize, &mut async_resource_name)
     })?;
 
     let mut raw_tsfn = ptr::null_mut();
     let callback_ptr = Box::into_raw(Box::new(callback));
     let handle = ThreadsafeFunctionHandle::null();
     check_status!(unsafe {
-      sys::napi_create_threadsafe_function(
+      libnode_sys::napi_create_threadsafe_function(
         env,
         func,
         ptr::null_mut(),
@@ -402,7 +402,7 @@ impl<T: 'static, ES: ErrorStrategy::T> ThreadsafeFunction<T, ES> {
   ) -> Result<()> {
     self.handle.with_read_aborted(|aborted| {
       if !aborted && !self.handle.referred.load(Ordering::Relaxed) {
-        check_status!(unsafe { sys::napi_ref_threadsafe_function(env.0, self.handle.get_raw()) })?;
+        check_status!(unsafe { libnode_sys::napi_ref_threadsafe_function(env.0, self.handle.get_raw()) })?;
         self.handle.referred.store(true, Ordering::Relaxed);
       }
       Ok(())
@@ -418,7 +418,7 @@ impl<T: 'static, ES: ErrorStrategy::T> ThreadsafeFunction<T, ES> {
     self.handle.with_read_aborted(|aborted| {
       if !aborted && self.handle.referred.load(Ordering::Relaxed) {
         check_status!(unsafe {
-          sys::napi_unref_threadsafe_function(env.0, self.handle.get_raw())
+          libnode_sys::napi_unref_threadsafe_function(env.0, self.handle.get_raw())
         })?;
         self.handle.referred.store(false, Ordering::Relaxed);
       }
@@ -434,9 +434,9 @@ impl<T: 'static, ES: ErrorStrategy::T> ThreadsafeFunction<T, ES> {
     self.handle.with_write_aborted(|mut aborted_guard| {
       if !*aborted_guard {
         check_status!(unsafe {
-          sys::napi_release_threadsafe_function(
+          libnode_sys::napi_release_threadsafe_function(
             self.handle.get_raw(),
-            sys::ThreadsafeFunctionReleaseMode::abort,
+            libnode_sys::ThreadsafeFunctionReleaseMode::abort,
           )
         })?;
         *aborted_guard = true;
@@ -446,7 +446,7 @@ impl<T: 'static, ES: ErrorStrategy::T> ThreadsafeFunction<T, ES> {
   }
 
   /// Get the raw `ThreadSafeFunction` pointer
-  pub fn raw(&self) -> sys::napi_threadsafe_function {
+  pub fn raw(&self) -> libnode_sys::napi_threadsafe_function {
     self.handle.get_raw()
   }
 }
@@ -465,7 +465,7 @@ impl<T: 'static> ThreadsafeFunction<T, ErrorStrategy::CalleeHandled> {
       }
 
       unsafe {
-        sys::napi_call_threadsafe_function(
+        libnode_sys::napi_call_threadsafe_function(
           self.handle.get_raw(),
           Box::into_raw(Box::new(value.map(|data| {
             ThreadsafeFunctionCallJsBackData {
@@ -494,7 +494,7 @@ impl<T: 'static> ThreadsafeFunction<T, ErrorStrategy::CalleeHandled> {
       }
 
       unsafe {
-        sys::napi_call_threadsafe_function(
+        libnode_sys::napi_call_threadsafe_function(
           self.handle.get_raw(),
           Box::into_raw(Box::new(value.map(|data| {
             ThreadsafeFunctionCallJsBackData {
@@ -528,7 +528,7 @@ impl<T: 'static> ThreadsafeFunction<T, ErrorStrategy::Fatal> {
       }
 
       unsafe {
-        sys::napi_call_threadsafe_function(
+        libnode_sys::napi_call_threadsafe_function(
           self.handle.get_raw(),
           Box::into_raw(Box::new(ThreadsafeFunctionCallJsBackData {
             data: value,
@@ -555,7 +555,7 @@ impl<T: 'static> ThreadsafeFunction<T, ErrorStrategy::Fatal> {
       }
 
       unsafe {
-        sys::napi_call_threadsafe_function(
+        libnode_sys::napi_call_threadsafe_function(
           self.handle.get_raw(),
           Box::into_raw(Box::new(ThreadsafeFunctionCallJsBackData {
             data: value,
@@ -575,7 +575,7 @@ impl<T: 'static> ThreadsafeFunction<T, ErrorStrategy::Fatal> {
 
 #[allow(unused_variables)]
 unsafe extern "C" fn thread_finalize_cb<T: 'static, V: ToNapiValue, R>(
-  env: sys::napi_env,
+  env: libnode_sys::napi_env,
   finalize_data: *mut c_void,
   finalize_hint: *mut c_void,
 ) where
@@ -597,8 +597,8 @@ unsafe extern "C" fn thread_finalize_cb<T: 'static, V: ToNapiValue, R>(
 }
 
 unsafe extern "C" fn call_js_cb<T: 'static, V: ToNapiValue, R, ES>(
-  raw_env: sys::napi_env,
-  js_callback: sys::napi_value,
+  raw_env: libnode_sys::napi_env,
+  js_callback: libnode_sys::napi_value,
   context: *mut c_void,
   data: *mut c_void,
 ) where
@@ -623,7 +623,7 @@ unsafe extern "C" fn call_js_cb<T: 'static, V: ToNapiValue, R, ES>(
   };
 
   let mut recv = ptr::null_mut();
-  unsafe { sys::napi_get_undefined(raw_env, &mut recv) };
+  unsafe { libnode_sys::napi_get_undefined(raw_env, &mut recv) };
 
   let ret = val.and_then(|v| {
     (ctx)(ThreadSafeCallContext {
@@ -641,9 +641,9 @@ unsafe extern "C" fn call_js_cb<T: 'static, V: ToNapiValue, R, ES>(
       let values = values
         .into_iter()
         .map(|v| unsafe { ToNapiValue::to_napi_value(raw_env, v) });
-      let args: Result<Vec<sys::napi_value>> = if ES::VALUE == ErrorStrategy::CalleeHandled::VALUE {
+      let args: Result<Vec<libnode_sys::napi_value>> = if ES::VALUE == ErrorStrategy::CalleeHandled::VALUE {
         let mut js_null = ptr::null_mut();
-        unsafe { sys::napi_get_null(raw_env, &mut js_null) };
+        unsafe { libnode_sys::napi_get_null(raw_env, &mut js_null) };
         ::core::iter::once(Ok(js_null)).chain(values).collect()
       } else {
         values.collect()
@@ -651,7 +651,7 @@ unsafe extern "C" fn call_js_cb<T: 'static, V: ToNapiValue, R, ES>(
       let mut return_value = ptr::null_mut();
       let mut status = match args {
         Ok(args) => unsafe {
-          sys::napi_call_function(
+          libnode_sys::napi_call_function(
             raw_env,
             recv,
             js_callback,
@@ -662,10 +662,10 @@ unsafe extern "C" fn call_js_cb<T: 'static, V: ToNapiValue, R, ES>(
         },
         Err(e) => match ES::VALUE {
           ErrorStrategy::Fatal::VALUE => unsafe {
-            sys::napi_fatal_exception(raw_env, JsError::from(e).into_value(raw_env))
+            libnode_sys::napi_fatal_exception(raw_env, JsError::from(e).into_value(raw_env))
           },
           ErrorStrategy::CalleeHandled::VALUE => unsafe {
-            sys::napi_call_function(
+            libnode_sys::napi_call_function(
               raw_env,
               recv,
               js_callback,
@@ -678,9 +678,9 @@ unsafe extern "C" fn call_js_cb<T: 'static, V: ToNapiValue, R, ES>(
       };
       if let ThreadsafeFunctionCallVariant::WithCallback = call_variant {
         // throw Error in JavaScript callback
-        let callback_arg = if status == sys::Status::napi_pending_exception {
+        let callback_arg = if status == libnode_sys::Status::napi_pending_exception {
           let mut exception = ptr::null_mut();
-          status = unsafe { sys::napi_get_and_clear_last_exception(raw_env, &mut exception) };
+          status = unsafe { libnode_sys::napi_get_and_clear_last_exception(raw_env, &mut exception) };
           Err(
             JsUnknown(crate::napi::Value {
               env: raw_env,
@@ -703,7 +703,7 @@ unsafe extern "C" fn call_js_cb<T: 'static, V: ToNapiValue, R, ES>(
           let message_length = message.len();
           let c_message = CString::new(message).unwrap();
           unsafe {
-            sys::napi_fatal_error(
+            libnode_sys::napi_fatal_error(
               "threadsafe_function.rs:749\0".as_ptr().cast(),
               26,
               c_message.as_ptr(),
@@ -715,10 +715,10 @@ unsafe extern "C" fn call_js_cb<T: 'static, V: ToNapiValue, R, ES>(
       status
     }
     Err(e) if ES::VALUE == ErrorStrategy::Fatal::VALUE => unsafe {
-      sys::napi_fatal_exception(raw_env, JsError::from(e).into_value(raw_env))
+      libnode_sys::napi_fatal_exception(raw_env, JsError::from(e).into_value(raw_env))
     },
     Err(e) => unsafe {
-      sys::napi_call_function(
+      libnode_sys::napi_call_function(
         raw_env,
         recv,
         js_callback,
@@ -732,60 +732,60 @@ unsafe extern "C" fn call_js_cb<T: 'static, V: ToNapiValue, R, ES>(
 }
 
 fn handle_call_js_cb_status(
-  status: sys::napi_status,
-  raw_env: sys::napi_env,
+  status: libnode_sys::napi_status,
+  raw_env: libnode_sys::napi_env,
 ) {
-  if status == sys::Status::napi_ok {
+  if status == libnode_sys::Status::napi_ok {
     return;
   }
-  if status == sys::Status::napi_pending_exception {
+  if status == libnode_sys::Status::napi_pending_exception {
     let mut error_result = ptr::null_mut();
     assert_eq!(
-      unsafe { sys::napi_get_and_clear_last_exception(raw_env, &mut error_result) },
-      sys::Status::napi_ok
+      unsafe { libnode_sys::napi_get_and_clear_last_exception(raw_env, &mut error_result) },
+      libnode_sys::Status::napi_ok
     );
 
     // When shutting down, napi_fatal_exception sometimes returns another exception
-    let stat = unsafe { sys::napi_fatal_exception(raw_env, error_result) };
-    assert!(stat == sys::Status::napi_ok || stat == sys::Status::napi_pending_exception);
+    let stat = unsafe { libnode_sys::napi_fatal_exception(raw_env, error_result) };
+    assert!(stat == libnode_sys::Status::napi_ok || stat == libnode_sys::Status::napi_pending_exception);
   } else {
     let error_code: Status = status.into();
     let error_code_string = format!("{error_code:?}");
     let mut error_code_value = ptr::null_mut();
     assert_eq!(
       unsafe {
-        sys::napi_create_string_utf8(
+        libnode_sys::napi_create_string_utf8(
           raw_env,
           error_code_string.as_ptr() as *const _,
           error_code_string.len() as isize,
           &mut error_code_value,
         )
       },
-      sys::Status::napi_ok,
+      libnode_sys::Status::napi_ok,
     );
     let error_msg = "Call JavaScript callback failed in threadsafe function";
     let mut error_msg_value = ptr::null_mut();
     assert_eq!(
       unsafe {
-        sys::napi_create_string_utf8(
+        libnode_sys::napi_create_string_utf8(
           raw_env,
           error_msg.as_ptr() as *const _,
           error_msg.len() as isize,
           &mut error_msg_value,
         )
       },
-      sys::Status::napi_ok,
+      libnode_sys::Status::napi_ok,
     );
     let mut error_value = ptr::null_mut();
     assert_eq!(
       unsafe {
-        sys::napi_create_error(raw_env, error_code_value, error_msg_value, &mut error_value)
+        libnode_sys::napi_create_error(raw_env, error_code_value, error_msg_value, &mut error_value)
       },
-      sys::Status::napi_ok,
+      libnode_sys::Status::napi_ok,
     );
     assert_eq!(
-      unsafe { sys::napi_fatal_exception(raw_env, error_value) },
-      sys::Status::napi_ok
+      unsafe { libnode_sys::napi_fatal_exception(raw_env, error_value) },
+      libnode_sys::Status::napi_ok
     );
   }
 }
@@ -899,8 +899,8 @@ impl ValidateNapiValue for UnknownReturnValue {}
 
 impl FromNapiValue for UnknownReturnValue {
   unsafe fn from_napi_value(
-    _env: sys::napi_env,
-    _napi_val: sys::napi_value,
+    _env: libnode_sys::napi_env,
+    _napi_val: libnode_sys::napi_value,
   ) -> Result<Self> {
     Ok(UnknownReturnValue)
   }

@@ -27,8 +27,8 @@ impl ValidateNapiValue for JsBigInt {}
 
 impl JsBigInt {
   pub(crate) fn from_raw_unchecked(
-    env: sys::napi_env,
-    value: sys::napi_value,
+    env: libnode_sys::napi_env,
+    value: libnode_sys::napi_value,
     word_count: usize,
   ) -> Self {
     Self {
@@ -48,7 +48,7 @@ impl JsBigInt {
   pub fn coerce_to_number(self) -> Result<JsNumber> {
     let mut new_raw_value = ptr::null_mut();
     check_status!(unsafe {
-      sys::napi_coerce_to_number(self.raw.env, self.raw.value, &mut new_raw_value)
+      libnode_sys::napi_coerce_to_number(self.raw.env, self.raw.value, &mut new_raw_value)
     })?;
     Ok(JsNumber(Value {
       env: self.raw.env,
@@ -60,7 +60,7 @@ impl JsBigInt {
   pub fn coerce_to_string(self) -> Result<JsString> {
     let mut new_raw_value = ptr::null_mut();
     check_status!(unsafe {
-      sys::napi_coerce_to_string(self.raw.env, self.raw.value, &mut new_raw_value)
+      libnode_sys::napi_coerce_to_string(self.raw.env, self.raw.value, &mut new_raw_value)
     })?;
     Ok(JsString(Value {
       env: self.raw.env,
@@ -72,7 +72,7 @@ impl JsBigInt {
   pub fn coerce_to_object(self) -> Result<JsObject> {
     let mut new_raw_value = ptr::null_mut();
     check_status!(unsafe {
-      sys::napi_coerce_to_object(self.raw.env, self.raw.value, &mut new_raw_value)
+      libnode_sys::napi_coerce_to_object(self.raw.env, self.raw.value, &mut new_raw_value)
     })?;
     Ok(JsObject(Value {
       env: self.raw.env,
@@ -83,37 +83,37 @@ impl JsBigInt {
 
   pub fn is_date(&self) -> Result<bool> {
     let mut is_date = true;
-    check_status!(unsafe { sys::napi_is_date(self.raw.env, self.raw.value, &mut is_date) })?;
+    check_status!(unsafe { libnode_sys::napi_is_date(self.raw.env, self.raw.value, &mut is_date) })?;
     Ok(is_date)
   }
 
   pub fn is_error(&self) -> Result<bool> {
     let mut result = false;
-    check_status!(unsafe { sys::napi_is_error(self.raw.env, self.raw.value, &mut result) })?;
+    check_status!(unsafe { libnode_sys::napi_is_error(self.raw.env, self.raw.value, &mut result) })?;
     Ok(result)
   }
 
   pub fn is_typedarray(&self) -> Result<bool> {
     let mut result = false;
-    check_status!(unsafe { sys::napi_is_typedarray(self.raw.env, self.raw.value, &mut result) })?;
+    check_status!(unsafe { libnode_sys::napi_is_typedarray(self.raw.env, self.raw.value, &mut result) })?;
     Ok(result)
   }
 
   pub fn is_dataview(&self) -> Result<bool> {
     let mut result = false;
-    check_status!(unsafe { sys::napi_is_dataview(self.raw.env, self.raw.value, &mut result) })?;
+    check_status!(unsafe { libnode_sys::napi_is_dataview(self.raw.env, self.raw.value, &mut result) })?;
     Ok(result)
   }
 
   pub fn is_array(&self) -> Result<bool> {
     let mut is_array = false;
-    check_status!(unsafe { sys::napi_is_array(self.raw.env, self.raw.value, &mut is_array) })?;
+    check_status!(unsafe { libnode_sys::napi_is_array(self.raw.env, self.raw.value, &mut is_array) })?;
     Ok(is_array)
   }
 
   pub fn is_buffer(&self) -> Result<bool> {
     let mut is_buffer = false;
-    check_status!(unsafe { sys::napi_is_buffer(self.raw.env, self.raw.value, &mut is_buffer) })?;
+    check_status!(unsafe { libnode_sys::napi_is_buffer(self.raw.env, self.raw.value, &mut is_buffer) })?;
     Ok(is_buffer)
   }
 
@@ -123,32 +123,32 @@ impl JsBigInt {
   ) -> Result<bool> {
     let mut result = false;
     check_status!(unsafe {
-      sys::napi_instanceof(self.raw.env, self.raw.value, constructor.raw(), &mut result)
+      libnode_sys::napi_instanceof(self.raw.env, self.raw.value, constructor.raw(), &mut result)
     })?;
     Ok(result)
   }
 }
 
 impl NapiRaw for JsBigInt {
-  unsafe fn raw(&self) -> sys::napi_value {
+  unsafe fn raw(&self) -> libnode_sys::napi_value {
     self.raw.value
   }
 }
 
 impl NapiRaw for &JsBigInt {
-  unsafe fn raw(&self) -> sys::napi_value {
+  unsafe fn raw(&self) -> libnode_sys::napi_value {
     self.raw.value
   }
 }
 
 impl NapiValue for JsBigInt {
   unsafe fn from_raw(
-    env: sys::napi_env,
-    value: sys::napi_value,
+    env: libnode_sys::napi_env,
+    value: libnode_sys::napi_value,
   ) -> Result<Self> {
     let mut word_count = 0usize;
     check_status!(unsafe {
-      sys::napi_get_value_bigint_words(
+      libnode_sys::napi_get_value_bigint_words(
         env,
         value,
         ptr::null_mut(),
@@ -167,12 +167,12 @@ impl NapiValue for JsBigInt {
   }
 
   unsafe fn from_raw_unchecked(
-    env: sys::napi_env,
-    value: sys::napi_value,
+    env: libnode_sys::napi_env,
+    value: libnode_sys::napi_value,
   ) -> Self {
     let mut word_count = 0usize;
     let status = unsafe {
-      sys::napi_get_value_bigint_words(
+      libnode_sys::napi_get_value_bigint_words(
         env,
         value,
         ptr::null_mut(),
@@ -220,7 +220,7 @@ impl JsBigInt {
     let word_count = &mut self.word_count;
     let mut sign_bit = 0;
     check_status!(unsafe {
-      sys::napi_get_value_bigint_words(
+      libnode_sys::napi_get_value_bigint_words(
         self.raw.env,
         self.raw.value,
         &mut sign_bit,
@@ -240,7 +240,7 @@ impl JsBigInt {
     let mut val: u64 = 0;
     let mut lossless = false;
     check_status!(unsafe {
-      sys::napi_get_value_bigint_uint64(self.raw.env, self.raw.value, &mut val, &mut lossless)
+      libnode_sys::napi_get_value_bigint_uint64(self.raw.env, self.raw.value, &mut val, &mut lossless)
     })?;
 
     Ok((val, lossless))
@@ -250,7 +250,7 @@ impl JsBigInt {
     let mut val: i64 = 0;
     let mut lossless: bool = false;
     check_status!(unsafe {
-      sys::napi_get_value_bigint_int64(self.raw.env, self.raw.value, &mut val, &mut lossless)
+      libnode_sys::napi_get_value_bigint_int64(self.raw.env, self.raw.value, &mut val, &mut lossless)
     })?;
     Ok((val, lossless))
   }

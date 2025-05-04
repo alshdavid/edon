@@ -7,7 +7,7 @@ use crate::napi::Status;
 /// The hook will be removed if `AsyncCleanupHook` was `dropped`.
 /// If you want keep the hook until node process exited, call the `AsyncCleanupHook::forget`.
 #[repr(transparent)]
-pub struct AsyncCleanupHook(pub(crate) sys::napi_async_cleanup_hook_handle);
+pub struct AsyncCleanupHook(pub(crate) libnode_sys::napi_async_cleanup_hook_handle);
 
 impl AsyncCleanupHook {
   /// Safe to forget it.
@@ -19,9 +19,9 @@ impl AsyncCleanupHook {
 
 impl Drop for AsyncCleanupHook {
   fn drop(&mut self) {
-    let status = unsafe { sys::napi_remove_async_cleanup_hook(self.0) };
+    let status = unsafe { libnode_sys::napi_remove_async_cleanup_hook(self.0) };
     assert!(
-      status == sys::Status::napi_ok,
+      status == libnode_sys::Status::napi_ok,
       "Delete async cleanup hook failed: {}",
       Status::from(status)
     );

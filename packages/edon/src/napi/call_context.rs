@@ -15,9 +15,9 @@ use crate::napi::Status;
 /// Function call context
 pub struct CallContext<'env> {
   pub env: &'env mut Env,
-  raw_this: sys::napi_value,
-  callback_info: sys::napi_callback_info,
-  args: &'env [sys::napi_value],
+  raw_this: libnode_sys::napi_value,
+  callback_info: libnode_sys::napi_callback_info,
+  args: &'env [libnode_sys::napi_value],
   /// arguments.length
   pub length: usize,
 }
@@ -40,9 +40,9 @@ impl<'env> CallContext<'env> {
 
   pub fn new(
     env: &'env mut Env,
-    callback_info: sys::napi_callback_info,
-    raw_this: sys::napi_value,
-    args: &'env [sys::napi_value],
+    callback_info: libnode_sys::napi_callback_info,
+    raw_this: libnode_sys::napi_value,
+    args: &'env [libnode_sys::napi_value],
     length: usize,
   ) -> Self {
     Self {
@@ -98,7 +98,7 @@ impl<'env> CallContext<'env> {
     V: NapiValue,
   {
     let mut value = ptr::null_mut();
-    check_status!(unsafe { sys::napi_get_new_target(self.env.0, self.callback_info, &mut value) })?;
+    check_status!(unsafe { libnode_sys::napi_get_new_target(self.env.0, self.callback_info, &mut value) })?;
     unsafe { V::from_raw(self.env.0, value) }
   }
 

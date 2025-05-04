@@ -16,7 +16,7 @@ struct DeferredData<Data: ToNapiValue, Resolver: FnOnce(Env) -> Result<Data>> {
 }
 
 pub struct JsDeferred<Data: ToNapiValue, Resolver: FnOnce(Env) -> Result<Data>> {
-  pub(crate) tsfn: sys::napi_threadsafe_function,
+  pub(crate) tsfn: libnode_sys::napi_threadsafe_function,
   _data: PhantomData<Data>,
   _resolver: PhantomData<Resolver>,
 }
@@ -41,7 +41,7 @@ unsafe impl<Data: ToNapiValue, Resolver: FnOnce(Env) -> Result<Data>> Send
 }
 
 impl<Data: ToNapiValue, Resolver: FnOnce(Env) -> Result<Data>> JsDeferred<Data, Resolver> {
-  pub(crate) fn new(env: sys::napi_env) -> Result<(Self, JsObject)> {
+  pub(crate) fn new(env: libnode_sys::napi_env) -> Result<(Self, JsObject)> {
     let (tsfn, promise) = js_deferred_new_raw(env, Some(napi_resolve_deferred::<Data, Resolver>))?;
 
     let deferred = Self {
@@ -78,42 +78,42 @@ impl<Data: ToNapiValue, Resolver: FnOnce(Env) -> Result<Data>> JsDeferred<Data, 
 
     // Call back into the JS thread via a threadsafe function. This results in napi_resolve_deferred being called.
     let status = unsafe {
-      sys::napi_call_threadsafe_function(
+      libnode_sys::napi_call_threadsafe_function(
         self.tsfn,
         Box::into_raw(Box::from(data)).cast(),
-        sys::ThreadsafeFunctionCallMode::blocking,
+        libnode_sys::ThreadsafeFunctionCallMode::blocking,
       )
     };
     debug_assert!(
-      status == sys::Status::napi_ok,
+      status == libnode_sys::Status::napi_ok,
       "Call threadsafe function in JsDeferred failed"
     );
 
     let status = unsafe {
-      sys::napi_release_threadsafe_function(self.tsfn, sys::ThreadsafeFunctionReleaseMode::release)
+      libnode_sys::napi_release_threadsafe_function(self.tsfn, libnode_sys::ThreadsafeFunctionReleaseMode::release)
     };
     debug_assert!(
-      status == sys::Status::napi_ok,
+      status == libnode_sys::Status::napi_ok,
       "Release threadsafe function in JsDeferred failed"
     );
   }
 }
 
 fn js_deferred_new_raw(
-  env: sys::napi_env,
-  resolve_deferred: sys::napi_threadsafe_function_call_js,
-) -> Result<(sys::napi_threadsafe_function, JsObject)> {
+  env: libnode_sys::napi_env,
+  resolve_deferred: libnode_sys::napi_threadsafe_function_call_js,
+) -> Result<(libnode_sys::napi_threadsafe_function, JsObject)> {
   let mut raw_promise = ptr::null_mut();
   let mut raw_deferred = ptr::null_mut();
   check_status! {
-    unsafe { sys::napi_create_promise(env, &mut raw_deferred, &mut raw_promise) }
+    unsafe { libnode_sys::napi_create_promise(env, &mut raw_deferred, &mut raw_promise) }
   }?;
 
   // Create a threadsafe function so we can call back into the JS thread when we are done.
   let mut async_resource_name = ptr::null_mut();
   check_status!(
     unsafe {
-      sys::napi_create_string_utf8(
+      libnode_sys::napi_create_string_utf8(
         env,
         "napi_resolve_deferred\0".as_ptr().cast(),
         22,
@@ -126,7 +126,7 @@ fn js_deferred_new_raw(
   let mut tsfn = ptr::null_mut();
   check_status!(
     unsafe {
-      sys::napi_create_threadsafe_function(
+      libnode_sys::napi_create_threadsafe_function(
         env,
         ptr::null_mut(),
         ptr::null_mut(),
@@ -153,8 +153,8 @@ fn js_deferred_new_raw(
 }
 
 extern "C" fn napi_resolve_deferred<Data: ToNapiValue, Resolver: FnOnce(Env) -> Result<Data>>(
-  env: sys::napi_env,
-  _js_callback: sys::napi_value,
+  env: libnode_sys::napi_env,
+  _js_callback: libnode_sys::napi_value,
   context: *mut c_void,
   data: *mut c_void,
 ) {
@@ -167,15 +167,15 @@ extern "C" fn napi_resolve_deferred<Data: ToNapiValue, Resolver: FnOnce(Env) -> 
 
   if let Err(e) = result.and_then(|res| {
     check_status!(
-      unsafe { sys::napi_resolve_deferred(env, deferred, res) },
+      unsafe { libnode_sys::napi_resolve_deferred(env, deferred, res) },
       "Resolve deferred value failed"
     )
   }) {
-    let error = Ok::<sys::napi_value, Error>(unsafe { crate::napi::JsError::from(e).into_value(env) });
+    let error = Ok::<libnode_sys::napi_value, Error>(unsafe { crate::napi::JsError::from(e).into_value(env) });
 
     match error {
       Ok(error) => {
-        unsafe { sys::napi_reject_deferred(env, deferred, error) };
+        unsafe { libnode_sys::napi_reject_deferred(env, deferred, error) };
       }
       Err(err) => {
         if cfg!(debug_assertions) {
@@ -183,14 +183,14 @@ extern "C" fn napi_resolve_deferred<Data: ToNapiValue, Resolver: FnOnce(Env) -> 
           let mut err = ptr::null_mut();
           let mut err_msg = ptr::null_mut();
           unsafe {
-            sys::napi_create_string_utf8(
+            libnode_sys::napi_create_string_utf8(
               env,
               "Rejection failed\0".as_ptr().cast(),
               0,
               &mut err_msg,
             );
-            sys::napi_create_error(env, ptr::null_mut(), err_msg, &mut err);
-            sys::napi_reject_deferred(env, deferred, err);
+            libnode_sys::napi_create_error(env, ptr::null_mut(), err_msg, &mut err);
+            libnode_sys::napi_reject_deferred(env, deferred, err);
           }
         }
       }

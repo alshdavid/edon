@@ -30,18 +30,18 @@ thread_local! {
 /// If you want to use Node.js Buffer in async context or want to extend the lifetime, use `Buffer` instead.
 pub struct BufferSlice<'scope> {
   pub(crate) inner: &'scope mut [u8],
-  raw_value: sys::napi_value,
+  raw_value: libnode_sys::napi_value,
 }
 
 impl<'scope> FromNapiValue for BufferSlice<'scope> {
   unsafe fn from_napi_value(
-    env: sys::napi_env,
-    napi_val: sys::napi_value,
+    env: libnode_sys::napi_env,
+    napi_val: libnode_sys::napi_value,
   ) -> Result<Self> {
     let mut buf = ptr::null_mut();
     let mut len = 0usize;
     check_status!(
-      unsafe { sys::napi_get_buffer_info(env, napi_val, &mut buf, &mut len) },
+      unsafe { libnode_sys::napi_get_buffer_info(env, napi_val, &mut buf, &mut len) },
       "Failed to get Buffer pointer and length"
     )?;
     // From the docs of `napi_get_buffer_info`:
@@ -65,9 +65,9 @@ impl<'scope> FromNapiValue for BufferSlice<'scope> {
 impl ToNapiValue for BufferSlice<'_> {
   #[allow(unused_variables)]
   unsafe fn to_napi_value(
-    env: sys::napi_env,
+    env: libnode_sys::napi_env,
     val: Self,
-  ) -> Result<sys::napi_value> {
+  ) -> Result<libnode_sys::napi_value> {
     Ok(val.raw_value)
   }
 }
@@ -84,12 +84,12 @@ impl TypeName for BufferSlice<'_> {
 
 impl ValidateNapiValue for BufferSlice<'_> {
   unsafe fn validate(
-    env: sys::napi_env,
-    napi_val: sys::napi_value,
-  ) -> Result<sys::napi_value> {
+    env: libnode_sys::napi_env,
+    napi_val: libnode_sys::napi_value,
+  ) -> Result<libnode_sys::napi_value> {
     let mut is_buffer = false;
     check_status!(
-      unsafe { sys::napi_is_buffer(env, napi_val, &mut is_buffer) },
+      unsafe { libnode_sys::napi_is_buffer(env, napi_val, &mut is_buffer) },
       "Failed to validate napi buffer"
     )?;
     if !is_buffer {
@@ -133,7 +133,7 @@ pub struct Buffer {
   pub(crate) inner: NonNull<u8>,
   pub(crate) len: usize,
   pub(crate) capacity: usize,
-  raw: Option<(sys::napi_ref, sys::napi_env)>,
+  raw: Option<(libnode_sys::napi_ref, libnode_sys::napi_env)>,
   pub(crate) ref_count: Arc<()>,
 }
 
@@ -150,14 +150,14 @@ impl Drop for Buffer {
           }
           if !THREADS_CAN_ACCESS_ENV.borrow_mut(|m| m.get(&std::thread::current().id()).is_some()) {
             let status = unsafe {
-              sys::napi_call_threadsafe_function(
+              libnode_sys::napi_call_threadsafe_function(
                 CUSTOM_GC_TSFN.load(std::sync::atomic::Ordering::SeqCst),
                 ref_.cast(),
                 1,
               )
             };
             assert!(
-              status == sys::Status::napi_ok || status == sys::Status::napi_closing,
+              status == libnode_sys::Status::napi_ok || status == libnode_sys::Status::napi_closing,
               "Call custom GC in Buffer::drop failed {}",
               Status::from(status)
             );
@@ -167,7 +167,7 @@ impl Drop for Buffer {
         let mut ref_count = 0;
         check_status_or_throw!(
           env,
-          unsafe { sys::napi_reference_unref(env, ref_, &mut ref_count) },
+          unsafe { libnode_sys::napi_reference_unref(env, ref_, &mut ref_count) },
           "Failed to unref Buffer reference in drop"
         );
         debug_assert!(
@@ -176,7 +176,7 @@ impl Drop for Buffer {
         );
         check_status_or_throw!(
           env,
-          unsafe { sys::napi_delete_reference(env, ref_) },
+          unsafe { libnode_sys::napi_delete_reference(env, ref_) },
           "Failed to delete Buffer reference in drop"
         );
       } else {
@@ -297,18 +297,18 @@ impl TypeName for Buffer {
 
 impl FromNapiValue for Buffer {
   unsafe fn from_napi_value(
-    env: sys::napi_env,
-    napi_val: sys::napi_value,
+    env: libnode_sys::napi_env,
+    napi_val: libnode_sys::napi_value,
   ) -> Result<Self> {
     let mut buf = ptr::null_mut();
     let mut len = 0;
     let mut ref_ = ptr::null_mut();
     check_status!(
-      unsafe { sys::napi_create_reference(env, napi_val, 1, &mut ref_) },
+      unsafe { libnode_sys::napi_create_reference(env, napi_val, 1, &mut ref_) },
       "Failed to create reference from Buffer"
     )?;
     check_status!(
-      unsafe { sys::napi_get_buffer_info(env, napi_val, &mut buf, &mut len as *mut usize) },
+      unsafe { libnode_sys::napi_get_buffer_info(env, napi_val, &mut buf, &mut len as *mut usize) },
       "Failed to get Buffer pointer and length"
     )?;
 
@@ -337,20 +337,20 @@ impl FromNapiValue for Buffer {
 
 impl ToNapiValue for Buffer {
   unsafe fn to_napi_value(
-    env: sys::napi_env,
+    env: libnode_sys::napi_env,
     mut val: Self,
-  ) -> Result<sys::napi_value> {
+  ) -> Result<libnode_sys::napi_value> {
     // From Node.js value, not from `Vec<u8>`
     if let Some((ref_, _)) = val.raw {
       let mut buf = ptr::null_mut();
       check_status!(
-        unsafe { sys::napi_get_reference_value(env, ref_, &mut buf) },
+        unsafe { libnode_sys::napi_get_reference_value(env, ref_, &mut buf) },
         "Failed to get Buffer value from reference"
       )?;
       // fast path for Buffer::drop
       if Arc::strong_count(&val.ref_count) == 1 {
         check_status!(
-          unsafe { sys::napi_delete_reference(env, ref_) },
+          unsafe { libnode_sys::napi_delete_reference(env, ref_) },
           "Failed to delete Buffer reference in Buffer::to_napi_value"
         )?;
         val.raw = Some((ptr::null_mut(), ptr::null_mut()));
@@ -364,12 +364,12 @@ impl ToNapiValue for Buffer {
         // Rust uses 0x1 as the data pointer for empty buffers,
         // but NAPI/V8 only allows multiple buffers to have
         // the same data pointer if it's 0x0.
-        unsafe { sys::napi_create_buffer(env, len, ptr::null_mut(), &mut ret) }
+        unsafe { libnode_sys::napi_create_buffer(env, len, ptr::null_mut(), &mut ret) }
       } else {
         let value_ptr = val.inner.as_ptr();
         let val_box_ptr = Box::into_raw(Box::new(val));
         let mut status = unsafe {
-          sys::napi_create_external_buffer(
+          libnode_sys::napi_create_external_buffer(
             env,
             len,
             value_ptr as *mut c_void,
@@ -381,7 +381,7 @@ impl ToNapiValue for Buffer {
         if status == libnode_sys::Status::napi_no_external_buffers_allowed {
           let value = unsafe { Box::from_raw(val_box_ptr) };
           status = unsafe {
-            sys::napi_create_buffer_copy(
+            libnode_sys::napi_create_buffer_copy(
               env,
               len,
               value.inner.as_ptr() as *mut c_void,
@@ -401,9 +401,9 @@ impl ToNapiValue for Buffer {
 
 impl ToNapiValue for &Buffer {
   unsafe fn to_napi_value(
-    env: sys::napi_env,
+    env: libnode_sys::napi_env,
     val: Self,
-  ) -> Result<sys::napi_value> {
+  ) -> Result<libnode_sys::napi_value> {
     let buf = val.clone();
     unsafe { ToNapiValue::to_napi_value(env, buf) }
   }
@@ -411,9 +411,9 @@ impl ToNapiValue for &Buffer {
 
 impl ToNapiValue for &mut Buffer {
   unsafe fn to_napi_value(
-    env: sys::napi_env,
+    env: libnode_sys::napi_env,
     val: Self,
-  ) -> Result<sys::napi_value> {
+  ) -> Result<libnode_sys::napi_value> {
     let buf = val.clone();
     unsafe { ToNapiValue::to_napi_value(env, buf) }
   }
@@ -421,12 +421,12 @@ impl ToNapiValue for &mut Buffer {
 
 impl ValidateNapiValue for Buffer {
   unsafe fn validate(
-    env: sys::napi_env,
-    napi_val: sys::napi_value,
-  ) -> Result<sys::napi_value> {
+    env: libnode_sys::napi_env,
+    napi_val: libnode_sys::napi_value,
+  ) -> Result<libnode_sys::napi_value> {
     let mut is_buffer = false;
     check_status!(
-      unsafe { sys::napi_is_buffer(env, napi_val, &mut is_buffer) },
+      unsafe { libnode_sys::napi_is_buffer(env, napi_val, &mut is_buffer) },
       "Failed to validate napi buffer"
     )?;
     if !is_buffer {

@@ -19,17 +19,17 @@ struct EmptyStructPlaceholder(u8);
 
 #[doc(hidden)]
 pub struct CallbackInfo<const N: usize> {
-  env: sys::napi_env,
-  pub this: sys::napi_value,
-  pub args: [sys::napi_value; N],
-  this_reference: sys::napi_ref,
+  env: libnode_sys::napi_env,
+  pub this: libnode_sys::napi_value,
+  pub args: [libnode_sys::napi_value; N],
+  this_reference: libnode_sys::napi_ref,
 }
 
 impl<const N: usize> CallbackInfo<N> {
   #[allow(clippy::not_unsafe_ptr_arg_deref)]
   pub fn new(
-    env: sys::napi_env,
-    callback_info: sys::napi_callback_info,
+    env: libnode_sys::napi_env,
+    callback_info: libnode_sys::napi_callback_info,
     required_argc: Option<usize>,
     // for async class factory, the `this` will be used after the async call
     // so we must create reference for it and use it after async resolved
@@ -41,7 +41,7 @@ impl<const N: usize> CallbackInfo<N> {
 
     unsafe {
       check_status!(
-        sys::napi_get_cb_info(
+        libnode_sys::napi_get_cb_info(
           env,
           callback_info,
           &mut argc,
@@ -69,7 +69,7 @@ impl<const N: usize> CallbackInfo<N> {
 
     if use_after_async {
       check_status!(
-        unsafe { sys::napi_create_reference(env, this, 1, &mut this_reference) },
+        unsafe { libnode_sys::napi_create_reference(env, this, 1, &mut this_reference) },
         "Failed to create reference for `this` in async class factory"
       )?;
     }
@@ -85,11 +85,11 @@ impl<const N: usize> CallbackInfo<N> {
   pub fn get_arg(
     &self,
     index: usize,
-  ) -> sys::napi_value {
+  ) -> libnode_sys::napi_value {
     self.args[index]
   }
 
-  pub fn this(&self) -> sys::napi_value {
+  pub fn this(&self) -> libnode_sys::napi_value {
     self.this
   }
 
@@ -97,7 +97,7 @@ impl<const N: usize> CallbackInfo<N> {
     &self,
     js_name: &str,
     obj: T,
-  ) -> Result<(sys::napi_value, *mut T)> {
+  ) -> Result<(libnode_sys::napi_value, *mut T)> {
     let obj = Box::new(obj);
     let this = self.this();
     let mut value_ref = Box::into_raw(obj);
@@ -111,7 +111,7 @@ impl<const N: usize> CallbackInfo<N> {
     let finalize_callbacks_ptr = Rc::into_raw(Rc::new(Cell::new(Box::into_raw(initial_finalize))));
     unsafe {
       check_status!(
-        sys::napi_wrap(
+        libnode_sys::napi_wrap(
           self.env,
           this,
           value_ref.cast(),
@@ -136,7 +136,7 @@ impl<const N: usize> CallbackInfo<N> {
     &self,
     js_name: &str,
     obj: T,
-  ) -> Result<sys::napi_value> {
+  ) -> Result<libnode_sys::napi_value> {
     self
       ._construct::<IsEmptyStructHint, T>(js_name, obj)
       .map(|(v, _)| v)
@@ -149,7 +149,7 @@ impl<const N: usize> CallbackInfo<N> {
     &self,
     js_name: &str,
     obj: T,
-  ) -> Result<sys::napi_value> {
+  ) -> Result<libnode_sys::napi_value> {
     let (instance, generator_ptr) = self._construct::<IsEmptyStructHint, T>(js_name, obj)?;
     crate::napi::__private::create_iterator(self.env, instance, generator_ptr);
     Ok(instance)
@@ -159,7 +159,7 @@ impl<const N: usize> CallbackInfo<N> {
     &self,
     js_name: &str,
     obj: T,
-  ) -> Result<sys::napi_value> {
+  ) -> Result<libnode_sys::napi_value> {
     self._factory(js_name, obj).map(|(value, _)| value)
   }
 
@@ -167,7 +167,7 @@ impl<const N: usize> CallbackInfo<N> {
     &self,
     js_name: &str,
     obj: T,
-  ) -> Result<sys::napi_value> {
+  ) -> Result<libnode_sys::napi_value> {
     let (instance, generator_ptr) = self._factory(js_name, obj)?;
     crate::napi::__private::create_iterator(self.env, instance, generator_ptr);
     Ok(instance)
@@ -177,28 +177,28 @@ impl<const N: usize> CallbackInfo<N> {
     &self,
     js_name: &str,
     obj: T,
-  ) -> Result<(sys::napi_value, *mut T)> {
+  ) -> Result<(libnode_sys::napi_value, *mut T)> {
     let mut this = self.this();
     let mut instance = ptr::null_mut();
     if !self.this_reference.is_null() {
       check_status!(
-        unsafe { sys::napi_get_reference_value(self.env, self.this_reference, &mut this) },
+        unsafe { libnode_sys::napi_get_reference_value(self.env, self.this_reference, &mut this) },
         "Failed to get reference value for `this` in async class factory"
       )?;
       check_status!(
-        unsafe { sys::napi_delete_reference(self.env, self.this_reference) },
+        unsafe { libnode_sys::napi_delete_reference(self.env, self.this_reference) },
         "Failed to delete reference for `this` in async class factory"
       )?;
     }
     ___CALL_FROM_FACTORY.with(|s| s.store(true, Ordering::Relaxed));
     let status =
-      unsafe { sys::napi_new_instance(self.env, this, 0, ptr::null_mut(), &mut instance) };
+      unsafe { libnode_sys::napi_new_instance(self.env, this, 0, ptr::null_mut(), &mut instance) };
     ___CALL_FROM_FACTORY.with(|s| s.store(false, Ordering::Relaxed));
     // Error thrown in `constructor`
-    if status == sys::Status::napi_pending_exception {
+    if status == libnode_sys::Status::napi_pending_exception {
       let mut exception = ptr::null_mut();
-      unsafe { sys::napi_get_and_clear_last_exception(self.env, &mut exception) };
-      unsafe { sys::napi_throw(self.env, exception) };
+      unsafe { libnode_sys::napi_get_and_clear_last_exception(self.env, &mut exception) };
+      unsafe { libnode_sys::napi_throw(self.env, exception) };
       return Ok((ptr::null_mut(), ptr::null_mut()));
     }
     check_status!(status, "Failed to create instance of class `{}`", js_name)?;
@@ -215,7 +215,7 @@ impl<const N: usize> CallbackInfo<N> {
     }
     check_status!(
       unsafe {
-        sys::napi_wrap(
+        libnode_sys::napi_wrap(
           self.env,
           instance,
           value_ref.cast(),
@@ -261,7 +261,7 @@ impl<const N: usize> CallbackInfo<N> {
 
     unsafe {
       check_status!(
-        sys::napi_unwrap(self.env, self.this, &mut wrapped_val),
+        libnode_sys::napi_unwrap(self.env, self.this, &mut wrapped_val),
         "Failed to unwrap exclusive reference of `{}` type from napi value",
         T::type_name(),
       )?;

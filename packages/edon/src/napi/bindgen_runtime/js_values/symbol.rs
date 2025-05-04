@@ -49,14 +49,14 @@ impl Symbol {
 
 impl ToNapiValue for Symbol {
   unsafe fn to_napi_value(
-    env: sys::napi_env,
+    env: libnode_sys::napi_env,
     val: Self,
-  ) -> crate::napi::Result<sys::napi_value> {
+  ) -> crate::napi::Result<libnode_sys::napi_value> {
     let mut symbol_value = ptr::null_mut();
     if let Some(desc) = val.for_desc {
       check_status!(
         unsafe {
-          sys::node_api_symbol_for(
+          libnode_sys::node_api_symbol_for(
             env,
             desc.as_ptr().cast(),
             desc.len() as isize,
@@ -68,13 +68,13 @@ impl ToNapiValue for Symbol {
       return Ok(symbol_value);
     }
     check_status!(unsafe {
-      sys::napi_create_symbol(
+      libnode_sys::napi_create_symbol(
         env,
         match val.desc {
           Some(desc) => {
             let mut desc_string = ptr::null_mut();
             let desc_len = desc.len();
-            check_status!(sys::napi_create_string_utf8(
+            check_status!(libnode_sys::napi_create_string_utf8(
               env,
               desc.as_ptr().cast(),
               desc_len as isize,
@@ -93,8 +93,8 @@ impl ToNapiValue for Symbol {
 
 impl FromNapiValue for Symbol {
   unsafe fn from_napi_value(
-    _env: sys::napi_env,
-    _napi_val: sys::napi_value,
+    _env: libnode_sys::napi_env,
+    _napi_val: libnode_sys::napi_value,
   ) -> crate::napi::Result<Self> {
     Ok(Self {
       desc: None,

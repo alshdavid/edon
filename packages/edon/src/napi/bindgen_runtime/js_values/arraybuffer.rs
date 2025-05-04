@@ -85,14 +85,14 @@ macro_rules! impl_typed_array {
                 .borrow_mut(|m| m.get(&std::thread::current().id()).is_some())
               {
                 let status = unsafe {
-                  sys::napi_call_threadsafe_function(
+                  libnode_sys::napi_call_threadsafe_function(
                     CUSTOM_GC_TSFN.load(std::sync::atomic::Ordering::SeqCst),
                     ref_.cast(),
                     1,
                   )
                 };
                 assert!(
-                  status == sys::Status::napi_ok || status == sys::Status::napi_closing,
+                  status == libnode_sys::Status::napi_ok || status == libnode_sys::Status::napi_closing,
                   "Call custom GC in ArrayBuffer::drop failed {}",
                   Status::from(status)
                 );
@@ -102,7 +102,7 @@ macro_rules! impl_typed_array {
             let mut ref_count = 0;
             crate::napi::check_status_or_throw!(
               env,
-              unsafe { sys::napi_reference_unref(env, ref_, &mut ref_count) },
+              unsafe { libnode_sys::napi_reference_unref(env, ref_, &mut ref_count) },
               "Failed to unref ArrayBuffer reference in drop"
             );
             debug_assert!(
@@ -111,7 +111,7 @@ macro_rules! impl_typed_array {
             );
             crate::napi::check_status_or_throw!(
               env,
-              unsafe { sys::napi_delete_reference(env, ref_) },
+              unsafe { libnode_sys::napi_delete_reference(env, ref_) },
               "Failed to delete ArrayBuffer reference in drop"
             );
             return;
@@ -305,12 +305,12 @@ napi_get_typedarray_info(
 
     impl ValidateNapiValue for $name {
       unsafe fn validate(
-        env: sys::napi_env,
-        napi_val: sys::napi_value,
+        env: libnode_sys::napi_env,
+        napi_val: libnode_sys::napi_value,
       ) -> Result<libnode_sys::napi_value> {
         let mut is_typed_array = false;
         check_status!(
-          unsafe { sys::napi_is_typedarray(env, napi_val, &mut is_typed_array) },
+          unsafe { libnode_sys::napi_is_typedarray(env, napi_val, &mut is_typed_array) },
           "Failed to check if value is typed array"
         )?;
         if !is_typed_array {
@@ -325,8 +325,8 @@ napi_get_typedarray_info(
 
     impl FromNapiValue for $name {
       unsafe fn from_napi_value(
-        env: sys::napi_env,
-        napi_val: sys::napi_value,
+        env: libnode_sys::napi_env,
+        napi_val: libnode_sys::napi_value,
       ) -> Result<Self> {
         let mut typed_array_type = 0;
         let mut length = 0;
@@ -335,12 +335,12 @@ napi_get_typedarray_info(
         let mut byte_offset = 0;
         let mut ref_ = ptr::null_mut();
         check_status!(
-          unsafe { sys::napi_create_reference(env, napi_val, 1, &mut ref_) },
+          unsafe { libnode_sys::napi_create_reference(env, napi_val, 1, &mut ref_) },
           "Failed to create reference from Buffer"
         )?;
         check_status!(
           unsafe {
-            sys::napi_get_typedarray_info(
+            libnode_sys::napi_get_typedarray_info(
               env,
               napi_val,
               &mut typed_array_type,
@@ -372,19 +372,19 @@ napi_get_typedarray_info(
 
     impl ToNapiValue for $name {
       unsafe fn to_napi_value(
-        env: sys::napi_env,
+        env: libnode_sys::napi_env,
         mut val: Self,
-      ) -> Result<sys::napi_value> {
+      ) -> Result<libnode_sys::napi_value> {
         if let Some((ref_, _)) = val.raw {
           let mut napi_value = std::ptr::null_mut();
           check_status!(
-            unsafe { sys::napi_get_reference_value(env, ref_, &mut napi_value) },
+            unsafe { libnode_sys::napi_get_reference_value(env, ref_, &mut napi_value) },
             "Failed to get reference from ArrayBuffer"
           )?;
           // fast path for ArrayBuffer::drop
           if Arc::strong_count(&val.drop_in_vm) == 1 {
             check_status!(
-              unsafe { sys::napi_delete_reference(env, ref_) },
+              unsafe { libnode_sys::napi_delete_reference(env, ref_) },
               "Failed to delete reference in ArrayBuffer::to_napi_value"
             )?;
             val.raw = Some((ptr::null_mut(), ptr::null_mut()));
@@ -403,12 +403,12 @@ napi_get_typedarray_info(
             // but NAPI/V8 only allows multiple buffers to have
             // the same data pointer if it's 0x0.
             unsafe {
-              sys::napi_create_arraybuffer(env, length, ptr::null_mut(), &mut arraybuffer_value)
+              libnode_sys::napi_create_arraybuffer(env, length, ptr::null_mut(), &mut arraybuffer_value)
             }
           } else {
             let hint_ptr = Box::into_raw(Box::new(val));
             let status = unsafe {
-              sys::napi_create_external_arraybuffer(
+              libnode_sys::napi_create_external_arraybuffer(
                 env,
                 val_data.cast(),
                 length,
@@ -421,7 +421,7 @@ napi_get_typedarray_info(
               let hint = unsafe { Box::from_raw(hint_ptr) };
               let mut underlying_data = ptr::null_mut();
               let status = unsafe {
-                sys::napi_create_arraybuffer(
+                libnode_sys::napi_create_arraybuffer(
                   env,
                   length,
                   &mut underlying_data,
@@ -439,7 +439,7 @@ napi_get_typedarray_info(
         let mut napi_val = ptr::null_mut();
         check_status!(
           unsafe {
-            sys::napi_create_typedarray(
+            libnode_sys::napi_create_typedarray(
               env,
               $typed_array_type as i32,
               val_length,
@@ -456,13 +456,13 @@ napi_get_typedarray_info(
 
     impl ToNapiValue for &mut $name {
       unsafe fn to_napi_value(
-        env: sys::napi_env,
+        env: libnode_sys::napi_env,
         val: Self,
-      ) -> Result<sys::napi_value> {
+      ) -> Result<libnode_sys::napi_value> {
         if let Some((ref_, _)) = val.raw {
           let mut napi_value = std::ptr::null_mut();
           check_status!(
-            unsafe { sys::napi_get_reference_value(env, ref_, &mut napi_value) },
+            unsafe { libnode_sys::napi_get_reference_value(env, ref_, &mut napi_value) },
             "Failed to get reference from ArrayBuffer"
           )?;
           Ok(napi_value)
@@ -487,8 +487,8 @@ macro_rules! impl_from_slice {
   ($name:ident, $rust_type:ident, $typed_array_type:expr) => {
     impl FromNapiValue for &mut [$rust_type] {
       unsafe fn from_napi_value(
-        env: sys::napi_env,
-        napi_val: sys::napi_value,
+        env: libnode_sys::napi_env,
+        napi_val: libnode_sys::napi_value,
       ) -> Result<Self> {
         let mut typed_array_type = 0;
         let mut length = 0;
@@ -497,7 +497,7 @@ macro_rules! impl_from_slice {
         let mut byte_offset = 0;
         check_status!(
           unsafe {
-            sys::napi_get_typedarray_info(
+            libnode_sys::napi_get_typedarray_info(
               env,
               napi_val,
               &mut typed_array_type,
@@ -525,8 +525,8 @@ macro_rules! impl_from_slice {
 
     impl FromNapiValue for &[$rust_type] {
       unsafe fn from_napi_value(
-        env: sys::napi_env,
-        napi_val: sys::napi_value,
+        env: libnode_sys::napi_env,
+        napi_val: libnode_sys::napi_value,
       ) -> Result<Self> {
         let mut typed_array_type = 0;
         let mut length = 0;
@@ -535,7 +535,7 @@ macro_rules! impl_from_slice {
         let mut byte_offset = 0;
         check_status!(
           unsafe {
-            sys::napi_get_typedarray_info(
+            libnode_sys::napi_get_typedarray_info(
               env,
               napi_val,
               &mut typed_array_type,
@@ -583,12 +583,12 @@ macro_rules! impl_from_slice {
 
     impl ValidateNapiValue for &[$rust_type] {
       unsafe fn validate(
-        env: sys::napi_env,
-        napi_val: sys::napi_value,
-      ) -> Result<sys::napi_value> {
+        env: libnode_sys::napi_env,
+        napi_val: libnode_sys::napi_value,
+      ) -> Result<libnode_sys::napi_value> {
         let mut is_typed_array = false;
         check_status!(
-          unsafe { sys::napi_is_typedarray(env, napi_val, &mut is_typed_array) },
+          unsafe { libnode_sys::napi_is_typedarray(env, napi_val, &mut is_typed_array) },
           "Failed to validate napi typed array"
         )?;
         if !is_typed_array {
@@ -603,12 +603,12 @@ macro_rules! impl_from_slice {
 
     impl ValidateNapiValue for &mut [$rust_type] {
       unsafe fn validate(
-        env: sys::napi_env,
-        napi_val: sys::napi_value,
-      ) -> Result<sys::napi_value> {
+        env: libnode_sys::napi_env,
+        napi_val: libnode_sys::napi_value,
+      ) -> Result<libnode_sys::napi_value> {
         let mut is_typed_array = false;
         check_status!(
-          unsafe { sys::napi_is_typedarray(env, napi_val, &mut is_typed_array) },
+          unsafe { libnode_sys::napi_is_typedarray(env, napi_val, &mut is_typed_array) },
           "Failed to validate napi typed array"
         )?;
         if !is_typed_array {
@@ -624,7 +624,7 @@ macro_rules! impl_from_slice {
 }
 
 unsafe extern "C" fn finalizer<Data, T: Finalizer<RustType = Data>>(
-  _env: sys::napi_env,
+  _env: libnode_sys::napi_env,
   finalize_data: *mut c_void,
   finalize_hint: *mut c_void,
 ) {
@@ -686,13 +686,13 @@ impl_from_slice!(BigUint64Array, u64, TypedArrayType::BigUint64);
 /// If you want to use Node.js `Uint8ClampedArray` in async context or want to extend the lifetime, use `Uint8ClampedArray` instead.
 pub struct Uint8ClampedSlice<'scope> {
   pub(crate) inner: &'scope mut [u8],
-  raw_value: sys::napi_value,
+  raw_value: libnode_sys::napi_value,
 }
 
 impl<'scope> FromNapiValue for Uint8ClampedSlice<'scope> {
   unsafe fn from_napi_value(
-    env: sys::napi_env,
-    napi_val: sys::napi_value,
+    env: libnode_sys::napi_env,
+    napi_val: libnode_sys::napi_value,
   ) -> Result<Self> {
     let mut typed_array_type = 0;
     let mut length = 0;
@@ -701,7 +701,7 @@ impl<'scope> FromNapiValue for Uint8ClampedSlice<'scope> {
     let mut byte_offset = 0;
     check_status!(
       unsafe {
-        sys::napi_get_typedarray_info(
+        libnode_sys::napi_get_typedarray_info(
           env,
           napi_val,
           &mut typed_array_type,
@@ -733,9 +733,9 @@ impl<'scope> FromNapiValue for Uint8ClampedSlice<'scope> {
 impl ToNapiValue for Uint8ClampedSlice<'_> {
   #[allow(unused_variables)]
   unsafe fn to_napi_value(
-    env: sys::napi_env,
+    env: libnode_sys::napi_env,
     val: Self,
-  ) -> Result<sys::napi_value> {
+  ) -> Result<libnode_sys::napi_value> {
     Ok(val.raw_value)
   }
 }
@@ -752,12 +752,12 @@ impl TypeName for Uint8ClampedSlice<'_> {
 
 impl ValidateNapiValue for Uint8ClampedSlice<'_> {
   unsafe fn validate(
-    env: sys::napi_env,
-    napi_val: sys::napi_value,
-  ) -> Result<sys::napi_value> {
+    env: libnode_sys::napi_env,
+    napi_val: libnode_sys::napi_value,
+  ) -> Result<libnode_sys::napi_value> {
     let mut is_typedarray = false;
     check_status!(
-      unsafe { sys::napi_is_typedarray(env, napi_val, &mut is_typedarray) },
+      unsafe { libnode_sys::napi_is_typedarray(env, napi_val, &mut is_typedarray) },
       "Failed to validate typed buffer"
     )?;
     if !is_typedarray {

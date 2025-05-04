@@ -27,7 +27,7 @@ impl ValidateNapiValue for JsBoolean {}
 impl JsBoolean {
   pub fn get_value(&self) -> Result<bool> {
     let mut result = false;
-    check_status!(unsafe { sys::napi_get_value_bool(self.0.env, self.0.value, &mut result) })?;
+    check_status!(unsafe { libnode_sys::napi_get_value_bool(self.0.env, self.0.value, &mut result) })?;
     Ok(result)
   }
 }
