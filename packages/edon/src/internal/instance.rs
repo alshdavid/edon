@@ -8,13 +8,15 @@ use libnode_sys::napi_callback_info;
 use libnode_sys::napi_env;
 use libnode_sys::napi_value;
 
+use crate::Env;
+
 pub enum NodejsEvent {
-  Eval {
+  EvalScript {
     code: String,
     resolve: Sender<()>,
   },
   Env {
-    callback: Box<dyn FnOnce(libnode_sys::napi_env)>,
+    callback: Box<dyn FnOnce(Env) -> crate::Result<()>>,
   },
 }
 
@@ -84,7 +86,7 @@ unsafe extern "C" fn edon_prelude_main(
 
   while let Ok(event) = rx.recv() {
     match event {
-      NodejsEvent::Eval { code, resolve } => {
+      NodejsEvent::EvalScript { code, resolve } => {
         let mut code_value = ptr::null_mut();
         libnode_sys::napi_create_string_utf8(
           env,
@@ -104,7 +106,10 @@ unsafe extern "C" fn edon_prelude_main(
 
         resolve.send(()).unwrap();
       }
-      NodejsEvent::Env { callback } => callback(env),
+      NodejsEvent::Env { callback } => {
+        let env = Env::from_raw(env);
+        callback(env).ok();
+      },
     }
   }
 

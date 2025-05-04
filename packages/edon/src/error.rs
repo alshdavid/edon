@@ -12,6 +12,7 @@ pub enum Error {
   LibnodeFailedToLoad,
   LibnodeSymbolNotFound,
   IoError(Arc<std::io::Error>),
+  NapiError(crate::napi::Error),
 }
 
 impl std::fmt::Debug for Error {
@@ -27,6 +28,7 @@ impl std::fmt::Debug for Error {
       Self::LibnodeFailedToLoad => write!(f, "LibnodeFailedToLoad"),
       Self::LibnodeSymbolNotFound => write!(f, "LibnodeSymbolNotFound"),
       Self::IoError(arg0) => f.debug_tuple("IoError").field(arg0).finish(),
+      Self::NapiError(arg0) => f.debug_tuple("NapiError").field(arg0).finish(),
     }
   }
 }
@@ -43,6 +45,7 @@ impl std::fmt::Display for Error {
       Error::LibnodeNotLoaded => write!(f, "LibnodeNotLoaded"),
       Error::LibnodeSymbolNotFound => write!(f, "LibnodeSymbolNotFound"),
       Error::IoError(err) => write!(f, "{}", err),
+      Error::NapiError(err) => write!(f, "{}", err),
       Error::LibnodeNotFound => write!(
         f,
         r#"NotFound: {}
@@ -69,6 +72,7 @@ impl From<&Error> for Error {
       Error::LibnodeFailedToLoad => Error::LibnodeFailedToLoad,
       Error::LibnodeSymbolNotFound => Error::LibnodeSymbolNotFound,
       Error::IoError(error) => Error::IoError(error.clone()),
+      Error::NapiError(error) => Error::NapiError(error.clone()),
     }
   }
 }
@@ -82,5 +86,11 @@ impl From<Error> for std::io::Error {
 impl From<std::io::Error> for Error {
   fn from(value: std::io::Error) -> Self {
     Self::IoError(Arc::new(value))
+  }
+}
+
+impl From<crate::napi::Error> for Error {
+  fn from(value: crate::napi::Error) -> Self {
+    Self::NapiError(value)
   }
 }

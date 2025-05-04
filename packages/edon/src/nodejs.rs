@@ -7,6 +7,7 @@ use super::NodejsWorker;
 use crate::internal::constants::LIB_NAME;
 use crate::internal::NodejsEvent;
 use crate::internal::PathExt;
+use crate::Env;
 
 pub struct Nodejs {
   tx_eval: Sender<NodejsEvent>,
@@ -74,14 +75,14 @@ impl Nodejs {
   }
 
   /// Evaluate block of JavaScript
-  pub fn eval<Code: AsRef<str>>(
+  pub fn eval_script<Code: AsRef<str>>(
     &self,
     code: Code,
   ) -> crate::Result<()> {
     let (tx, rx) = channel();
     self
       .tx_eval
-      .send(NodejsEvent::Eval {
+      .send(NodejsEvent::EvalScript {
         code: code.as_ref().to_string(),
         resolve: tx,
       })
@@ -90,7 +91,7 @@ impl Nodejs {
     Ok(())
   }
 
-  pub fn env<F: 'static + FnOnce(libnode_sys::napi_env)>(
+  pub fn exec<F: 'static + FnOnce(Env) -> crate::Result<()>>(
     &self,
     callback: F,
   ) {
