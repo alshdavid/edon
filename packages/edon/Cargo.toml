@@ -10,5 +10,8 @@ license = "MIT"
 [lib]
 
 [dependencies]
+bitflags = "2.9.0"
+ctor = "0.4.2"
 libffi = "^4.0.0"
 libnode_sys = "^0.0.2"
+once_cell = "1.21.3"

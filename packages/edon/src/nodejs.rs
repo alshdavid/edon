@@ -5,10 +5,11 @@ use std::sync::mpsc::Sender;
 use super::internal;
 use super::NodejsWorker;
 use crate::internal::constants::LIB_NAME;
+use crate::internal::NodejsEvent;
 use crate::internal::PathExt;
 
 pub struct Nodejs {
-  tx_eval: Sender<(String, Sender<()>)>,
+  tx_eval: Sender<NodejsEvent>,
 }
 
 impl Nodejs {
@@ -78,13 +79,20 @@ impl Nodejs {
     code: Code,
   ) -> crate::Result<()> {
     let (tx, rx) = channel();
-    self.tx_eval.send((code.as_ref().to_string(), tx)).unwrap();
+    self.tx_eval.send(NodejsEvent::Eval{
+      code: code.as_ref().to_string(),
+      resolve: tx
+    }).ok();
     rx.recv().unwrap();
     Ok(())
   }
 
+  pub fn env<F: 'static + FnOnce(libnode_sys::napi_env)>(&self, callback: F) {
+    self.tx_eval.send(NodejsEvent::Env { callback: Box::new(callback) }).ok();
+  }
+
   /// Evaluate block of JavaScript
-  pub fn new_worker(&self) -> crate::Result<NodejsWorker> {
+  pub fn spawn_worker(&self) -> crate::Result<NodejsWorker> {
     // let (tx, rx) = channel();
     // self.tx_eval.send((code.as_ref().to_string(), tx)).unwrap();
     // rx.recv().unwrap();

@@ -3,12 +3,23 @@ use std::ptr;
 use std::sync::mpsc::channel;
 use std::sync::mpsc::Receiver;
 use std::sync::mpsc::Sender;
+use std::sync::OnceLock;
 
 use libnode_sys::napi_callback_info;
 use libnode_sys::napi_env;
 use libnode_sys::napi_value;
 
-pub fn start_node_instance() -> Sender<(String, Sender<()>)> {
+pub enum NodejsEvent {
+  Eval {
+    code: String,
+    resolve: Sender<()>,
+  },
+  Env {
+    callback: Box<dyn FnOnce(libnode_sys::napi_env)>,
+  },
+}
+
+pub fn start_node_instance() -> Sender<NodejsEvent> {
   let (tx, rx) = channel();
   let closure_data_ptr = Box::into_raw(Box::new(rx));
 
@@ -70,28 +81,34 @@ unsafe extern "C" fn edon_prelude_main(
   );
 
   let n_callback = raw_args.first().unwrap();
-  let rx: &Receiver<(String, Sender<()>)> =
-    Box::leak(unsafe { Box::from_raw(closure_data_ptr.cast()) });
+  let rx: &Receiver<NodejsEvent> = Box::leak(unsafe { Box::from_raw(closure_data_ptr.cast()) });
 
-  while let Ok((code, tx_resolved)) = rx.recv() {
-    let mut code_value = ptr::null_mut();
-    libnode_sys::napi_create_string_utf8(
-      env,
-      code.as_ptr().cast(),
-      code.len() as isize,
-      &mut code_value,
-    );
+  while let Ok(event) = rx.recv() {
+    match event {
+      NodejsEvent::Eval { code, resolve } => {
+        let mut code_value = ptr::null_mut();
+        libnode_sys::napi_create_string_utf8(
+          env,
+          code.as_ptr().cast(),
+          code.len() as isize,
+          &mut code_value,
+        );
 
-    libnode_sys::napi_call_function(
-      env,
-      n_undefined,
-      n_callback.cast(),
-      1,
-      [code_value].as_mut_ptr(),
-      ptr::null_mut(),
-    );
+        libnode_sys::napi_call_function(
+          env,
+          n_undefined,
+          n_callback.cast(),
+          1,
+          [code_value].as_mut_ptr(),
+          ptr::null_mut(),
+        );
 
-    tx_resolved.send(()).unwrap();
+        resolve.send(()).unwrap();
+      }
+      NodejsEvent::Env { callback } => {
+        callback(env)
+      },
+    }
   }
 
   n_undefined

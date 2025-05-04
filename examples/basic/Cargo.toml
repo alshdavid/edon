@@ -7,4 +7,4 @@ license = "MIT"
 
 [dependencies]
 edon = { path = "../../packages/edon" }
-napi = "2.16.17"
+anyhow = "*"

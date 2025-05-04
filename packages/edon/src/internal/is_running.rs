@@ -10,13 +10,13 @@ pub fn is_running() -> bool {
 pub(crate) fn mark_running() -> crate::Result<()> {
   match RUNNING.compare_exchange(false, true, Ordering::Acquire, Ordering::Acquire) {
     Ok(_) => Ok(()),
-    Err(_) => Err(crate::Error::NodejsAlreadyRunning),
+    Err(_) => Err(crate::Error::from_reason("Already running")),
   }
 }
 
 pub(crate) fn mark_stopped() -> crate::Result<()> {
   match RUNNING.compare_exchange(true, false, Ordering::Acquire, Ordering::Acquire) {
     Ok(_) => Ok(()),
-    Err(_) => Err(crate::Error::NodejsNotRunning),
+    Err(_) => Err(crate::Error::from_reason("NodejsNotRunning")),
   }
 }
