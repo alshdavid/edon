@@ -69,7 +69,7 @@ unsafe extern "C" fn edon_prelude_main(
     &mut closure_data_ptr,
   );
 
-  let n_callback = raw_args.get(0).unwrap();
+  let n_callback = raw_args.first().unwrap();
   let rx: &Receiver<(String, Sender<()>)> =
     Box::leak(unsafe { Box::from_raw(closure_data_ptr.cast()) });
 

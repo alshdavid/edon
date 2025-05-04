@@ -1,7 +1,6 @@
 use std::ffi::CString;
 use std::ptr;
 
-use edon;
 use edon::sys;
 
 pub fn main() -> std::io::Result<()> {

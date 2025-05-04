@@ -1,9 +1,3 @@
-use std::path::Path;
-use std::sync::mpsc::channel;
-use std::sync::mpsc::Sender;
-
-use super::internal;
-
 pub struct NodejsWorker {
   // tx_eval: Sender<(String, Sender<()>)>,
 }
