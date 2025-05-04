@@ -1156,7 +1156,6 @@ impl Env {
       .map_err(|e| Error::new(Status::InvalidArg, format!("{}", e)))
   }
 
-  #[cfg(all(feature = "napi2", not(target_family = "wasm")))]
   pub fn get_uv_event_loop(&self) -> Result<*mut sys::uv_loop_s> {
     let mut uv_loop: *mut sys::uv_loop_s = ptr::null_mut();
     check_status!(unsafe { sys::napi_get_uv_event_loop(self.0, &mut uv_loop) })?;
@@ -1637,6 +1636,7 @@ pub(crate) unsafe extern "C" fn trampoline<
       ptr::null_mut()
     })
 }
+
 
 pub(crate) unsafe extern "C" fn trampoline_setter<
   V: FromNapiValue,

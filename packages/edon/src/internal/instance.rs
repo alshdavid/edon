@@ -3,7 +3,6 @@ use std::ptr;
 use std::sync::mpsc::channel;
 use std::sync::mpsc::Receiver;
 use std::sync::mpsc::Sender;
-use std::sync::OnceLock;
 
 use libnode_sys::napi_callback_info;
 use libnode_sys::napi_env;

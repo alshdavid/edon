@@ -19,7 +19,7 @@ mod bigint;
 mod boolean;
 mod buffer;
 mod class;
-#[cfg(all(feature = "chrono_date", feature = "napi5"))]
+#[cfg(feature = "chrono-date")]
 mod date;
 mod either;
 mod external;
@@ -45,8 +45,6 @@ pub use external::*;
 pub use function::*;
 pub use nil::*;
 pub use object::*;
-#[cfg(feature = "latin1")]
-pub use string::latin1_string::*;
 pub use string::*;
 pub use symbol::*;
 pub use task::*;

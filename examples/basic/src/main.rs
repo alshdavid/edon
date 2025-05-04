@@ -1,7 +1,3 @@
-use std::ffi::CString;
-use std::ptr;
-
-use edon::sys;
 use edon::Env;
 
 pub fn main() -> anyhow::Result<()> {

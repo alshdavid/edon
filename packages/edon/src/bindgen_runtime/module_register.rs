@@ -2,23 +2,14 @@ use std::collections::HashMap;
 use std::collections::HashSet;
 use std::ffi::CStr;
 use std::ptr;
-use std::sync::atomic::AtomicBool;
-use std::sync::atomic::Ordering;
+use std::sync::atomic::{AtomicBool, Ordering};
 use std::sync::RwLock;
 use std::thread::ThreadId;
 
 use once_cell::sync::Lazy;
 
-use crate::check_status;
-use crate::check_status_or_throw;
-use crate::sys;
-use crate::Env;
-use crate::JsError;
-use crate::JsFunction;
-use crate::Property;
-use crate::Result;
-use crate::Value;
-use crate::ValueType;
+use crate::{check_status, sys, Env, JsFunction, Property, Result, Value, ValueType};
+use crate::{check_status_or_throw, JsError};
 
 pub type ExportRegisterCallback = unsafe fn(sys::napi_env) -> Result<sys::napi_value>;
 pub type ModuleExportsCallback =
@@ -33,10 +24,7 @@ impl<K, V> PersistedPerInstanceHashMap<K, V> {
   }
 
   #[allow(clippy::mut_from_ref)]
-  pub(crate) fn borrow_mut<F, R>(
-    &self,
-    f: F,
-  ) -> R
+  pub(crate) fn borrow_mut<F, R>(&self, f: F) -> R
   where
     F: FnOnce(&mut HashMap<K, V>) -> R,
   {
@@ -68,18 +56,13 @@ type RegisteredClassesMap = PersistedPerInstanceHashMap<ThreadId, RegisteredClas
 
 static MODULE_REGISTER_CALLBACK: Lazy<ModuleRegisterCallback> = Lazy::new(Default::default);
 static MODULE_CLASS_PROPERTIES: Lazy<ModuleClassProperty> = Lazy::new(Default::default);
-#[cfg(not(feature = "noop"))]
 static IS_FIRST_MODULE: AtomicBool = AtomicBool::new(true);
-#[cfg(not(feature = "noop"))]
 static FIRST_MODULE_REGISTERED: AtomicBool = AtomicBool::new(false);
 static REGISTERED_CLASSES: Lazy<RegisteredClassesMap> = Lazy::new(Default::default);
 static FN_REGISTER_MAP: Lazy<FnRegisterMap> = Lazy::new(Default::default);
-#[cfg(all(feature = "napi4", not(feature = "noop"), not(target_family = "wasm")))]
 pub(crate) static CUSTOM_GC_TSFN: std::sync::atomic::AtomicPtr<sys::napi_threadsafe_function__> =
   std::sync::atomic::AtomicPtr::new(ptr::null_mut());
-#[cfg(all(feature = "napi4", not(feature = "noop"), not(target_family = "wasm")))]
 pub(crate) static CUSTOM_GC_TSFN_DESTROYED: AtomicBool = AtomicBool::new(false);
-#[cfg(all(feature = "napi4", not(feature = "noop"), not(target_family = "wasm")))]
 // Store thread id of the thread that created the CustomGC ThreadsafeFunction.
 pub(crate) static THREADS_CAN_ACCESS_ENV: once_cell::sync::Lazy<
   PersistedPerInstanceHashMap<ThreadId, bool>,
@@ -88,11 +71,9 @@ pub(crate) static THREADS_CAN_ACCESS_ENV: once_cell::sync::Lazy<
 type RegisteredClasses =
   PersistedPerInstanceHashMap</* export name */ String, /* constructor */ sys::napi_ref>;
 
-#[cfg(all(feature = "compat-mode", not(feature = "noop")))]
 // compatibility for #[module_exports]
 static MODULE_EXPORTS: Lazy<RwLock<Vec<ModuleExportsCallback>>> = Lazy::new(Default::default);
 
-#[cfg(not(feature = "noop"))]
 #[inline]
 fn wait_first_thread_registered() {
   while !FIRST_MODULE_REGISTERED.load(Ordering::SeqCst) {
@@ -111,7 +92,6 @@ pub fn get_class_constructor(js_name: &'static str) -> Option<sys::napi_ref> {
 }
 
 #[doc(hidden)]
-#[cfg(all(feature = "compat-mode", not(feature = "noop")))]
 // compatibility for #[module_exports]
 pub fn register_module_exports(callback: ModuleExportsCallback) {
   MODULE_EXPORTS
@@ -176,10 +156,7 @@ pub fn register_class(
 /// returnSomeFn()(); // 1
 /// ```
 ///
-pub fn get_js_function(
-  env: &Env,
-  raw_fn: ExportRegisterCallback,
-) -> Result<JsFunction> {
+pub fn get_js_function(env: &Env, raw_fn: ExportRegisterCallback) -> Result<JsFunction> {
   FN_REGISTER_MAP.borrow_mut(|inner| {
     inner
       .get(&raw_fn)
@@ -246,24 +223,6 @@ pub fn get_c_callback(raw_fn: ExportRegisterCallback) -> Result<crate::Callback>
   })
 }
 
-#[cfg(all(any(windows, feature = "dyn-symbols"), not(feature = "noop")))]
-#[ctor::ctor]
-fn load_host() {
-  unsafe {
-    sys::setup();
-  }
-}
-
-#[cfg(all(target_family = "wasm", not(feature = "noop")))]
-#[no_mangle]
-unsafe extern "C" fn napi_register_wasm_v1(
-  env: sys::napi_env,
-  exports: sys::napi_value,
-) -> sys::napi_value {
-  unsafe { napi_register_module_v1(env, exports) }
-}
-
-#[cfg(not(feature = "noop"))]
 #[no_mangle]
 /// Register the n-api module exports.
 ///
@@ -276,13 +235,6 @@ pub unsafe extern "C" fn napi_register_module_v1(
   env: sys::napi_env,
   exports: sys::napi_value,
 ) -> sys::napi_value {
-  #[cfg(all(
-    any(target_env = "msvc", feature = "dyn-symbols"),
-    not(feature = "noop")
-  ))]
-  unsafe {
-    sys::setup();
-  }
   if IS_FIRST_MODULE.load(Ordering::SeqCst) {
     IS_FIRST_MODULE.store(false, Ordering::SeqCst);
   } else {
@@ -465,6 +417,16 @@ pub unsafe extern "C" fn napi_register_module_v1(
     });
   });
 
+  {
+    let module_exports = MODULE_EXPORTS.read().expect("Read MODULE_EXPORTS failed");
+    module_exports.iter().for_each(|callback| unsafe {
+      if let Err(e) = callback(env, exports) {
+        JsError::from(e).throw_into(env);
+      }
+    })
+  }
+
+  create_custom_gc(env);
   FIRST_MODULE_REGISTERED.store(true, Ordering::SeqCst);
   exports
 }
@@ -484,4 +446,121 @@ pub(crate) unsafe extern "C" fn noop(
     }
   }
   ptr::null_mut()
+}
+
+fn create_custom_gc(env: sys::napi_env) {
+  if !FIRST_MODULE_REGISTERED.load(Ordering::SeqCst) {
+    let mut custom_gc_fn = ptr::null_mut();
+    check_status_or_throw!(
+      env,
+      unsafe {
+        sys::napi_create_function(
+          env,
+          "custom_gc".as_ptr().cast(),
+          9,
+          Some(empty),
+          ptr::null_mut(),
+          &mut custom_gc_fn,
+        )
+      },
+      "Create Custom GC Function in napi_register_module_v1 failed"
+    );
+    let mut async_resource_name = ptr::null_mut();
+    check_status_or_throw!(
+      env,
+      unsafe {
+        sys::napi_create_string_utf8(env, "CustomGC".as_ptr().cast(), 8, &mut async_resource_name)
+      },
+      "Create async resource string in napi_register_module_v1"
+    );
+    let mut custom_gc_tsfn = ptr::null_mut();
+    check_status_or_throw!(
+      env,
+      unsafe {
+        sys::napi_create_threadsafe_function(
+          env,
+          custom_gc_fn,
+          ptr::null_mut(),
+          async_resource_name,
+          0,
+          1,
+          ptr::null_mut(),
+          Some(custom_gc_finalize),
+          ptr::null_mut(),
+          Some(custom_gc),
+          &mut custom_gc_tsfn,
+        )
+      },
+      "Create Custom GC ThreadsafeFunction in napi_register_module_v1 failed"
+    );
+    check_status_or_throw!(
+      env,
+      unsafe { sys::napi_unref_threadsafe_function(env, custom_gc_tsfn) },
+      "Unref Custom GC ThreadsafeFunction in napi_register_module_v1 failed"
+    );
+    CUSTOM_GC_TSFN.store(custom_gc_tsfn, Ordering::Relaxed);
+  }
+
+  let current_thread_id = std::thread::current().id();
+  THREADS_CAN_ACCESS_ENV.borrow_mut(|m| m.insert(current_thread_id, true));
+  check_status_or_throw!(
+    env,
+    unsafe {
+      sys::napi_add_env_cleanup_hook(
+        env,
+        Some(remove_thread_id),
+        Box::into_raw(Box::new(current_thread_id)).cast(),
+      )
+    },
+    "Failed to add remove thread id cleanup hook"
+  );
+}
+
+unsafe extern "C" fn remove_thread_id(id: *mut std::ffi::c_void) {
+  let thread_id = unsafe { Box::from_raw(id.cast::<ThreadId>()) };
+  THREADS_CAN_ACCESS_ENV.borrow_mut(|m| m.insert(*thread_id, false));
+}
+
+#[allow(unused)]
+unsafe extern "C" fn empty(env: sys::napi_env, info: sys::napi_callback_info) -> sys::napi_value {
+  ptr::null_mut()
+}
+
+#[allow(unused_variables)]
+unsafe extern "C" fn custom_gc_finalize(
+  env: sys::napi_env,
+  finalize_data: *mut std::ffi::c_void,
+  finalize_hint: *mut std::ffi::c_void,
+) {
+  CUSTOM_GC_TSFN_DESTROYED.store(true, Ordering::SeqCst);
+}
+
+// recycle the ArrayBuffer/Buffer Reference if the ArrayBuffer/Buffer is not dropped on the main thread
+extern "C" fn custom_gc(
+  env: sys::napi_env,
+  _js_callback: sys::napi_value,
+  _context: *mut std::ffi::c_void,
+  data: *mut std::ffi::c_void,
+) {
+  // current thread was destroyed
+  if THREADS_CAN_ACCESS_ENV.borrow_mut(|m| m.get(&std::thread::current().id()) == Some(&false))
+    || data.is_null()
+  {
+    return;
+  }
+  let mut ref_count = 0;
+  check_status_or_throw!(
+    env,
+    unsafe { sys::napi_reference_unref(env, data.cast(), &mut ref_count) },
+    "Failed to unref Buffer reference in Custom GC"
+  );
+  debug_assert!(
+    ref_count == 0,
+    "Buffer reference count in Custom GC is not 0"
+  );
+  check_status_or_throw!(
+    env,
+    unsafe { sys::napi_delete_reference(env, data.cast()) },
+    "Failed to delete Buffer reference in Custom GC"
+  );
 }

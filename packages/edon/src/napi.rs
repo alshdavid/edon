@@ -106,5 +106,5 @@ pub mod __private {
   }
 }
 
-#[cfg(feature = "error_anyhow")]
+#[cfg(feature = "error-anyhow")]
 pub extern crate anyhow;

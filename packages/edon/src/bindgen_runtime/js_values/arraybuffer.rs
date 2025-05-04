@@ -11,11 +11,8 @@ use super::FromNapiValue;
 use super::ToNapiValue;
 use super::TypeName;
 use super::ValidateNapiValue;
-#[cfg(all(feature = "napi4", not(feature = "noop"), not(target_family = "wasm")))]
 use crate::bindgen_prelude::CUSTOM_GC_TSFN;
-#[cfg(all(feature = "napi4", not(feature = "noop"), not(target_family = "wasm")))]
 use crate::bindgen_prelude::CUSTOM_GC_TSFN_DESTROYED;
-#[cfg(all(feature = "napi4", not(feature = "noop"), not(target_family = "wasm")))]
 use crate::bindgen_prelude::THREADS_CAN_ACCESS_ENV;
 use crate::check_status;
 pub use crate::js_values::TypedArrayType;
@@ -24,17 +21,6 @@ use crate::Error;
 use crate::Result;
 use crate::Status;
 use crate::ValueType;
-
-#[cfg(target_family = "wasm")]
-extern "C" {
-  fn emnapi_sync_memory(
-    env: crate::sys::napi_env,
-    js_to_wasm: bool,
-    arraybuffer_or_view: crate::sys::napi_value,
-    byte_offset: usize,
-    length: usize,
-  ) -> crate::sys::napi_status;
-}
 
 trait Finalizer {
   type RustType;
@@ -91,7 +77,6 @@ macro_rules! impl_typed_array {
             if ref_.is_null() {
               return;
             }
-            #[cfg(all(feature = "napi4", not(feature = "noop"), not(target_family = "wasm")))]
             {
               if CUSTOM_GC_TSFN_DESTROYED.load(Ordering::SeqCst) {
                 return;

@@ -111,7 +111,6 @@ impl Property {
     self
   }
 
-  #[cfg(feature = "napi5")]
   pub fn with_getter_closure<R, F>(
     mut self,
     callback: F,
@@ -137,7 +136,6 @@ impl Property {
     self
   }
 
-  #[cfg(feature = "napi5")]
   pub fn with_setter_closure<F, V>(
     mut self,
     callback: F,
@@ -172,7 +170,6 @@ impl Property {
   }
 
   pub(crate) fn raw(&self) -> sys::napi_property_descriptor {
-    #[cfg(feature = "napi5")]
     let closures = Box::into_raw(Box::new(self.closures));
     sys::napi_property_descriptor {
       utf8name: self.name.as_ptr(),
@@ -182,9 +179,6 @@ impl Property {
       setter: self.setter,
       value: self.value,
       attributes: self.attrs.into(),
-      #[cfg(not(feature = "napi5"))]
-      data: ptr::null_mut(),
-      #[cfg(feature = "napi5")]
       data: closures.cast(),
     }
   }

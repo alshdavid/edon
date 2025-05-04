@@ -8,106 +8,15 @@ use crate::sys;
 use crate::Env;
 use crate::Error;
 use crate::JsObject;
-#[cfg(feature = "deferred_trace")]
-use crate::NapiRaw;
-#[cfg(feature = "deferred_trace")]
-use crate::NapiValue;
 use crate::Result;
 use crate::Value;
 
-#[cfg(feature = "deferred_trace")]
-/// A javascript error which keeps a stack trace
-/// to the original caller in an asynchronous context.
-/// This is required as the stack trace is lost when
-/// an error is created in a different thread.
-///
-/// See this issue for more details:
-/// https://github.com/nodejs/node-addon-api/issues/595
-#[repr(transparent)]
-#[derive(Clone)]
-struct DeferredTrace(sys::napi_ref);
-
-#[cfg(feature = "deferred_trace")]
-impl DeferredTrace {
-  fn new(raw_env: sys::napi_env) -> Result<Self> {
-    let env = unsafe { Env::from_raw(raw_env) };
-    let reason = env.create_string("none").unwrap();
-
-    let mut js_error = ptr::null_mut();
-    check_status!(
-      unsafe { sys::napi_create_error(raw_env, ptr::null_mut(), reason.raw(), &mut js_error) },
-      "Create error in DeferredTrace failed"
-    )?;
-
-    let mut result = ptr::null_mut();
-    check_status!(
-      unsafe { sys::napi_create_reference(raw_env, js_error, 1, &mut result) },
-      "Create reference in DeferredTrace failed"
-    )?;
-
-    Ok(Self(result))
-  }
-
-  fn into_rejected(
-    self,
-    raw_env: sys::napi_env,
-    err: Error,
-  ) -> Result<sys::napi_value> {
-    let env = unsafe { Env::from_raw(raw_env) };
-    let mut raw = ptr::null_mut();
-    check_status!(
-      unsafe { sys::napi_get_reference_value(raw_env, self.0, &mut raw) },
-      "Failed to get referenced value in DeferredTrace"
-    )?;
-
-    let mut obj = unsafe { JsObject::from_raw_unchecked(raw_env, raw) };
-    let err_value = if !err.maybe_raw.is_null() {
-      let mut err_raw_value = std::ptr::null_mut();
-      check_status!(
-        unsafe { sys::napi_get_reference_value(raw_env, err.maybe_raw, &mut err_raw_value) },
-        "Get error reference in `to_napi_value` failed"
-      )?;
-      let err_obj = unsafe { JsObject::from_raw_unchecked(raw_env, err_raw_value) };
-
-      let err_value = if err_obj.has_named_property("message")? {
-        // The error was already created inside the JS engine, just return it
-        Ok(unsafe { err_obj.raw() })
-      } else {
-        obj.set_named_property("message", "")?;
-        obj.set_named_property("code", "")?;
-        Ok(raw)
-      };
-      check_status!(
-        unsafe { sys::napi_delete_reference(raw_env, err.maybe_raw) },
-        "Delete error reference in `to_napi_value` failed"
-      )?;
-      err_value
-    } else {
-      obj.set_named_property("message", &err.reason)?;
-      obj.set_named_property(
-        "code",
-        env.create_string_from_std(format!("{}", err.status))?,
-      )?;
-      Ok(raw)
-    };
-    check_status!(
-      unsafe { sys::napi_delete_reference(raw_env, self.0) },
-      "Failed to get referenced value in DeferredTrace"
-    )?;
-    err_value
-  }
-}
-
 struct DeferredData<Data: ToNapiValue, Resolver: FnOnce(Env) -> Result<Data>> {
   resolver: Result<Resolver>,
-  #[cfg(feature = "deferred_trace")]
-  trace: DeferredTrace,
 }
 
 pub struct JsDeferred<Data: ToNapiValue, Resolver: FnOnce(Env) -> Result<Data>> {
   pub(crate) tsfn: sys::napi_threadsafe_function,
-  #[cfg(feature = "deferred_trace")]
-  trace: DeferredTrace,
   _data: PhantomData<Data>,
   _resolver: PhantomData<Resolver>,
 }
@@ -120,8 +29,6 @@ impl<Data: ToNapiValue, Resolver: FnOnce(Env) -> Result<Data>> Clone
   fn clone(&self) -> Self {
     Self {
       tsfn: self.tsfn,
-      #[cfg(feature = "deferred_trace")]
-      trace: self.trace.clone(),
       _data: PhantomData,
       _resolver: PhantomData,
     }
@@ -139,8 +46,6 @@ impl<Data: ToNapiValue, Resolver: FnOnce(Env) -> Result<Data>> JsDeferred<Data, 
 
     let deferred = Self {
       tsfn,
-      #[cfg(feature = "deferred_trace")]
-      trace: DeferredTrace::new(env)?,
       _data: PhantomData,
       _resolver: PhantomData,
     };
@@ -171,8 +76,6 @@ impl<Data: ToNapiValue, Resolver: FnOnce(Env) -> Result<Data>> JsDeferred<Data, 
   ) {
     let data = DeferredData {
       resolver: result,
-      #[cfg(feature = "deferred_trace")]
-      trace: self.trace,
     };
 
     // Call back into the JS thread via a threadsafe function. This results in napi_resolve_deferred being called.
@@ -270,9 +173,6 @@ extern "C" fn napi_resolve_deferred<Data: ToNapiValue, Resolver: FnOnce(Env) -> 
       "Resolve deferred value failed"
     )
   }) {
-    #[cfg(feature = "deferred_trace")]
-    let error = deferred_data.trace.into_rejected(env, e);
-    #[cfg(not(feature = "deferred_trace"))]
     let error = Ok::<sys::napi_value, Error>(unsafe { crate::JsError::from(e).into_value(env) });
 
     match error {

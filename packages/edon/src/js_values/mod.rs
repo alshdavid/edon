@@ -97,7 +97,6 @@ impl TypeName for JsSymbol {
 
 impl ValidateNapiValue for JsSymbol {}
 
-#[deprecated(since = "3.0.0", note = "Please use `External` instead")]
 pub struct JsExternal(pub(crate) Value);
 
 impl TypeName for JsExternal {

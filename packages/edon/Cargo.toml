@@ -7,6 +7,11 @@ description = "Library embedding Nodejs (libnode) within Rust"
 edition = "2021"
 license = "MIT"
 
+[features]
+serde-json = ["serde", "serde_json"]
+error-anyhow = ["anyhow"]
+chrono-date = ["chrono"]
+
 [lib]
 
 [dependencies]
@@ -14,4 +19,20 @@ bitflags = "2.9.0"
 ctor = "0.4.2"
 libffi = "^4.0.0"
 libnode_sys = "^0.0.2"
-once_cell = "1.21.3"
+once_cell = "^1.21.3"
+
+[dependencies.anyhow]
+optional = true
+version = "^1"
+
+[dependencies.serde]
+optional = true
+version = "^1"
+
+[dependencies.serde_json]
+optional = true
+version = "^1"
+
+[dependencies.chrono]
+optional = true
+version = "^0.4"

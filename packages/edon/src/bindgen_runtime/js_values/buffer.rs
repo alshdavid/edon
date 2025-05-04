@@ -11,11 +11,8 @@ use std::sync::Arc;
 #[cfg(all(debug_assertions, not(windows)))]
 use std::sync::Mutex;
 
-#[cfg(all(feature = "napi4", not(feature = "noop"), not(target_family = "wasm")))]
 use crate::bindgen_prelude::CUSTOM_GC_TSFN;
-#[cfg(all(feature = "napi4", not(feature = "noop"), not(target_family = "wasm")))]
 use crate::bindgen_prelude::CUSTOM_GC_TSFN_DESTROYED;
-#[cfg(all(feature = "napi4", not(feature = "noop"), not(target_family = "wasm")))]
 use crate::bindgen_prelude::THREADS_CAN_ACCESS_ENV;
 use crate::bindgen_prelude::*;
 use crate::check_status;
@@ -147,7 +144,6 @@ impl Drop for Buffer {
         if ref_.is_null() {
           return;
         }
-        #[cfg(all(feature = "napi4", not(feature = "noop"), not(target_family = "wasm")))]
         {
           if CUSTOM_GC_TSFN_DESTROYED.load(std::sync::atomic::Ordering::SeqCst) {
             return;
