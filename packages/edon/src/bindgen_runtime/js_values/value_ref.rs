@@ -1,12 +1,20 @@
-use std::cell::{Cell, RefCell};
+use std::cell::Cell;
+use std::cell::RefCell;
 use std::collections::HashMap;
 use std::ffi::c_void;
-use std::ops::{Deref, DerefMut};
+use std::ops::Deref;
+use std::ops::DerefMut;
 use std::ptr;
-use std::rc::{Rc, Weak};
+use std::rc::Rc;
+use std::rc::Weak;
 
 use crate::bindgen_prelude::FromNapiValue;
-use crate::{bindgen_runtime::ToNapiValue, check_status, Env, Error, Result, Status};
+use crate::bindgen_runtime::ToNapiValue;
+use crate::check_status;
+use crate::Env;
+use crate::Error;
+use crate::Result;
+use crate::Status;
 
 type RefInformation = (
   /* wrapped_value */ *mut c_void,
@@ -59,7 +67,11 @@ impl<T> Drop for Reference<T> {
 impl<T: 'static> Reference<T> {
   #[doc(hidden)]
   #[allow(clippy::not_unsafe_ptr_arg_deref)]
-  pub fn add_ref(env: crate::sys::napi_env, t: *mut c_void, value: RefInformation) {
+  pub fn add_ref(
+    env: crate::sys::napi_env,
+    t: *mut c_void,
+    value: RefInformation,
+  ) {
     REFERENCE_MAP.with(|map| {
       if let Some((_, previous_ref, previous_rc)) = map.borrow_mut().insert(t, value) {
         unsafe { Rc::from_raw(previous_rc) };
@@ -69,7 +81,10 @@ impl<T: 'static> Reference<T> {
   }
 
   #[doc(hidden)]
-  pub unsafe fn from_value_ptr(t: *mut c_void, env: crate::sys::napi_env) -> Result<Self> {
+  pub unsafe fn from_value_ptr(
+    t: *mut c_void,
+    env: crate::sys::napi_env,
+  ) -> Result<Self> {
     if let Some((wrapped_value, napi_ref, finalize_callbacks_ptr)) =
       REFERENCE_MAP.with(|map| map.borrow().get(&t).cloned())
     {
@@ -98,7 +113,10 @@ impl<T: 'static> Reference<T> {
 }
 
 impl<T: 'static> ToNapiValue for Reference<T> {
-  unsafe fn to_napi_value(env: crate::sys::napi_env, val: Self) -> Result<crate::sys::napi_value> {
+  unsafe fn to_napi_value(
+    env: crate::sys::napi_env,
+    val: Self,
+  ) -> Result<crate::sys::napi_value> {
     let mut result = ptr::null_mut();
     check_status!(
       unsafe { crate::sys::napi_get_reference_value(env, val.napi_ref, &mut result) },
@@ -124,7 +142,10 @@ impl<T: 'static> FromNapiValue for Reference<T> {
 }
 
 impl<T: 'static> Reference<T> {
-  pub fn clone(&self, env: Env) -> Result<Self> {
+  pub fn clone(
+    &self,
+    env: Env,
+  ) -> Result<Self> {
     let mut ref_count = 0;
     check_status!(
       unsafe { crate::sys::napi_reference_ref(env.0, self.napi_ref, &mut ref_count) },
@@ -198,7 +219,10 @@ impl<T> Clone for WeakReference<T> {
 }
 
 impl<T: 'static> ToNapiValue for WeakReference<T> {
-  unsafe fn to_napi_value(env: crate::sys::napi_env, val: Self) -> Result<crate::sys::napi_value> {
+  unsafe fn to_napi_value(
+    env: crate::sys::napi_env,
+    val: Self,
+  ) -> Result<crate::sys::napi_value> {
     if Weak::strong_count(&val.finalize_callbacks) == 0 {
       return Err(Error::new(
         Status::GenericFailure,
@@ -218,7 +242,10 @@ impl<T: 'static> ToNapiValue for WeakReference<T> {
 }
 
 impl<T: 'static> WeakReference<T> {
-  pub fn upgrade(&self, env: Env) -> Result<Option<Reference<T>>> {
+  pub fn upgrade(
+    &self,
+    env: Env,
+  ) -> Result<Option<Reference<T>>> {
     if let Some(finalize_callbacks) = self.finalize_callbacks.upgrade() {
       let mut ref_count = 0;
       check_status!(
@@ -262,14 +289,20 @@ pub struct SharedReference<T: 'static, S: 'static> {
 }
 
 impl<T: 'static, S: 'static> SharedReference<T, S> {
-  pub fn clone(&self, env: Env) -> Result<Self> {
+  pub fn clone(
+    &self,
+    env: Env,
+  ) -> Result<Self> {
     Ok(SharedReference {
       raw: self.raw,
       owner: self.owner.clone(env)?,
     })
   }
 
-  pub fn clone_owner(&self, env: Env) -> Result<Reference<T>> {
+  pub fn clone_owner(
+    &self,
+    env: Env,
+  ) -> Result<Reference<T>> {
     self.owner.clone(env)
   }
 
@@ -295,7 +328,10 @@ impl<T: 'static, S: 'static> SharedReference<T, S> {
 }
 
 impl<T: 'static, S: 'static> ToNapiValue for SharedReference<T, S> {
-  unsafe fn to_napi_value(env: crate::sys::napi_env, val: Self) -> Result<crate::sys::napi_value> {
+  unsafe fn to_napi_value(
+    env: crate::sys::napi_env,
+    val: Self,
+  ) -> Result<crate::sys::napi_value> {
     let mut result = ptr::null_mut();
     check_status!(
       unsafe { crate::sys::napi_get_reference_value(env, val.owner.napi_ref, &mut result) },

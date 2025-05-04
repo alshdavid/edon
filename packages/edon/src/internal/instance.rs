@@ -105,9 +105,7 @@ unsafe extern "C" fn edon_prelude_main(
 
         resolve.send(()).unwrap();
       }
-      NodejsEvent::Env { callback } => {
-        callback(env)
-      },
+      NodejsEvent::Env { callback } => callback(env),
     }
   }
 

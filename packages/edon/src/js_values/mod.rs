@@ -3,10 +3,18 @@ use std::ffi::c_void;
 use std::ffi::CString;
 use std::ptr;
 
-use crate::{
-  bindgen_runtime::{FromNapiValue, ToNapiValue, TypeName, ValidateNapiValue},
-  check_status, sys, type_of, Callback, Error, Result, Status, ValueType,
-};
+use crate::bindgen_runtime::FromNapiValue;
+use crate::bindgen_runtime::ToNapiValue;
+use crate::bindgen_runtime::TypeName;
+use crate::bindgen_runtime::ValidateNapiValue;
+use crate::check_status;
+use crate::sys;
+use crate::type_of;
+use crate::Callback;
+use crate::Error;
+use crate::Result;
+use crate::Status;
+use crate::ValueType;
 
 #[cfg(feature = "serde-json")]
 mod de;
@@ -107,7 +115,10 @@ impl ValidateNapiValue for JsExternal {}
 macro_rules! impl_napi_value_trait {
   ($js_value:ident, $value_type:ident) => {
     impl NapiValue for $js_value {
-      unsafe fn from_raw(env: sys::napi_env, value: sys::napi_value) -> Result<$js_value> {
+      unsafe fn from_raw(
+        env: sys::napi_env,
+        value: sys::napi_value,
+      ) -> Result<$js_value> {
         let value_type = type_of!(env, value)?;
         if value_type != $value_type {
           Err(Error::new(
@@ -123,7 +134,10 @@ macro_rules! impl_napi_value_trait {
         }
       }
 
-      unsafe fn from_raw_unchecked(env: sys::napi_env, value: sys::napi_value) -> $js_value {
+      unsafe fn from_raw_unchecked(
+        env: sys::napi_env,
+        value: sys::napi_value,
+      ) -> $js_value {
         $js_value(Value {
           env,
           value,
@@ -208,7 +222,7 @@ macro_rules! impl_js_value_methods {
         }))
       }
 
-            pub fn is_date(&self) -> Result<bool> {
+      pub fn is_date(&self) -> Result<bool> {
         let mut is_date = true;
         check_status!(unsafe { sys::napi_is_date(self.0.env, self.0.value, &mut is_date) })?;
         Ok(is_date)
@@ -250,7 +264,10 @@ macro_rules! impl_js_value_methods {
         Ok(is_buffer)
       }
 
-      pub fn instanceof<Constructor>(&self, constructor: Constructor) -> Result<bool>
+      pub fn instanceof<Constructor>(
+        &self,
+        constructor: Constructor,
+      ) -> Result<bool>
       where
         Constructor: NapiRaw,
       {
@@ -267,7 +284,11 @@ macro_rules! impl_js_value_methods {
 macro_rules! impl_object_methods {
   ($js_value:ident) => {
     impl $js_value {
-      pub fn set_property<K, V>(&mut self, key: K, value: V) -> Result<()>
+      pub fn set_property<K, V>(
+        &mut self,
+        key: K,
+        value: V,
+      ) -> Result<()>
       where
         K: NapiRaw,
         V: NapiRaw,
@@ -277,7 +298,10 @@ macro_rules! impl_object_methods {
         })
       }
 
-      pub fn get_property<K, T>(&self, key: K) -> Result<T>
+      pub fn get_property<K, T>(
+        &self,
+        key: K,
+      ) -> Result<T>
       where
         K: NapiRaw,
         T: NapiValue,
@@ -289,7 +313,10 @@ macro_rules! impl_object_methods {
         unsafe { T::from_raw(self.0.env, raw_value) }
       }
 
-      pub fn get_property_unchecked<K, T>(&self, key: K) -> Result<T>
+      pub fn get_property_unchecked<K, T>(
+        &self,
+        key: K,
+      ) -> Result<T>
       where
         K: NapiRaw,
         T: NapiValue,
@@ -301,7 +328,11 @@ macro_rules! impl_object_methods {
         Ok(unsafe { T::from_raw_unchecked(self.0.env, raw_value) })
       }
 
-      pub fn set_named_property<T>(&mut self, name: &str, value: T) -> Result<()>
+      pub fn set_named_property<T>(
+        &mut self,
+        name: &str,
+        value: T,
+      ) -> Result<()>
       where
         T: ToNapiValue,
       {
@@ -316,7 +347,11 @@ macro_rules! impl_object_methods {
         })
       }
 
-      pub fn create_named_method(&mut self, name: &str, function: Callback) -> Result<()> {
+      pub fn create_named_method(
+        &mut self,
+        name: &str,
+        function: Callback,
+      ) -> Result<()> {
         let mut js_function = ptr::null_mut();
         let len = name.len();
         let name = CString::new(name)?;
@@ -338,7 +373,10 @@ macro_rules! impl_object_methods {
         )
       }
 
-      pub fn get_named_property<T>(&self, name: &str) -> Result<T>
+      pub fn get_named_property<T>(
+        &self,
+        name: &str,
+      ) -> Result<T>
       where
         T: FromNapiValue + ValidateNapiValue,
       {
@@ -359,7 +397,10 @@ macro_rules! impl_object_methods {
         unsafe { <T as FromNapiValue>::from_napi_value(self.0.env, raw_value) }
       }
 
-      pub fn get_named_property_unchecked<T>(&self, name: &str) -> Result<T>
+      pub fn get_named_property_unchecked<T>(
+        &self,
+        name: &str,
+      ) -> Result<T>
       where
         T: FromNapiValue,
       {
@@ -374,7 +415,10 @@ macro_rules! impl_object_methods {
         unsafe { <T as FromNapiValue>::from_napi_value(self.0.env, raw_value) }
       }
 
-      pub fn has_named_property<N: AsRef<str>>(&self, name: N) -> Result<bool> {
+      pub fn has_named_property<N: AsRef<str>>(
+        &self,
+        name: N,
+      ) -> Result<bool> {
         let mut result = false;
         let key = CString::new(name.as_ref())?;
         check_status!(
@@ -386,7 +430,10 @@ macro_rules! impl_object_methods {
         Ok(result)
       }
 
-      pub fn delete_property<S>(&mut self, name: S) -> Result<bool>
+      pub fn delete_property<S>(
+        &mut self,
+        name: S,
+      ) -> Result<bool>
       where
         S: NapiRaw,
       {
@@ -397,11 +444,19 @@ macro_rules! impl_object_methods {
         Ok(result)
       }
 
-      pub fn delete_named_property(&mut self, name: &str) -> Result<bool> {
+      pub fn delete_named_property(
+        &mut self,
+        name: &str,
+      ) -> Result<bool> {
         let mut result = false;
         let mut js_key = ptr::null_mut();
         check_status!(unsafe {
-          sys::napi_create_string_utf8(self.0.env, name.as_ptr().cast(), name.len() as isize, &mut js_key)
+          sys::napi_create_string_utf8(
+            self.0.env,
+            name.as_ptr().cast(),
+            name.len() as isize,
+            &mut js_key,
+          )
         })?;
         check_status!(unsafe {
           sys::napi_delete_property(self.0.env, self.0.value, js_key, &mut result)
@@ -409,11 +464,19 @@ macro_rules! impl_object_methods {
         Ok(result)
       }
 
-      pub fn has_own_property(&self, key: &str) -> Result<bool> {
+      pub fn has_own_property(
+        &self,
+        key: &str,
+      ) -> Result<bool> {
         let mut result = false;
         let mut js_key = ptr::null_mut();
         check_status!(unsafe {
-          sys::napi_create_string_utf8(self.0.env, key.as_ptr().cast(), key.len() as isize, &mut js_key)
+          sys::napi_create_string_utf8(
+            self.0.env,
+            key.as_ptr().cast(),
+            key.len() as isize,
+            &mut js_key,
+          )
         })?;
         check_status!(unsafe {
           sys::napi_has_own_property(self.0.env, self.0.value, js_key, &mut result)
@@ -421,7 +484,10 @@ macro_rules! impl_object_methods {
         Ok(result)
       }
 
-      pub fn has_own_property_js<K>(&self, key: K) -> Result<bool>
+      pub fn has_own_property_js<K>(
+        &self,
+        key: K,
+      ) -> Result<bool>
       where
         K: NapiRaw,
       {
@@ -432,11 +498,19 @@ macro_rules! impl_object_methods {
         Ok(result)
       }
 
-      pub fn has_property(&self, name: &str) -> Result<bool> {
+      pub fn has_property(
+        &self,
+        name: &str,
+      ) -> Result<bool> {
         let mut js_key = ptr::null_mut();
         let mut result = false;
         check_status!(unsafe {
-          sys::napi_create_string_utf8(self.0.env, name.as_ptr().cast(), name.len() as isize, &mut js_key)
+          sys::napi_create_string_utf8(
+            self.0.env,
+            name.as_ptr().cast(),
+            name.len() as isize,
+            &mut js_key,
+          )
         })?;
         check_status!(unsafe {
           sys::napi_has_property(self.0.env, self.0.value, js_key, &mut result)
@@ -444,7 +518,10 @@ macro_rules! impl_object_methods {
         Ok(result)
       }
 
-      pub fn has_property_js<K>(&self, name: K) -> Result<bool>
+      pub fn has_property_js<K>(
+        &self,
+        name: K,
+      ) -> Result<bool>
       where
         K: NapiRaw,
       {
@@ -465,7 +542,7 @@ macro_rules! impl_object_methods {
 
       /// <https://nodejs.org/api/n-api.html#n_api_napi_get_all_property_names>
       /// return `Array` of property names
-            pub fn get_all_property_names(
+      pub fn get_all_property_names(
         &self,
         mode: KeyCollectionMode,
         filter: KeyFilter,
@@ -504,7 +581,11 @@ macro_rules! impl_object_methods {
         Ok(unsafe { T::from_raw_unchecked(self.0.env, result) })
       }
 
-      pub fn set_element<T>(&mut self, index: u32, value: T) -> Result<()>
+      pub fn set_element<T>(
+        &mut self,
+        index: u32,
+        value: T,
+      ) -> Result<()>
       where
         T: NapiRaw,
       {
@@ -513,7 +594,10 @@ macro_rules! impl_object_methods {
         })
       }
 
-      pub fn has_element(&self, index: u32) -> Result<bool> {
+      pub fn has_element(
+        &self,
+        index: u32,
+      ) -> Result<bool> {
         let mut result = false;
         check_status!(unsafe {
           sys::napi_has_element(self.0.env, self.0.value, index, &mut result)
@@ -521,7 +605,10 @@ macro_rules! impl_object_methods {
         Ok(result)
       }
 
-      pub fn delete_element(&mut self, index: u32) -> Result<bool> {
+      pub fn delete_element(
+        &mut self,
+        index: u32,
+      ) -> Result<bool> {
         let mut result = false;
         check_status!(unsafe {
           sys::napi_delete_element(self.0.env, self.0.value, index, &mut result)
@@ -529,7 +616,10 @@ macro_rules! impl_object_methods {
         Ok(result)
       }
 
-      pub fn get_element<T>(&self, index: u32) -> Result<T>
+      pub fn get_element<T>(
+        &self,
+        index: u32,
+      ) -> Result<T>
       where
         T: NapiValue,
       {
@@ -540,7 +630,10 @@ macro_rules! impl_object_methods {
         unsafe { T::from_raw(self.0.env, raw_value) }
       }
 
-      pub fn get_element_unchecked<T>(&self, index: u32) -> Result<T>
+      pub fn get_element_unchecked<T>(
+        &self,
+        index: u32,
+      ) -> Result<T>
       where
         T: NapiValue,
       {
@@ -552,9 +645,12 @@ macro_rules! impl_object_methods {
       }
 
       /// This method allows the efficient definition of multiple properties on a given object.
-      pub fn define_properties(&mut self, properties: &[Property]) -> Result<()> {
+      pub fn define_properties(
+        &mut self,
+        properties: &[Property],
+      ) -> Result<()> {
         let properties_iter = properties.iter().map(|property| property.raw());
-                {
+        {
           let mut closures = properties_iter
             .clone()
             .map(|p| p.data)
@@ -606,11 +702,11 @@ macro_rules! impl_object_methods {
         Ok(length)
       }
 
-            pub fn freeze(&mut self) -> Result<()> {
+      pub fn freeze(&mut self) -> Result<()> {
         check_status!(unsafe { sys::napi_object_freeze(self.0.env, self.0.value) })
       }
 
-            pub fn seal(&mut self) -> Result<()> {
+      pub fn seal(&mut self) -> Result<()> {
         check_status!(unsafe { sys::napi_object_seal(self.0.env, self.0.value) })
       }
     }
@@ -624,10 +720,16 @@ pub trait NapiRaw {
 
 pub trait NapiValue: Sized + NapiRaw {
   #[allow(clippy::missing_safety_doc)]
-  unsafe fn from_raw(env: sys::napi_env, value: sys::napi_value) -> Result<Self>;
+  unsafe fn from_raw(
+    env: sys::napi_env,
+    value: sys::napi_value,
+  ) -> Result<Self>;
 
   #[allow(clippy::missing_safety_doc)]
-  unsafe fn from_raw_unchecked(env: sys::napi_env, value: sys::napi_value) -> Self;
+  unsafe fn from_raw_unchecked(
+    env: sys::napi_env,
+    value: sys::napi_value,
+  ) -> Self;
 }
 
 impl_js_value_methods!(JsUnknown);
@@ -677,7 +779,10 @@ impl_napi_value_trait!(JsExternal, External);
 impl_napi_value_trait!(JsSymbol, Symbol);
 
 impl NapiValue for JsUnknown {
-  unsafe fn from_raw(env: sys::napi_env, value: sys::napi_value) -> Result<Self> {
+  unsafe fn from_raw(
+    env: sys::napi_env,
+    value: sys::napi_value,
+  ) -> Result<Self> {
     Ok(JsUnknown(Value {
       env,
       value,
@@ -685,7 +790,10 @@ impl NapiValue for JsUnknown {
     }))
   }
 
-  unsafe fn from_raw_unchecked(env: sys::napi_env, value: sys::napi_value) -> Self {
+  unsafe fn from_raw_unchecked(
+    env: sys::napi_env,
+    value: sys::napi_value,
+  ) -> Self {
     JsUnknown(Value {
       env,
       value,
@@ -726,7 +834,11 @@ impl JsUnknown {
   }
 }
 
-unsafe extern "C" fn finalize_closures(_env: sys::napi_env, data: *mut c_void, len: *mut c_void) {
+unsafe extern "C" fn finalize_closures(
+  _env: sys::napi_env,
+  data: *mut c_void,
+  len: *mut c_void,
+) {
   let length: usize = *unsafe { Box::from_raw(len.cast()) };
   let closures: Vec<*mut PropertyClosures> =
     unsafe { Vec::from_raw_parts(data.cast(), length, length) };

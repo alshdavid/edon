@@ -1,4 +1,7 @@
-use crate::{bindgen_prelude::*, check_status, sys, ValueType};
+use crate::bindgen_prelude::*;
+use crate::check_status;
+use crate::sys;
+use crate::ValueType;
 
 impl TypeName for bool {
   fn type_name() -> &'static str {
@@ -13,7 +16,10 @@ impl TypeName for bool {
 impl ValidateNapiValue for bool {}
 
 impl ToNapiValue for bool {
-  unsafe fn to_napi_value(env: sys::napi_env, val: bool) -> Result<sys::napi_value> {
+  unsafe fn to_napi_value(
+    env: sys::napi_env,
+    val: bool,
+  ) -> Result<sys::napi_value> {
     let mut ptr = std::ptr::null_mut();
 
     check_status!(
@@ -26,7 +32,10 @@ impl ToNapiValue for bool {
 }
 
 impl FromNapiValue for bool {
-  unsafe fn from_napi_value(env: sys::napi_env, napi_val: sys::napi_value) -> Result<Self> {
+  unsafe fn from_napi_value(
+    env: sys::napi_env,
+    napi_val: sys::napi_value,
+  ) -> Result<Self> {
     let mut ret = false;
 
     check_status!(

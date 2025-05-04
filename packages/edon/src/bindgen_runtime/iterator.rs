@@ -1,10 +1,14 @@
+use std::ffi::c_void;
+use std::os::raw::c_char;
 use std::ptr;
-use std::{ffi::c_void, os::raw::c_char};
 
+use super::FromNapiValue;
+use super::ToNapiValue;
+use crate::bindgen_runtime::Unknown;
+use crate::check_status_or_throw;
+use crate::sys;
+use crate::Env;
 use crate::Value;
-use crate::{bindgen_runtime::Unknown, check_status_or_throw, sys, Env};
-
-use super::{FromNapiValue, ToNapiValue};
 
 const GENERATOR_STATE_KEY: &str = "[[GeneratorState]]\0";
 
@@ -17,19 +21,29 @@ pub trait Generator {
 
   /// Handle the `Generator.next()`
   /// <https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Generator/next>
-  fn next(&mut self, value: Option<Self::Next>) -> Option<Self::Yield>;
+  fn next(
+    &mut self,
+    value: Option<Self::Next>,
+  ) -> Option<Self::Yield>;
 
   #[allow(unused_variables)]
   /// Implement complete to handle the `Generator.return()`
   /// <https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Generator/return>
-  fn complete(&mut self, value: Option<Self::Return>) -> Option<Self::Yield> {
+  fn complete(
+    &mut self,
+    value: Option<Self::Return>,
+  ) -> Option<Self::Yield> {
     None
   }
 
   #[allow(unused_variables)]
   /// Implement catch to handle the `Generator.throw()`
   /// <https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Generator/throw>
-  fn catch(&mut self, env: Env, value: Unknown) -> Result<Option<Self::Yield>, Unknown> {
+  fn catch(
+    &mut self,
+    env: Env,
+    value: Unknown,
+  ) -> Result<Option<Self::Yield>, Unknown> {
     Err(value)
   }
 }
@@ -540,7 +554,11 @@ extern "C" fn generator_throw<T: Generator>(
   result
 }
 
-fn set_generator_value<V: ToNapiValue>(env: sys::napi_env, result: sys::napi_value, value: V) {
+fn set_generator_value<V: ToNapiValue>(
+  env: sys::napi_env,
+  result: sys::napi_value,
+  value: V,
+) {
   match unsafe { ToNapiValue::to_napi_value(env, value) } {
     Ok(val) => {
       check_status_or_throw!(

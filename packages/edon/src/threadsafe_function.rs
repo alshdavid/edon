@@ -4,14 +4,28 @@ use std::convert::Into;
 use std::ffi::CString;
 use std::marker::PhantomData;
 use std::os::raw::c_void;
-use std::ptr::{self, null_mut};
-use std::sync::atomic::{AtomicBool, AtomicPtr, Ordering};
-use std::sync::{Arc, RwLock, RwLockWriteGuard, Weak};
+use std::ptr::null_mut;
+use std::ptr::{self};
+use std::sync::atomic::AtomicBool;
+use std::sync::atomic::AtomicPtr;
+use std::sync::atomic::Ordering;
+use std::sync::Arc;
+use std::sync::RwLock;
+use std::sync::RwLockWriteGuard;
+use std::sync::Weak;
 
-use crate::bindgen_runtime::{
-  FromNapiValue, JsValuesTupleIntoVec, ToNapiValue, TypeName, ValidateNapiValue,
-};
-use crate::{check_status, sys, Env, JsError, JsUnknown, Result, Status};
+use crate::bindgen_runtime::FromNapiValue;
+use crate::bindgen_runtime::JsValuesTupleIntoVec;
+use crate::bindgen_runtime::ToNapiValue;
+use crate::bindgen_runtime::TypeName;
+use crate::bindgen_runtime::ValidateNapiValue;
+use crate::check_status;
+use crate::sys;
+use crate::Env;
+use crate::JsError;
+use crate::JsUnknown;
+use crate::Result;
+use crate::Status;
 
 /// ThreadSafeFunction Context object
 /// the `value` is the value passed to `call` method
@@ -115,7 +129,10 @@ impl ThreadsafeFunctionHandle {
   }
 
   /// Lock `aborted` with read access, call `f` with the value of `aborted`, then unlock it
-  fn with_read_aborted<RT, F>(&self, f: F) -> RT
+  fn with_read_aborted<RT, F>(
+    &self,
+    f: F,
+  ) -> RT
   where
     F: FnOnce(bool) -> RT,
   {
@@ -127,7 +144,10 @@ impl ThreadsafeFunctionHandle {
   }
 
   /// Lock `aborted` with write access, call `f` with the `RwLockWriteGuard`, then unlock it
-  fn with_write_aborted<RT, F>(&self, f: F) -> RT
+  fn with_write_aborted<RT, F>(
+    &self,
+    f: F,
+  ) -> RT
   where
     F: FnOnce(RwLockWriteGuard<bool>) -> RT,
   {
@@ -147,7 +167,10 @@ impl ThreadsafeFunctionHandle {
     self.raw.load(Ordering::SeqCst)
   }
 
-  fn set_raw(&self, raw: sys::napi_threadsafe_function) {
+  fn set_raw(
+    &self,
+    raw: sys::napi_threadsafe_function,
+  ) {
     self.raw.store(raw, Ordering::SeqCst)
   }
 }
@@ -258,7 +281,10 @@ impl<T: 'static, ES: ErrorStrategy::T> Clone for ThreadsafeFunction<T, ES> {
 
 impl<T: ToNapiValue> JsValuesTupleIntoVec for T {
   #[allow(clippy::not_unsafe_ptr_arg_deref)]
-  fn into_vec(self, env: sys::napi_env) -> Result<Vec<sys::napi_value>> {
+  fn into_vec(
+    self,
+    env: sys::napi_env,
+  ) -> Result<Vec<sys::napi_value>> {
     Ok(vec![unsafe {
       <T as ToNapiValue>::to_napi_value(env, self)?
     }])
@@ -312,7 +338,10 @@ impl_js_value_tuple_to_vec!(
 impl<T: JsValuesTupleIntoVec + 'static, ES: ErrorStrategy::T> FromNapiValue
   for ThreadsafeFunction<T, ES>
 {
-  unsafe fn from_napi_value(env: sys::napi_env, napi_val: sys::napi_value) -> Result<Self> {
+  unsafe fn from_napi_value(
+    env: sys::napi_env,
+    napi_val: sys::napi_value,
+  ) -> Result<Self> {
     Self::create(env, napi_val, 0, |ctx| ctx.value.into_vec(ctx.env.0))
   }
 }
@@ -367,7 +396,10 @@ impl<T: 'static, ES: ErrorStrategy::T> ThreadsafeFunction<T, ES> {
   /// for more information.
   ///
   /// "ref" is a keyword so that we use "refer" here.
-  pub fn refer(&mut self, env: &Env) -> Result<()> {
+  pub fn refer(
+    &mut self,
+    env: &Env,
+  ) -> Result<()> {
     self.handle.with_read_aborted(|aborted| {
       if !aborted && !self.handle.referred.load(Ordering::Relaxed) {
         check_status!(unsafe { sys::napi_ref_threadsafe_function(env.0, self.handle.get_raw()) })?;
@@ -379,7 +411,10 @@ impl<T: 'static, ES: ErrorStrategy::T> ThreadsafeFunction<T, ES> {
 
   /// See [napi_unref_threadsafe_function](https://nodejs.org/api/n-api.html#n_api_napi_unref_threadsafe_function)
   /// for more information.
-  pub fn unref(&mut self, env: &Env) -> Result<()> {
+  pub fn unref(
+    &mut self,
+    env: &Env,
+  ) -> Result<()> {
     self.handle.with_read_aborted(|aborted| {
       if !aborted && self.handle.referred.load(Ordering::Relaxed) {
         check_status!(unsafe {
@@ -419,7 +454,11 @@ impl<T: 'static, ES: ErrorStrategy::T> ThreadsafeFunction<T, ES> {
 impl<T: 'static> ThreadsafeFunction<T, ErrorStrategy::CalleeHandled> {
   /// See [napi_call_threadsafe_function](https://nodejs.org/api/n-api.html#n_api_napi_call_threadsafe_function)
   /// for more information.
-  pub fn call(&self, value: Result<T>, mode: ThreadsafeFunctionCallMode) -> Status {
+  pub fn call(
+    &self,
+    value: Result<T>,
+    mode: ThreadsafeFunctionCallMode,
+  ) -> Status {
     self.handle.with_read_aborted(|aborted| {
       if aborted {
         return Status::Closing;
@@ -478,7 +517,11 @@ impl<T: 'static> ThreadsafeFunction<T, ErrorStrategy::CalleeHandled> {
 impl<T: 'static> ThreadsafeFunction<T, ErrorStrategy::Fatal> {
   /// See [napi_call_threadsafe_function](https://nodejs.org/api/n-api.html#n_api_napi_call_threadsafe_function)
   /// for more information.
-  pub fn call(&self, value: T, mode: ThreadsafeFunctionCallMode) -> Status {
+  pub fn call(
+    &self,
+    value: T,
+    mode: ThreadsafeFunctionCallMode,
+  ) -> Status {
     self.handle.with_read_aborted(|aborted| {
       if aborted {
         return Status::Closing;
@@ -689,7 +732,10 @@ unsafe extern "C" fn call_js_cb<T: 'static, V: ToNapiValue, R, ES>(
   handle_call_js_cb_status(status, raw_env)
 }
 
-fn handle_call_js_cb_status(status: sys::napi_status, raw_env: sys::napi_env) {
+fn handle_call_js_cb_status(
+  status: sys::napi_status,
+  raw_env: sys::napi_env,
+) {
   if status == sys::Status::napi_ok {
     return;
   }
@@ -853,7 +899,10 @@ impl TypeName for UnknownReturnValue {
 impl ValidateNapiValue for UnknownReturnValue {}
 
 impl FromNapiValue for UnknownReturnValue {
-  unsafe fn from_napi_value(_env: sys::napi_env, _napi_val: sys::napi_value) -> Result<Self> {
+  unsafe fn from_napi_value(
+    _env: sys::napi_env,
+    _napi_val: sys::napi_value,
+  ) -> Result<Self> {
     Ok(UnknownReturnValue)
   }
 }

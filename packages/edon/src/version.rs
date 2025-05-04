@@ -1,5 +1,8 @@
-use crate::{sys, Error, Status};
 use std::ffi::CStr;
+
+use crate::sys;
+use crate::Error;
+use crate::Status;
 
 #[derive(Debug, Clone, Copy)]
 pub struct NodeVersion {

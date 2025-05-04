@@ -2,16 +2,26 @@
 use std::collections::HashSet;
 use std::ffi::c_void;
 use std::mem;
-use std::ops::{Deref, DerefMut};
-use std::ptr::{self, NonNull};
+use std::ops::Deref;
+use std::ops::DerefMut;
+use std::ptr::NonNull;
+use std::ptr::{self};
 use std::slice;
 use std::sync::Arc;
 #[cfg(all(debug_assertions, not(windows)))]
 use std::sync::Mutex;
 
 #[cfg(all(feature = "napi4", not(feature = "noop"), not(target_family = "wasm")))]
-use crate::bindgen_prelude::{CUSTOM_GC_TSFN, CUSTOM_GC_TSFN_DESTROYED, THREADS_CAN_ACCESS_ENV};
-use crate::{bindgen_prelude::*, check_status, sys, Result, ValueType};
+use crate::bindgen_prelude::CUSTOM_GC_TSFN;
+#[cfg(all(feature = "napi4", not(feature = "noop"), not(target_family = "wasm")))]
+use crate::bindgen_prelude::CUSTOM_GC_TSFN_DESTROYED;
+#[cfg(all(feature = "napi4", not(feature = "noop"), not(target_family = "wasm")))]
+use crate::bindgen_prelude::THREADS_CAN_ACCESS_ENV;
+use crate::bindgen_prelude::*;
+use crate::check_status;
+use crate::sys;
+use crate::Result;
+use crate::ValueType;
 
 #[cfg(all(debug_assertions, not(windows)))]
 thread_local! {
@@ -27,7 +37,10 @@ pub struct BufferSlice<'scope> {
 }
 
 impl<'scope> FromNapiValue for BufferSlice<'scope> {
-  unsafe fn from_napi_value(env: sys::napi_env, napi_val: sys::napi_value) -> Result<Self> {
+  unsafe fn from_napi_value(
+    env: sys::napi_env,
+    napi_val: sys::napi_value,
+  ) -> Result<Self> {
     let mut buf = ptr::null_mut();
     let mut len = 0usize;
     check_status!(
@@ -54,7 +67,10 @@ impl<'scope> FromNapiValue for BufferSlice<'scope> {
 
 impl ToNapiValue for BufferSlice<'_> {
   #[allow(unused_variables)]
-  unsafe fn to_napi_value(env: sys::napi_env, val: Self) -> Result<sys::napi_value> {
+  unsafe fn to_napi_value(
+    env: sys::napi_env,
+    val: Self,
+  ) -> Result<sys::napi_value> {
     Ok(val.raw_value)
   }
 }
@@ -70,7 +86,10 @@ impl TypeName for BufferSlice<'_> {
 }
 
 impl ValidateNapiValue for BufferSlice<'_> {
-  unsafe fn validate(env: sys::napi_env, napi_val: sys::napi_value) -> Result<sys::napi_value> {
+  unsafe fn validate(
+    env: sys::napi_env,
+    napi_val: sys::napi_value,
+  ) -> Result<sys::napi_value> {
     let mut is_buffer = false;
     check_status!(
       unsafe { sys::napi_is_buffer(env, napi_val, &mut is_buffer) },
@@ -281,7 +300,10 @@ impl TypeName for Buffer {
 }
 
 impl FromNapiValue for Buffer {
-  unsafe fn from_napi_value(env: sys::napi_env, napi_val: sys::napi_value) -> Result<Self> {
+  unsafe fn from_napi_value(
+    env: sys::napi_env,
+    napi_val: sys::napi_value,
+  ) -> Result<Self> {
     let mut buf = ptr::null_mut();
     let mut len = 0;
     let mut ref_ = ptr::null_mut();
@@ -318,7 +340,10 @@ impl FromNapiValue for Buffer {
 }
 
 impl ToNapiValue for Buffer {
-  unsafe fn to_napi_value(env: sys::napi_env, mut val: Self) -> Result<sys::napi_value> {
+  unsafe fn to_napi_value(
+    env: sys::napi_env,
+    mut val: Self,
+  ) -> Result<sys::napi_value> {
     // From Node.js value, not from `Vec<u8>`
     if let Some((ref_, _)) = val.raw {
       let mut buf = ptr::null_mut();
@@ -379,21 +404,30 @@ impl ToNapiValue for Buffer {
 }
 
 impl ToNapiValue for &Buffer {
-  unsafe fn to_napi_value(env: sys::napi_env, val: Self) -> Result<sys::napi_value> {
+  unsafe fn to_napi_value(
+    env: sys::napi_env,
+    val: Self,
+  ) -> Result<sys::napi_value> {
     let buf = val.clone();
     unsafe { ToNapiValue::to_napi_value(env, buf) }
   }
 }
 
 impl ToNapiValue for &mut Buffer {
-  unsafe fn to_napi_value(env: sys::napi_env, val: Self) -> Result<sys::napi_value> {
+  unsafe fn to_napi_value(
+    env: sys::napi_env,
+    val: Self,
+  ) -> Result<sys::napi_value> {
     let buf = val.clone();
     unsafe { ToNapiValue::to_napi_value(env, buf) }
   }
 }
 
 impl ValidateNapiValue for Buffer {
-  unsafe fn validate(env: sys::napi_env, napi_val: sys::napi_value) -> Result<sys::napi_value> {
+  unsafe fn validate(
+    env: sys::napi_env,
+    napi_val: sys::napi_value,
+  ) -> Result<sys::napi_value> {
     let mut is_buffer = false;
     check_status!(
       unsafe { sys::napi_is_buffer(env, napi_val, &mut is_buffer) },

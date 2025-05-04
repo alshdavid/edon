@@ -17,14 +17,14 @@ pub mod threadsafe_function;
 mod version;
 
 pub(crate) mod internal;
+mod napi;
 mod nodejs;
 mod nodejs_worker;
-mod napi;
 pub(crate) mod prelude;
 
 pub use libnode_sys as sys;
 
 pub use self::error::*;
-pub use self::nodejs::*;
 pub use self::napi::*;
+pub use self::nodejs::*;
 pub use self::nodejs_worker::*;

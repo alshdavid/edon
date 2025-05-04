@@ -1,14 +1,25 @@
 use std::ptr;
 
-use super::{FromNapiValue, ToNapiValue, TypeName, ValidateNapiValue};
-
+use super::FromNapiValue;
+use super::ToNapiValue;
+use super::TypeName;
+use super::ValidateNapiValue;
+use crate::check_pending_exception;
+use crate::check_status;
+use crate::sys;
+use crate::Env;
 pub use crate::JsFunction;
-use crate::{check_pending_exception, check_status, sys, Env, NapiRaw, Result, ValueType};
+use crate::NapiRaw;
+use crate::Result;
+use crate::ValueType;
 
 impl ValidateNapiValue for JsFunction {}
 
 pub trait JsValuesTupleIntoVec {
-  fn into_vec(self, env: sys::napi_env) -> Result<Vec<sys::napi_value>>;
+  fn into_vec(
+    self,
+    env: sys::napi_env,
+  ) -> Result<Vec<sys::napi_value>>;
 }
 
 /// A JavaScript function.
@@ -46,7 +57,10 @@ impl<'scope, Args: JsValuesTupleIntoVec, Return: FromNapiValue> NapiRaw
 impl<'scope, Args: JsValuesTupleIntoVec, Return: FromNapiValue> FromNapiValue
   for Function<'scope, Args, Return>
 {
-  unsafe fn from_napi_value(env: sys::napi_env, value: sys::napi_value) -> Result<Self> {
+  unsafe fn from_napi_value(
+    env: sys::napi_env,
+    value: sys::napi_value,
+  ) -> Result<Self> {
     Ok(Function {
       env,
       value,
@@ -66,7 +80,10 @@ impl<'scope, Args: JsValuesTupleIntoVec, Return: FromNapiValue> Function<'scope,
   /// Call the JavaScript function.
   /// `this` in the JavaScript function will be `undefined`.
   /// If you want to specify `this`, you can use the `apply` method.
-  pub fn call(&self, args: Args) -> Result<Return> {
+  pub fn call(
+    &self,
+    args: Args,
+  ) -> Result<Return> {
     let mut raw_this = ptr::null_mut();
     check_status!(
       unsafe { sys::napi_get_undefined(self.env, &mut raw_this) },
@@ -93,7 +110,11 @@ impl<'scope, Args: JsValuesTupleIntoVec, Return: FromNapiValue> Function<'scope,
 
   /// Call the JavaScript function.
   /// `this` in the JavaScript function will be the provided `this`.
-  pub fn apply<Context: ToNapiValue>(&self, this: Context, args: Args) -> Result<Return> {
+  pub fn apply<Context: ToNapiValue>(
+    &self,
+    this: Context,
+    args: Args,
+  ) -> Result<Return> {
     let raw_this = unsafe { Context::to_napi_value(self.env, this) }?;
     let args_ptr = args.into_vec(self.env)?;
     let mut raw_return = ptr::null_mut();
@@ -142,7 +163,10 @@ pub struct FunctionRef<Args: JsValuesTupleIntoVec, Return: FromNapiValue> {
 unsafe impl<Args: JsValuesTupleIntoVec, Return: FromNapiValue> Sync for FunctionRef<Args, Return> {}
 
 impl<Args: JsValuesTupleIntoVec, Return: FromNapiValue> FunctionRef<Args, Return> {
-  pub fn borrow_back<'scope>(&self, env: &'scope Env) -> Result<Function<'scope, Args, Return>> {
+  pub fn borrow_back<'scope>(
+    &self,
+    env: &'scope Env,
+  ) -> Result<Function<'scope, Args, Return>> {
     let mut value = ptr::null_mut();
     check_status!(
       unsafe { sys::napi_get_reference_value(env.0, self.inner, &mut value) },
@@ -178,7 +202,10 @@ impl<Args: JsValuesTupleIntoVec, Return: FromNapiValue> TypeName for FunctionRef
 impl<Args: JsValuesTupleIntoVec, Return: FromNapiValue> FromNapiValue
   for FunctionRef<Args, Return>
 {
-  unsafe fn from_napi_value(env: sys::napi_env, value: sys::napi_value) -> Result<Self> {
+  unsafe fn from_napi_value(
+    env: sys::napi_env,
+    value: sys::napi_value,
+  ) -> Result<Self> {
     let mut reference = ptr::null_mut();
     check_status!(
       unsafe { sys::napi_create_reference(env, value, 1, &mut reference) },

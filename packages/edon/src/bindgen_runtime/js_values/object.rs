@@ -1,5 +1,12 @@
-use crate::{bindgen_prelude::*, check_status, sys, type_of, JsObject, ValueType};
-use std::{ffi::CString, ptr};
+use std::ffi::CString;
+use std::ptr;
+
+use crate::bindgen_prelude::*;
+use crate::check_status;
+use crate::sys;
+use crate::type_of;
+use crate::JsObject;
+use crate::ValueType;
 
 pub type Object = JsObject;
 
@@ -21,7 +28,10 @@ impl Object {
     }))
   }
 
-  pub fn get<K: AsRef<str>, V: FromNapiValue>(&self, field: K) -> Result<Option<V>> {
+  pub fn get<K: AsRef<str>, V: FromNapiValue>(
+    &self,
+    field: K,
+  ) -> Result<Option<V>> {
     unsafe {
       self
         .get_inner(field.as_ref())?
@@ -30,7 +40,10 @@ impl Object {
     }
   }
 
-  fn get_inner(&self, field: &str) -> Result<Option<sys::napi_value>> {
+  fn get_inner(
+    &self,
+    field: &str,
+  ) -> Result<Option<sys::napi_value>> {
     let c_field = CString::new(field)?;
 
     unsafe {
@@ -51,11 +64,19 @@ impl Object {
     }
   }
 
-  pub fn set<K: AsRef<str>, V: ToNapiValue>(&mut self, field: K, val: V) -> Result<()> {
+  pub fn set<K: AsRef<str>, V: ToNapiValue>(
+    &mut self,
+    field: K,
+    val: V,
+  ) -> Result<()> {
     unsafe { self.set_inner(field.as_ref(), V::to_napi_value(self.0.env, val)?) }
   }
 
-  unsafe fn set_inner(&mut self, field: &str, napi_val: sys::napi_value) -> Result<()> {
+  unsafe fn set_inner(
+    &mut self,
+    field: &str,
+    napi_val: sys::napi_value,
+  ) -> Result<()> {
     let c_field = CString::new(field)?;
 
     unsafe {

@@ -1,18 +1,29 @@
 use std::ffi::c_void;
 use std::mem;
-use std::ops::{Deref, DerefMut};
+use std::ops::Deref;
+use std::ops::DerefMut;
 use std::ptr;
-use std::sync::{
-  atomic::{AtomicBool, Ordering},
-  Arc,
-};
+use std::sync::atomic::AtomicBool;
+use std::sync::atomic::Ordering;
+use std::sync::Arc;
 
+use super::FromNapiValue;
+use super::ToNapiValue;
+use super::TypeName;
+use super::ValidateNapiValue;
 #[cfg(all(feature = "napi4", not(feature = "noop"), not(target_family = "wasm")))]
-use crate::bindgen_prelude::{CUSTOM_GC_TSFN, CUSTOM_GC_TSFN_DESTROYED, THREADS_CAN_ACCESS_ENV};
+use crate::bindgen_prelude::CUSTOM_GC_TSFN;
+#[cfg(all(feature = "napi4", not(feature = "noop"), not(target_family = "wasm")))]
+use crate::bindgen_prelude::CUSTOM_GC_TSFN_DESTROYED;
+#[cfg(all(feature = "napi4", not(feature = "noop"), not(target_family = "wasm")))]
+use crate::bindgen_prelude::THREADS_CAN_ACCESS_ENV;
+use crate::check_status;
 pub use crate::js_values::TypedArrayType;
-use crate::{check_status, sys, Error, Result, Status, ValueType};
-
-use super::{FromNapiValue, ToNapiValue, TypeName, ValidateNapiValue};
+use crate::sys;
+use crate::Error;
+use crate::Result;
+use crate::Status;
+use crate::ValueType;
 
 #[cfg(target_family = "wasm")]
 extern "C" {
@@ -138,10 +149,17 @@ macro_rules! impl_typed_array {
     }
 
     impl $name {
-      fn noop_finalize(_data: *mut $rust_type, _length: usize) {}
+      fn noop_finalize(
+        _data: *mut $rust_type,
+        _length: usize,
+      ) {
+      }
 
       #[cfg(target_family = "wasm")]
-      pub fn sync(&mut self, env: &crate::Env) {
+      pub fn sync(
+        &mut self,
+        env: &crate::Env,
+      ) {
         if let Some((reference, _)) = self.raw {
           let mut value = ptr::null_mut();
           let mut array_buffer = ptr::null_mut();
@@ -219,7 +237,11 @@ macro_rules! impl_typed_array {
       /// # Safety
       ///
       /// The caller will be notified when the data is deallocated by vm
-      pub unsafe fn with_external_data<F>(data: *mut $rust_type, length: usize, notify: F) -> Self
+      pub unsafe fn with_external_data<F>(
+        data: *mut $rust_type,
+        length: usize,
+        notify: F,
+      ) -> Self
       where
         F: 'static + FnOnce(*mut $rust_type, usize),
       {
@@ -315,7 +337,10 @@ macro_rules! impl_typed_array {
     }
 
     impl FromNapiValue for $name {
-      unsafe fn from_napi_value(env: sys::napi_env, napi_val: sys::napi_value) -> Result<Self> {
+      unsafe fn from_napi_value(
+        env: sys::napi_env,
+        napi_val: sys::napi_value,
+      ) -> Result<Self> {
         let mut typed_array_type = 0;
         let mut length = 0;
         let mut data = ptr::null_mut();
@@ -359,7 +384,10 @@ macro_rules! impl_typed_array {
     }
 
     impl ToNapiValue for $name {
-      unsafe fn to_napi_value(env: sys::napi_env, mut val: Self) -> Result<sys::napi_value> {
+      unsafe fn to_napi_value(
+        env: sys::napi_env,
+        mut val: Self,
+      ) -> Result<sys::napi_value> {
         if let Some((ref_, _)) = val.raw {
           let mut napi_value = std::ptr::null_mut();
           check_status!(
@@ -440,7 +468,10 @@ macro_rules! impl_typed_array {
     }
 
     impl ToNapiValue for &mut $name {
-      unsafe fn to_napi_value(env: sys::napi_env, val: Self) -> Result<sys::napi_value> {
+      unsafe fn to_napi_value(
+        env: sys::napi_env,
+        val: Self,
+      ) -> Result<sys::napi_value> {
         if let Some((ref_, _)) = val.raw {
           let mut napi_value = std::ptr::null_mut();
           check_status!(
@@ -468,7 +499,10 @@ macro_rules! impl_typed_array {
 macro_rules! impl_from_slice {
   ($name:ident, $rust_type:ident, $typed_array_type:expr) => {
     impl FromNapiValue for &mut [$rust_type] {
-      unsafe fn from_napi_value(env: sys::napi_env, napi_val: sys::napi_value) -> Result<Self> {
+      unsafe fn from_napi_value(
+        env: sys::napi_env,
+        napi_val: sys::napi_value,
+      ) -> Result<Self> {
         let mut typed_array_type = 0;
         let mut length = 0;
         let mut data = ptr::null_mut();
@@ -503,7 +537,10 @@ macro_rules! impl_from_slice {
     }
 
     impl FromNapiValue for &[$rust_type] {
-      unsafe fn from_napi_value(env: sys::napi_env, napi_val: sys::napi_value) -> Result<Self> {
+      unsafe fn from_napi_value(
+        env: sys::napi_env,
+        napi_val: sys::napi_value,
+      ) -> Result<Self> {
         let mut typed_array_type = 0;
         let mut length = 0;
         let mut data = ptr::null_mut();
@@ -558,7 +595,10 @@ macro_rules! impl_from_slice {
     }
 
     impl ValidateNapiValue for &[$rust_type] {
-      unsafe fn validate(env: sys::napi_env, napi_val: sys::napi_value) -> Result<sys::napi_value> {
+      unsafe fn validate(
+        env: sys::napi_env,
+        napi_val: sys::napi_value,
+      ) -> Result<sys::napi_value> {
         let mut is_typed_array = false;
         check_status!(
           unsafe { sys::napi_is_typedarray(env, napi_val, &mut is_typed_array) },
@@ -575,7 +615,10 @@ macro_rules! impl_from_slice {
     }
 
     impl ValidateNapiValue for &mut [$rust_type] {
-      unsafe fn validate(env: sys::napi_env, napi_val: sys::napi_value) -> Result<sys::napi_value> {
+      unsafe fn validate(
+        env: sys::napi_env,
+        napi_val: sys::napi_value,
+      ) -> Result<sys::napi_value> {
         let mut is_typed_array = false;
         check_status!(
           unsafe { sys::napi_is_typedarray(env, napi_val, &mut is_typed_array) },
@@ -660,7 +703,10 @@ pub struct Uint8ClampedSlice<'scope> {
 }
 
 impl<'scope> FromNapiValue for Uint8ClampedSlice<'scope> {
-  unsafe fn from_napi_value(env: sys::napi_env, napi_val: sys::napi_value) -> Result<Self> {
+  unsafe fn from_napi_value(
+    env: sys::napi_env,
+    napi_val: sys::napi_value,
+  ) -> Result<Self> {
     let mut typed_array_type = 0;
     let mut length = 0;
     let mut data = ptr::null_mut();
@@ -699,7 +745,10 @@ impl<'scope> FromNapiValue for Uint8ClampedSlice<'scope> {
 
 impl ToNapiValue for Uint8ClampedSlice<'_> {
   #[allow(unused_variables)]
-  unsafe fn to_napi_value(env: sys::napi_env, val: Self) -> Result<sys::napi_value> {
+  unsafe fn to_napi_value(
+    env: sys::napi_env,
+    val: Self,
+  ) -> Result<sys::napi_value> {
     Ok(val.raw_value)
   }
 }
@@ -715,7 +764,10 @@ impl TypeName for Uint8ClampedSlice<'_> {
 }
 
 impl ValidateNapiValue for Uint8ClampedSlice<'_> {
-  unsafe fn validate(env: sys::napi_env, napi_val: sys::napi_value) -> Result<sys::napi_value> {
+  unsafe fn validate(
+    env: sys::napi_env,
+    napi_val: sys::napi_value,
+  ) -> Result<sys::napi_value> {
     let mut is_typedarray = false;
     check_status!(
       unsafe { sys::napi_is_typedarray(env, napi_val, &mut is_typedarray) },

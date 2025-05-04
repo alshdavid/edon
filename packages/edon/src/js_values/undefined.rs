@@ -1,9 +1,7 @@
-use crate::{
-  bindgen_runtime::{TypeName, ValidateNapiValue},
-  ValueType,
-};
-
 use super::Value;
+use crate::bindgen_runtime::TypeName;
+use crate::bindgen_runtime::ValidateNapiValue;
+use crate::ValueType;
 
 #[derive(Clone, Copy)]
 pub struct JsUndefined(pub(crate) Value);

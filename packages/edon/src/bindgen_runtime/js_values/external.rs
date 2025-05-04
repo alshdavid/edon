@@ -1,10 +1,16 @@
-use std::{
-  any::TypeId,
-  ops::{Deref, DerefMut},
-};
+use std::any::TypeId;
+use std::ops::Deref;
+use std::ops::DerefMut;
 
-use super::{FromNapiValue, ToNapiValue, TypeName, ValidateNapiValue};
-use crate::{check_status, sys, Error, Status, TaggedObject};
+use super::FromNapiValue;
+use super::ToNapiValue;
+use super::TypeName;
+use super::ValidateNapiValue;
+use crate::check_status;
+use crate::sys;
+use crate::Error;
+use crate::Status;
+use crate::TaggedObject;
 
 pub struct External<T: 'static> {
   obj: *mut TaggedObject<T>,
@@ -48,7 +54,7 @@ impl<T: 'static> External<T> {
   /// The `unknown_tagged_object` raw pointer must point to an `TaggedObject<T>` struct, which
   /// is essentially the pointer which napi-rs returns to the NAPI api.
   unsafe fn from_raw_impl(
-    unknown_tagged_object: *mut std::ffi::c_void,
+    unknown_tagged_object: *mut std::ffi::c_void
   ) -> Option<*mut TaggedObject<T>> {
     let type_id = unknown_tagged_object as *const TypeId;
     if unsafe { *type_id } == TypeId::of::<T>() {
@@ -68,7 +74,7 @@ impl<T: 'static> External<T> {
   /// Additionally, you must ensure that there are no other live mutable references to the `T` for
   /// the duration of the lifetime of the returned mutable reference.
   pub unsafe fn inner_from_raw_mut(
-    unknown_tagged_object: *mut std::ffi::c_void,
+    unknown_tagged_object: *mut std::ffi::c_void
   ) -> Option<&'static mut T> {
     Self::from_raw_impl(unknown_tagged_object)
       .and_then(|tagged_object| unsafe { (*tagged_object).object.as_mut() })
@@ -92,7 +98,10 @@ impl<T: 'static> External<T> {
   /// If getting the exact `size_hint` is difficult, you can provide an approximate value, it's only effect to the GC.
   ///
   /// If your `External` object is not effect to GC, you can use `External::new` instead.
-  pub fn new_with_size_hint(value: T, size_hint: usize) -> Self {
+  pub fn new_with_size_hint(
+    value: T,
+    size_hint: usize,
+  ) -> Self {
     Self {
       obj: Box::into_raw(Box::new(TaggedObject::new(value))),
       size_hint,
@@ -102,7 +111,10 @@ impl<T: 'static> External<T> {
 }
 
 impl<T: 'static> FromNapiValue for External<T> {
-  unsafe fn from_napi_value(env: sys::napi_env, napi_val: sys::napi_value) -> crate::Result<Self> {
+  unsafe fn from_napi_value(
+    env: sys::napi_env,
+    napi_val: sys::napi_value,
+  ) -> crate::Result<Self> {
     let mut unknown_tagged_object = std::ptr::null_mut();
     check_status!(
       unsafe { sys::napi_get_value_external(env, napi_val, &mut unknown_tagged_object) },
@@ -153,7 +165,10 @@ impl<T: 'static> DerefMut for External<T> {
 }
 
 impl<T: 'static> ToNapiValue for External<T> {
-  unsafe fn to_napi_value(env: sys::napi_env, mut val: Self) -> crate::Result<sys::napi_value> {
+  unsafe fn to_napi_value(
+    env: sys::napi_env,
+    mut val: Self,
+  ) -> crate::Result<sys::napi_value> {
     let mut napi_value = std::ptr::null_mut();
     check_status!(
       unsafe {

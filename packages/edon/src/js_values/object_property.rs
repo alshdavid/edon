@@ -5,11 +5,14 @@ use std::ptr;
 
 use bitflags::bitflags;
 
-use crate::{
-  bindgen_runtime::{FromNapiValue, This, ToNapiValue},
-  Env,
-};
-use crate::{sys, Callback, NapiRaw, Result};
+use crate::bindgen_runtime::FromNapiValue;
+use crate::bindgen_runtime::This;
+use crate::bindgen_runtime::ToNapiValue;
+use crate::sys;
+use crate::Callback;
+use crate::Env;
+use crate::NapiRaw;
+use crate::Result;
 
 #[derive(Copy, Clone)]
 pub struct PropertyClosures {
@@ -84,23 +87,35 @@ impl Property {
     })
   }
 
-  pub fn with_name(mut self, name: &str) -> Self {
+  pub fn with_name(
+    mut self,
+    name: &str,
+  ) -> Self {
     self.name = CString::new(name).unwrap();
     self
   }
 
-  pub fn with_method(mut self, callback: Callback) -> Self {
+  pub fn with_method(
+    mut self,
+    callback: Callback,
+  ) -> Self {
     self.method = Some(callback);
     self
   }
 
-  pub fn with_getter(mut self, callback: Callback) -> Self {
+  pub fn with_getter(
+    mut self,
+    callback: Callback,
+  ) -> Self {
     self.getter = Some(callback);
     self
   }
 
   #[cfg(feature = "napi5")]
-  pub fn with_getter_closure<R, F>(mut self, callback: F) -> Self
+  pub fn with_getter_closure<R, F>(
+    mut self,
+    callback: F,
+  ) -> Self
   where
     F: 'static + Fn(Env, This) -> Result<R>,
     R: ToNapiValue,
@@ -114,13 +129,19 @@ impl Property {
     self
   }
 
-  pub fn with_setter(mut self, callback: Callback) -> Self {
+  pub fn with_setter(
+    mut self,
+    callback: Callback,
+  ) -> Self {
     self.setter = Some(callback);
     self
   }
 
   #[cfg(feature = "napi5")]
-  pub fn with_setter_closure<F, V>(mut self, callback: F) -> Self
+  pub fn with_setter_closure<F, V>(
+    mut self,
+    callback: F,
+  ) -> Self
   where
     F: 'static + Fn(crate::Env, This, V) -> Result<()>,
     V: FromNapiValue,
@@ -134,12 +155,18 @@ impl Property {
     self
   }
 
-  pub fn with_property_attributes(mut self, attributes: PropertyAttributes) -> Self {
+  pub fn with_property_attributes(
+    mut self,
+    attributes: PropertyAttributes,
+  ) -> Self {
     self.attrs = attributes;
     self
   }
 
-  pub fn with_value<T: NapiRaw>(mut self, value: &T) -> Self {
+  pub fn with_value<T: NapiRaw>(
+    mut self,
+    value: &T,
+  ) -> Self {
     self.value = unsafe { T::raw(value) };
     self
   }
@@ -162,7 +189,10 @@ impl Property {
     }
   }
 
-  pub fn with_ctor(mut self, callback: Callback) -> Self {
+  pub fn with_ctor(
+    mut self,
+    callback: Callback,
+  ) -> Self {
     self.method = Some(callback);
     self.is_ctor = true;
     self

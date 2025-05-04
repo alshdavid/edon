@@ -1,6 +1,9 @@
 use std::ptr;
 
-use crate::{bindgen_prelude::*, check_status, JsObject, Value};
+use crate::bindgen_prelude::*;
+use crate::check_status;
+use crate::JsObject;
+use crate::Value;
 
 pub struct Array {
   env: sys::napi_env,
@@ -9,7 +12,10 @@ pub struct Array {
 }
 
 impl Array {
-  pub(crate) fn new(env: sys::napi_env, len: u32) -> Result<Self> {
+  pub(crate) fn new(
+    env: sys::napi_env,
+    len: u32,
+  ) -> Result<Self> {
     let mut ptr = ptr::null_mut();
     unsafe {
       check_status!(
@@ -25,7 +31,10 @@ impl Array {
     })
   }
 
-  pub fn get<T: FromNapiValue>(&self, index: u32) -> Result<Option<T>> {
+  pub fn get<T: FromNapiValue>(
+    &self,
+    index: u32,
+  ) -> Result<Option<T>> {
     if index >= self.len() {
       return Ok(None);
     }
@@ -42,7 +51,11 @@ impl Array {
     }
   }
 
-  pub fn set<T: ToNapiValue>(&mut self, index: u32, val: T) -> Result<()> {
+  pub fn set<T: ToNapiValue>(
+    &mut self,
+    index: u32,
+    val: T,
+  ) -> Result<()> {
     unsafe {
       let napi_val = T::to_napi_value(self.env, val)?;
 
@@ -60,7 +73,10 @@ impl Array {
     }
   }
 
-  pub fn insert<T: ToNapiValue>(&mut self, val: T) -> Result<()> {
+  pub fn insert<T: ToNapiValue>(
+    &mut self,
+    val: T,
+  ) -> Result<()> {
     self.set(self.len(), val)?;
     Ok(())
   }
@@ -92,13 +108,19 @@ impl TypeName for Array {
 }
 
 impl ToNapiValue for Array {
-  unsafe fn to_napi_value(_env: sys::napi_env, val: Self) -> Result<sys::napi_value> {
+  unsafe fn to_napi_value(
+    _env: sys::napi_env,
+    val: Self,
+  ) -> Result<sys::napi_value> {
     Ok(val.inner)
   }
 }
 
 impl FromNapiValue for Array {
-  unsafe fn from_napi_value(env: sys::napi_env, napi_val: sys::napi_value) -> Result<Self> {
+  unsafe fn from_napi_value(
+    env: sys::napi_env,
+    napi_val: sys::napi_value,
+  ) -> Result<Self> {
     let mut is_arr = false;
     check_status!(
       unsafe { sys::napi_is_array(env, napi_val, &mut is_arr) },
@@ -129,7 +151,10 @@ impl FromNapiValue for Array {
 
 impl Array {
   /// Create `Array` from `Vec<T>`
-  pub fn from_vec<T>(env: &Env, value: Vec<T>) -> Result<Self>
+  pub fn from_vec<T>(
+    env: &Env,
+    value: Vec<T>,
+  ) -> Result<Self>
   where
     T: ToNapiValue,
   {
@@ -142,7 +167,10 @@ impl Array {
   }
 
   /// Create `Array` from `&Vec<String>`
-  pub fn from_ref_vec_string(env: &Env, value: &[String]) -> Result<Self> {
+  pub fn from_ref_vec_string(
+    env: &Env,
+    value: &[String],
+  ) -> Result<Self> {
     let mut arr = Array::new(env.0, value.len() as u32)?;
     value.iter().enumerate().try_for_each(|(index, val)| {
       arr.set(index as u32, val.as_str())?;
@@ -152,7 +180,10 @@ impl Array {
   }
 
   /// Create `Array` from `&Vec<T: Copy + ToNapiValue>`
-  pub fn from_ref_vec<T>(env: &Env, value: &[T]) -> Result<Self>
+  pub fn from_ref_vec<T>(
+    env: &Env,
+    value: &[T],
+  ) -> Result<Self>
   where
     T: ToNapiValue + Copy,
   {
@@ -181,7 +212,10 @@ impl<T, const N: usize> ToNapiValue for [T; N]
 where
   T: ToNapiValue + Copy,
 {
-  unsafe fn to_napi_value(env: sys::napi_env, val: Self) -> Result<sys::napi_value> {
+  unsafe fn to_napi_value(
+    env: sys::napi_env,
+    val: Self,
+  ) -> Result<sys::napi_value> {
     let mut arr = Array::new(env, val.len() as u32)?;
 
     for (i, v) in val.into_iter().enumerate() {
@@ -196,7 +230,10 @@ impl<T> ToNapiValue for &[T]
 where
   T: ToNapiValue + Copy,
 {
-  unsafe fn to_napi_value(env: sys::napi_env, val: Self) -> Result<sys::napi_value> {
+  unsafe fn to_napi_value(
+    env: sys::napi_env,
+    val: Self,
+  ) -> Result<sys::napi_value> {
     let mut arr = Array::new(env, val.len() as u32)?;
 
     for (i, v) in val.iter().enumerate() {
@@ -211,7 +248,10 @@ impl<T> ToNapiValue for Vec<T>
 where
   T: ToNapiValue,
 {
-  unsafe fn to_napi_value(env: sys::napi_env, val: Self) -> Result<sys::napi_value> {
+  unsafe fn to_napi_value(
+    env: sys::napi_env,
+    val: Self,
+  ) -> Result<sys::napi_value> {
     let mut arr = Array::new(env, val.len() as u32)?;
 
     for (i, v) in val.into_iter().enumerate() {
@@ -225,7 +265,10 @@ where
 macro_rules! impl_for_primitive_type {
   ($primitive_type:ident) => {
     impl ToNapiValue for &Vec<$primitive_type> {
-      unsafe fn to_napi_value(env: sys::napi_env, val: Self) -> Result<sys::napi_value> {
+      unsafe fn to_napi_value(
+        env: sys::napi_env,
+        val: Self,
+      ) -> Result<sys::napi_value> {
         let mut arr = Array::new(env, val.len() as u32)?;
 
         for (i, v) in val.iter().enumerate() {
@@ -249,7 +292,10 @@ impl_for_primitive_type!(f64);
 impl_for_primitive_type!(bool);
 
 impl ToNapiValue for &Vec<String> {
-  unsafe fn to_napi_value(env: sys::napi_env, val: Self) -> Result<sys::napi_value> {
+  unsafe fn to_napi_value(
+    env: sys::napi_env,
+    val: Self,
+  ) -> Result<sys::napi_value> {
     let mut arr = Array::new(env, val.len() as u32)?;
 
     for (i, v) in val.iter().enumerate() {
@@ -264,7 +310,10 @@ impl<T> FromNapiValue for Vec<T>
 where
   T: FromNapiValue,
 {
-  unsafe fn from_napi_value(env: sys::napi_env, napi_val: sys::napi_value) -> Result<Self> {
+  unsafe fn from_napi_value(
+    env: sys::napi_env,
+    napi_val: sys::napi_value,
+  ) -> Result<Self> {
     let arr = unsafe { Array::from_napi_value(env, napi_val)? };
     let mut vec = vec![];
 
@@ -287,7 +336,10 @@ impl<T> ValidateNapiValue for Vec<T>
 where
   T: FromNapiValue,
 {
-  unsafe fn validate(env: sys::napi_env, napi_val: sys::napi_value) -> Result<sys::napi_value> {
+  unsafe fn validate(
+    env: sys::napi_env,
+    napi_val: sys::napi_value,
+  ) -> Result<sys::napi_value> {
     let mut is_array = false;
     check_status!(
       unsafe { sys::napi_is_array(env, napi_val, &mut is_array) },

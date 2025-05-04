@@ -1,7 +1,6 @@
 pub use crate::async_work::AsyncWorkPromise;
-pub use crate::call_context::CallContext;
-
 pub use crate::bindgen_runtime::iterator;
+pub use crate::call_context::CallContext;
 pub use crate::env::*;
 pub use crate::error::*;
 pub use crate::js_values::*;
@@ -49,19 +48,30 @@ macro_rules! assert_type_of {
 pub use crate::bindgen_runtime::ctor as module_init;
 
 pub mod bindgen_prelude {
-  pub use crate::{
-    assert_type_of, bindgen_runtime::*, check_pending_exception, check_status,
-    check_status_or_throw, error, error::*, sys, type_of, JsError, Property, PropertyAttributes,
-    Result, Status, Task, ValueType,
-  };
+  pub use crate::assert_type_of;
+  pub use crate::bindgen_runtime::*;
+  pub use crate::check_pending_exception;
+  pub use crate::check_status;
+  pub use crate::check_status_or_throw;
+  pub use crate::error;
+  pub use crate::error::*;
+  pub use crate::sys;
+  pub use crate::type_of;
+  pub use crate::JsError;
+  pub use crate::Property;
+  pub use crate::PropertyAttributes;
+  pub use crate::Result;
+  pub use crate::Status;
+  pub use crate::Task;
+  pub use crate::ValueType;
 }
 
 #[doc(hidden)]
 pub mod __private {
-  pub use crate::bindgen_runtime::{
-    get_class_constructor, iterator::create_iterator, register_class, ___CALL_FROM_FACTORY,
-  };
-
+  pub use crate::bindgen_runtime::get_class_constructor;
+  pub use crate::bindgen_runtime::iterator::create_iterator;
+  pub use crate::bindgen_runtime::register_class;
+  pub use crate::bindgen_runtime::___CALL_FROM_FACTORY;
   use crate::sys;
 
   pub unsafe fn log_js_value<V: AsRef<[sys::napi_value]>>(

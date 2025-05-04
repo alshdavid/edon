@@ -1,10 +1,17 @@
-use std::{
-  ptr,
-  rc::Rc,
-  sync::{Arc, Mutex},
-};
+use std::ptr;
+use std::rc::Rc;
+use std::sync::Arc;
+use std::sync::Mutex;
 
-use crate::{check_status, sys, Error, JsUnknown, NapiRaw, NapiValue, Result, Status, ValueType};
+use crate::check_status;
+use crate::sys;
+use crate::Error;
+use crate::JsUnknown;
+use crate::NapiRaw;
+use crate::NapiValue;
+use crate::Result;
+use crate::Status;
+use crate::ValueType;
 
 mod array;
 mod arraybuffer;
@@ -28,8 +35,6 @@ mod symbol;
 mod task;
 mod value_ref;
 
-pub use crate::js_values::JsUnknown as Unknown;
-pub use crate::JsDate as Date;
 pub use array::*;
 pub use arraybuffer::*;
 pub use bigint::*;
@@ -40,13 +45,15 @@ pub use external::*;
 pub use function::*;
 pub use nil::*;
 pub use object::*;
+#[cfg(feature = "latin1")]
+pub use string::latin1_string::*;
 pub use string::*;
 pub use symbol::*;
 pub use task::*;
 pub use value_ref::*;
 
-#[cfg(feature = "latin1")]
-pub use string::latin1_string::*;
+pub use crate::js_values::JsUnknown as Unknown;
+pub use crate::JsDate as Date;
 
 pub trait TypeName {
   fn type_name() -> &'static str;
@@ -58,7 +65,10 @@ pub trait ToNapiValue {
   /// # Safety
   ///
   /// this function called to convert rust values to napi values
-  unsafe fn to_napi_value(env: sys::napi_env, val: Self) -> Result<sys::napi_value>;
+  unsafe fn to_napi_value(
+    env: sys::napi_env,
+    val: Self,
+  ) -> Result<sys::napi_value>;
 }
 
 impl TypeName for JsUnknown {
@@ -74,19 +84,28 @@ impl TypeName for JsUnknown {
 impl ValidateNapiValue for JsUnknown {}
 
 impl ToNapiValue for sys::napi_value {
-  unsafe fn to_napi_value(_env: sys::napi_env, val: Self) -> Result<sys::napi_value> {
+  unsafe fn to_napi_value(
+    _env: sys::napi_env,
+    val: Self,
+  ) -> Result<sys::napi_value> {
     Ok(val)
   }
 }
 
 impl<T: NapiRaw> ToNapiValue for T {
-  unsafe fn to_napi_value(_env: sys::napi_env, val: Self) -> Result<sys::napi_value> {
+  unsafe fn to_napi_value(
+    _env: sys::napi_env,
+    val: Self,
+  ) -> Result<sys::napi_value> {
     Ok(unsafe { NapiRaw::raw(&val) })
   }
 }
 
 impl<T: NapiValue> FromNapiValue for T {
-  unsafe fn from_napi_value(env: sys::napi_env, napi_val: sys::napi_value) -> Result<Self> {
+  unsafe fn from_napi_value(
+    env: sys::napi_env,
+    napi_val: sys::napi_value,
+  ) -> Result<Self> {
     Ok(unsafe { T::from_raw_unchecked(env, napi_val) })
   }
 }
@@ -95,7 +114,10 @@ pub trait FromNapiValue: Sized {
   /// # Safety
   ///
   /// this function called to convert napi values to native rust values
-  unsafe fn from_napi_value(env: sys::napi_env, napi_val: sys::napi_value) -> Result<Self>;
+  unsafe fn from_napi_value(
+    env: sys::napi_env,
+    napi_val: sys::napi_value,
+  ) -> Result<Self>;
 
   fn from_unknown(value: JsUnknown) -> Result<Self> {
     unsafe { Self::from_napi_value(value.0.env, value.0.value) }
@@ -106,7 +128,10 @@ pub trait FromNapiRef {
   /// # Safety
   ///
   /// this function called to convert napi values to native rust values
-  unsafe fn from_napi_ref(env: sys::napi_env, napi_val: sys::napi_value) -> Result<&'static Self>;
+  unsafe fn from_napi_ref(
+    env: sys::napi_env,
+    napi_val: sys::napi_value,
+  ) -> Result<&'static Self>;
 }
 
 pub trait FromNapiMutRef {
@@ -126,7 +151,10 @@ pub trait ValidateNapiValue: TypeName {
   /// The reason why this function return `napi_value` is that if a `Promise<T>` passed in
   /// we need to return `Promise.reject(T)`, not the `T`.
   /// So we need to create `Promise.reject(T)` in this function.
-  unsafe fn validate(env: sys::napi_env, napi_val: sys::napi_value) -> Result<sys::napi_value> {
+  unsafe fn validate(
+    env: sys::napi_env,
+    napi_val: sys::napi_value,
+  ) -> Result<sys::napi_value> {
     let value_type = Self::value_type();
     if value_type == ValueType::Unknown {
       return Ok(ptr::null_mut());
@@ -164,7 +192,10 @@ impl<T: TypeName> TypeName for Option<T> {
 }
 
 impl<T: ValidateNapiValue> ValidateNapiValue for Option<T> {
-  unsafe fn validate(env: sys::napi_env, napi_val: sys::napi_value) -> Result<sys::napi_value> {
+  unsafe fn validate(
+    env: sys::napi_env,
+    napi_val: sys::napi_value,
+  ) -> Result<sys::napi_value> {
     let mut result = -1;
     check_status!(
       unsafe { sys::napi_typeof(env, napi_val, &mut result) },
@@ -193,7 +224,10 @@ impl<T> FromNapiValue for Option<T>
 where
   T: FromNapiValue,
 {
-  unsafe fn from_napi_value(env: sys::napi_env, napi_val: sys::napi_value) -> Result<Self> {
+  unsafe fn from_napi_value(
+    env: sys::napi_env,
+    napi_val: sys::napi_value,
+  ) -> Result<Self> {
     let mut val_type = 0;
 
     check_status!(
@@ -212,7 +246,10 @@ impl<T> ToNapiValue for Option<T>
 where
   T: ToNapiValue,
 {
-  unsafe fn to_napi_value(env: sys::napi_env, val: Self) -> Result<sys::napi_value> {
+  unsafe fn to_napi_value(
+    env: sys::napi_env,
+    val: Self,
+  ) -> Result<sys::napi_value> {
     match val {
       Some(val) => unsafe { T::to_napi_value(env, val) },
       None => {
@@ -231,7 +268,10 @@ impl<T> ToNapiValue for Result<T>
 where
   T: ToNapiValue,
 {
-  unsafe fn to_napi_value(env: sys::napi_env, val: Self) -> Result<sys::napi_value> {
+  unsafe fn to_napi_value(
+    env: sys::napi_env,
+    val: Self,
+  ) -> Result<sys::napi_value> {
     match val {
       Ok(v) => unsafe { T::to_napi_value(env, v) },
       Err(e) => {
@@ -260,7 +300,10 @@ impl<T: TypeName> TypeName for Rc<T> {
 }
 
 impl<T: ValidateNapiValue> ValidateNapiValue for Rc<T> {
-  unsafe fn validate(env: sys::napi_env, napi_val: sys::napi_value) -> Result<sys::napi_value> {
+  unsafe fn validate(
+    env: sys::napi_env,
+    napi_val: sys::napi_value,
+  ) -> Result<sys::napi_value> {
     let mut result = -1;
     check_status!(
       unsafe { sys::napi_typeof(env, napi_val, &mut result) },
@@ -287,7 +330,10 @@ impl<T> FromNapiValue for Rc<T>
 where
   T: FromNapiValue,
 {
-  unsafe fn from_napi_value(env: sys::napi_env, napi_val: sys::napi_value) -> Result<Self> {
+  unsafe fn from_napi_value(
+    env: sys::napi_env,
+    napi_val: sys::napi_value,
+  ) -> Result<Self> {
     let mut val_type = 0;
 
     check_status!(
@@ -303,7 +349,10 @@ impl<T> ToNapiValue for Rc<T>
 where
   T: ToNapiValue + Clone,
 {
-  unsafe fn to_napi_value(env: sys::napi_env, val: Self) -> Result<sys::napi_value> {
+  unsafe fn to_napi_value(
+    env: sys::napi_env,
+    val: Self,
+  ) -> Result<sys::napi_value> {
     unsafe { T::to_napi_value(env, (*val).clone()) }
   }
 }
@@ -319,7 +368,10 @@ impl<T: TypeName> TypeName for Arc<T> {
 }
 
 impl<T: ValidateNapiValue> ValidateNapiValue for Arc<T> {
-  unsafe fn validate(env: sys::napi_env, napi_val: sys::napi_value) -> Result<sys::napi_value> {
+  unsafe fn validate(
+    env: sys::napi_env,
+    napi_val: sys::napi_value,
+  ) -> Result<sys::napi_value> {
     let mut result = -1;
     check_status!(
       unsafe { sys::napi_typeof(env, napi_val, &mut result) },
@@ -346,7 +398,10 @@ impl<T> FromNapiValue for Arc<T>
 where
   T: FromNapiValue,
 {
-  unsafe fn from_napi_value(env: sys::napi_env, napi_val: sys::napi_value) -> Result<Self> {
+  unsafe fn from_napi_value(
+    env: sys::napi_env,
+    napi_val: sys::napi_value,
+  ) -> Result<Self> {
     let mut val_type = 0;
 
     check_status!(
@@ -362,7 +417,10 @@ impl<T> ToNapiValue for Arc<T>
 where
   T: ToNapiValue + Clone,
 {
-  unsafe fn to_napi_value(env: sys::napi_env, val: Self) -> Result<sys::napi_value> {
+  unsafe fn to_napi_value(
+    env: sys::napi_env,
+    val: Self,
+  ) -> Result<sys::napi_value> {
     unsafe { T::to_napi_value(env, (*val).clone()) }
   }
 }
@@ -378,7 +436,10 @@ impl<T: TypeName> TypeName for Mutex<T> {
 }
 
 impl<T: ValidateNapiValue> ValidateNapiValue for Mutex<T> {
-  unsafe fn validate(env: sys::napi_env, napi_val: sys::napi_value) -> Result<sys::napi_value> {
+  unsafe fn validate(
+    env: sys::napi_env,
+    napi_val: sys::napi_value,
+  ) -> Result<sys::napi_value> {
     let mut result = -1;
     check_status!(
       unsafe { sys::napi_typeof(env, napi_val, &mut result) },
@@ -405,7 +466,10 @@ impl<T> FromNapiValue for Mutex<T>
 where
   T: FromNapiValue,
 {
-  unsafe fn from_napi_value(env: sys::napi_env, napi_val: sys::napi_value) -> Result<Self> {
+  unsafe fn from_napi_value(
+    env: sys::napi_env,
+    napi_val: sys::napi_value,
+  ) -> Result<Self> {
     let mut val_type = 0;
 
     check_status!(
@@ -421,7 +485,10 @@ impl<T> ToNapiValue for Mutex<T>
 where
   T: ToNapiValue + Clone,
 {
-  unsafe fn to_napi_value(env: sys::napi_env, val: Self) -> Result<sys::napi_value> {
+  unsafe fn to_napi_value(
+    env: sys::napi_env,
+    val: Self,
+  ) -> Result<sys::napi_value> {
     unsafe {
       match val.lock() {
         Ok(inner) => T::to_napi_value(env, inner.clone()),

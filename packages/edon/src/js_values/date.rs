@@ -1,10 +1,14 @@
 use std::ptr;
 
 use super::check_status;
-use crate::{
-  bindgen_runtime::{TypeName, ValidateNapiValue},
-  sys, Error, Result, Status, Value, ValueType,
-};
+use crate::bindgen_runtime::TypeName;
+use crate::bindgen_runtime::ValidateNapiValue;
+use crate::sys;
+use crate::Error;
+use crate::Result;
+use crate::Status;
+use crate::Value;
+use crate::ValueType;
 
 pub struct JsDate(pub(crate) Value);
 
@@ -19,7 +23,10 @@ impl TypeName for JsDate {
 }
 
 impl ValidateNapiValue for JsDate {
-  unsafe fn validate(env: sys::napi_env, napi_val: sys::napi_value) -> Result<sys::napi_value> {
+  unsafe fn validate(
+    env: sys::napi_env,
+    napi_val: sys::napi_value,
+  ) -> Result<sys::napi_value> {
     let mut is_date = false;
     check_status!(unsafe { sys::napi_is_date(env, napi_val, &mut is_date) })?;
     if !is_date {

@@ -1,12 +1,23 @@
 use std::ffi::c_void;
 use std::ptr;
 use std::rc::Rc;
-use std::sync::atomic::{AtomicPtr, AtomicU8, Ordering};
+use std::sync::atomic::AtomicPtr;
+use std::sync::atomic::AtomicU8;
+use std::sync::atomic::Ordering;
 
-use super::{FromNapiValue, ToNapiValue, TypeName};
-use crate::{
-  async_work, check_status, sys, Env, Error, JsError, JsObject, NapiValue, Status, Task,
-};
+use super::FromNapiValue;
+use super::ToNapiValue;
+use super::TypeName;
+use crate::async_work;
+use crate::check_status;
+use crate::sys;
+use crate::Env;
+use crate::Error;
+use crate::JsError;
+use crate::JsObject;
+use crate::NapiValue;
+use crate::Status;
+use crate::Task;
 
 pub struct AsyncTask<T: Task> {
   inner: T,
@@ -31,14 +42,20 @@ impl<T: Task> AsyncTask<T> {
     }
   }
 
-  pub fn with_signal(task: T, signal: AbortSignal) -> Self {
+  pub fn with_signal(
+    task: T,
+    signal: AbortSignal,
+  ) -> Self {
     Self {
       inner: task,
       abort_signal: Some(signal),
     }
   }
 
-  pub fn with_optional_signal(task: T, signal: Option<AbortSignal>) -> Self {
+  pub fn with_optional_signal(
+    task: T,
+    signal: Option<AbortSignal>,
+  ) -> Self {
     Self {
       inner: task,
       abort_signal: signal,
@@ -54,7 +71,10 @@ pub struct AbortSignal {
 }
 
 impl FromNapiValue for AbortSignal {
-  unsafe fn from_napi_value(env: sys::napi_env, napi_val: sys::napi_value) -> crate::Result<Self> {
+  unsafe fn from_napi_value(
+    env: sys::napi_env,
+    napi_val: sys::napi_value,
+  ) -> crate::Result<Self> {
     let mut signal = unsafe { JsObject::from_raw_unchecked(env, napi_val) };
     let async_work_inner: Rc<AtomicPtr<sys::napi_async_work__>> =
       Rc::new(AtomicPtr::new(ptr::null_mut()));
@@ -137,7 +157,10 @@ extern "C" fn on_abort(
 }
 
 impl<T: Task> ToNapiValue for AsyncTask<T> {
-  unsafe fn to_napi_value(env: sys::napi_env, val: Self) -> crate::Result<sys::napi_value> {
+  unsafe fn to_napi_value(
+    env: sys::napi_env,
+    val: Self,
+  ) -> crate::Result<sys::napi_value> {
     if let Some(abort_controller) = val.abort_signal {
       let async_promise = async_work::run(env, val.inner, Some(abort_controller.status.clone()))?;
       abort_controller

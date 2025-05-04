@@ -3,12 +3,18 @@ use std::mem;
 use std::os::raw::c_void;
 use std::ptr;
 use std::rc::Rc;
-use std::sync::atomic::{AtomicU8, Ordering};
+use std::sync::atomic::AtomicU8;
+use std::sync::atomic::Ordering;
 
-use crate::{
-  bindgen_runtime::ToNapiValue, check_status, js_values::NapiValue, sys, Env, JsError, JsObject,
-  Result, Task,
-};
+use crate::bindgen_runtime::ToNapiValue;
+use crate::check_status;
+use crate::js_values::NapiValue;
+use crate::sys;
+use crate::Env;
+use crate::JsError;
+use crate::JsObject;
+use crate::Result;
+use crate::Task;
 
 struct AsyncWork<T: Task> {
   inner_task: T,
@@ -93,7 +99,10 @@ unsafe impl<T: Task + Sync> Sync for AsyncWork<T> {}
 
 /// env here is the same with the one in `CallContext`.
 /// So it actually could do nothing here, because `execute` function is called in the other thread mostly.
-unsafe extern "C" fn execute<T: Task>(_env: sys::napi_env, data: *mut c_void) {
+unsafe extern "C" fn execute<T: Task>(
+  _env: sys::napi_env,
+  data: *mut c_void,
+) {
   let mut work = unsafe { Box::from_raw(data as *mut AsyncWork<T>) };
   let _ = mem::replace(
     &mut work.value,

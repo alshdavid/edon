@@ -1,4 +1,6 @@
-use std::fmt::{Display, Formatter, Result};
+use std::fmt::Display;
+use std::fmt::Formatter;
+use std::fmt::Result;
 
 use crate::sys;
 
@@ -34,7 +36,10 @@ pub enum Status {
 }
 
 impl Display for Status {
-  fn fmt(&self, f: &mut Formatter<'_>) -> Result {
+  fn fmt(
+    &self,
+    f: &mut Formatter<'_>,
+  ) -> Result {
     let status_string = format!("{:?}", self);
     write!(f, "{}", status_string)
   }

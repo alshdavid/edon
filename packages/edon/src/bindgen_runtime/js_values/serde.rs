@@ -1,14 +1,26 @@
-use serde_json::{Map, Number, Value};
-
-use crate::{
-  bindgen_runtime::Null, check_status, sys, type_of, Error, JsObject, Result, Status, ValueType,
-};
+use serde_json::Map;
+use serde_json::Number;
+use serde_json::Value;
 
 use super::BigInt;
-use super::{FromNapiValue, Object, ToNapiValue};
+use super::FromNapiValue;
+use super::Object;
+use super::ToNapiValue;
+use crate::bindgen_runtime::Null;
+use crate::check_status;
+use crate::sys;
+use crate::type_of;
+use crate::Error;
+use crate::JsObject;
+use crate::Result;
+use crate::Status;
+use crate::ValueType;
 
 impl ToNapiValue for Value {
-  unsafe fn to_napi_value(env: sys::napi_env, val: Self) -> Result<sys::napi_value> {
+  unsafe fn to_napi_value(
+    env: sys::napi_env,
+    val: Self,
+  ) -> Result<sys::napi_value> {
     match val {
       Value::Null => unsafe { Null::to_napi_value(env, Null) },
       Value::Bool(b) => unsafe { bool::to_napi_value(env, b) },
@@ -21,7 +33,10 @@ impl ToNapiValue for Value {
 }
 
 impl FromNapiValue for Value {
-  unsafe fn from_napi_value(env: sys::napi_env, napi_val: sys::napi_value) -> Result<Self> {
+  unsafe fn from_napi_value(
+    env: sys::napi_env,
+    napi_val: sys::napi_value,
+  ) -> Result<Self> {
     let ty = type_of!(env, napi_val)?;
     let val = match ty {
       ValueType::Boolean => Value::Bool(unsafe { bool::from_napi_value(env, napi_val)? }),
@@ -40,7 +55,7 @@ impl FromNapiValue for Value {
           Value::Object(unsafe { Map::<String, Value>::from_napi_value(env, napi_val)? })
         }
       }
-            ValueType::BigInt => todo!(),
+      ValueType::BigInt => todo!(),
       ValueType::Null => Value::Null,
       ValueType::Function => {
         return Err(Error::new(
@@ -79,7 +94,10 @@ impl FromNapiValue for Value {
 }
 
 impl ToNapiValue for Map<String, Value> {
-  unsafe fn to_napi_value(env: sys::napi_env, val: Self) -> Result<sys::napi_value> {
+  unsafe fn to_napi_value(
+    env: sys::napi_env,
+    val: Self,
+  ) -> Result<sys::napi_value> {
     let mut obj = Object::new(env)?;
 
     for (k, v) in val.into_iter() {
@@ -91,7 +109,10 @@ impl ToNapiValue for Map<String, Value> {
 }
 
 impl FromNapiValue for Map<String, Value> {
-  unsafe fn from_napi_value(env: sys::napi_env, napi_val: sys::napi_value) -> Result<Self> {
+  unsafe fn from_napi_value(
+    env: sys::napi_env,
+    napi_val: sys::napi_value,
+  ) -> Result<Self> {
     let obj = JsObject(crate::Value {
       env,
       value: napi_val,
@@ -110,11 +131,14 @@ impl FromNapiValue for Map<String, Value> {
 }
 
 impl ToNapiValue for Number {
-  unsafe fn to_napi_value(env: sys::napi_env, n: Self) -> Result<sys::napi_value> {
-        const MAX_SAFE_INT: i64 = 9007199254740991i64; // 2 ^ 53 - 1
+  unsafe fn to_napi_value(
+    env: sys::napi_env,
+    n: Self,
+  ) -> Result<sys::napi_value> {
+    const MAX_SAFE_INT: i64 = 9007199254740991i64; // 2 ^ 53 - 1
     if n.is_i64() {
       let n = n.as_i64().unwrap();
-            {
+      {
         if !(-MAX_SAFE_INT..=MAX_SAFE_INT).contains(&n) {
           return unsafe { BigInt::to_napi_value(env, BigInt::from(n)) };
         }
@@ -126,7 +150,7 @@ impl ToNapiValue for Number {
     } else {
       let n = n.as_u64().unwrap();
       if n > u32::MAX as u64 {
-                {
+        {
           return unsafe { BigInt::to_napi_value(env, BigInt::from(n)) };
         }
 
@@ -140,7 +164,10 @@ impl ToNapiValue for Number {
 }
 
 impl FromNapiValue for Number {
-  unsafe fn from_napi_value(env: sys::napi_env, napi_val: sys::napi_value) -> Result<Self> {
+  unsafe fn from_napi_value(
+    env: sys::napi_env,
+    napi_val: sys::napi_value,
+  ) -> Result<Self> {
     let n = unsafe { f64::from_napi_value(env, napi_val)? };
     // Try to auto-convert to integers
     let n = if n.trunc() == n {

@@ -1,12 +1,21 @@
-use std::ops::{Deref, DerefMut};
+use std::ops::Deref;
+use std::ops::DerefMut;
 use std::os::raw::c_void;
 use std::ptr;
 use std::slice;
 
-use crate::bindgen_runtime::{TypeName, ValidateNapiValue};
-use crate::{
-  check_status, sys, Error, JsUnknown, NapiValue, Ref, Result, Status, Value, ValueType,
-};
+use crate::bindgen_runtime::TypeName;
+use crate::bindgen_runtime::ValidateNapiValue;
+use crate::check_status;
+use crate::sys;
+use crate::Error;
+use crate::JsUnknown;
+use crate::NapiValue;
+use crate::Ref;
+use crate::Result;
+use crate::Status;
+use crate::Value;
+use crate::ValueType;
 
 pub struct JsArrayBuffer(pub(crate) Value);
 
@@ -21,7 +30,10 @@ impl TypeName for JsArrayBuffer {
 }
 
 impl ValidateNapiValue for JsArrayBuffer {
-  unsafe fn validate(env: sys::napi_env, napi_val: sys::napi_value) -> Result<sys::napi_value> {
+  unsafe fn validate(
+    env: sys::napi_env,
+    napi_val: sys::napi_value,
+  ) -> Result<sys::napi_value> {
     let mut is_array_buffer = false;
     check_status!(unsafe { sys::napi_is_arraybuffer(env, napi_val, &mut is_array_buffer) })?;
     if !is_array_buffer {
@@ -92,8 +104,8 @@ pub enum TypedArrayType {
   Uint32,
   Float32,
   Float64,
-    BigInt64,
-    BigUint64,
+  BigInt64,
+  BigUint64,
 
   /// compatible with higher versions
   Unknown = 1024,
@@ -111,8 +123,8 @@ impl From<sys::napi_typedarray_type> for TypedArrayType {
       sys::TypedarrayType::uint32_array => Self::Uint32,
       sys::TypedarrayType::float32_array => Self::Float32,
       sys::TypedarrayType::float64_array => Self::Float64,
-            sys::TypedarrayType::bigint64_array => Self::BigInt64,
-            sys::TypedarrayType::biguint64_array => Self::BigUint64,
+      sys::TypedarrayType::bigint64_array => Self::BigInt64,
+      sys::TypedarrayType::biguint64_array => Self::BigUint64,
       _ => Self::Unknown,
     }
   }
@@ -125,11 +137,11 @@ impl From<TypedArrayType> for sys::napi_typedarray_type {
 }
 
 impl JsArrayBuffer {
-    pub fn detach(self) -> Result<()> {
+  pub fn detach(self) -> Result<()> {
     check_status!(unsafe { sys::napi_detach_arraybuffer(self.0.env, self.0.value) })
   }
 
-    pub fn is_detached(&self) -> Result<bool> {
+  pub fn is_detached(&self) -> Result<bool> {
     let mut is_detached = false;
     check_status!(unsafe {
       sys::napi_is_detached_arraybuffer(self.0.env, self.0.value, &mut is_detached)
@@ -174,7 +186,11 @@ impl JsArrayBuffer {
     }))
   }
 
-  pub fn into_dataview(self, length: usize, byte_offset: usize) -> Result<JsDataView> {
+  pub fn into_dataview(
+    self,
+    length: usize,
+    byte_offset: usize,
+  ) -> Result<JsDataView> {
     let mut dataview_value = ptr::null_mut();
     check_status!(unsafe {
       sys::napi_create_dataview(
@@ -198,7 +214,11 @@ impl JsArrayBuffer {
 }
 
 impl JsArrayBufferValue {
-  pub fn new(value: JsArrayBuffer, data: *mut c_void, len: usize) -> Self {
+  pub fn new(
+    value: JsArrayBuffer,
+    data: *mut c_void,
+    len: usize,
+  ) -> Self {
     JsArrayBufferValue { value, len, data }
   }
 
@@ -278,7 +298,10 @@ impl JsTypedArray {
 
 impl JsTypedArrayValue {
   #[inline]
-  fn is_valid_as_ref(&self, dest_type: TypedArrayType) {
+  fn is_valid_as_ref(
+    &self,
+    dest_type: TypedArrayType,
+  ) {
     // deref `Uint8ClampedArray` as `&[u8]` is valid
     if self.typedarray_type == TypedArrayType::Uint8Clamped && dest_type == TypedArrayType::Uint8 {
       return;

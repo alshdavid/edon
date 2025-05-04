@@ -1,19 +1,28 @@
-use std::convert::{From, TryFrom};
+use std::convert::From;
+use std::convert::TryFrom;
 use std::error;
 use std::ffi::CString;
 use std::fmt;
 #[cfg(feature = "serde-json")]
 use std::fmt::Display;
-use std::os::raw::{c_char, c_void};
+use std::os::raw::c_char;
+use std::os::raw::c_void;
 use std::ptr;
 
 #[cfg(feature = "serde-json")]
-use serde::{de, ser};
+use serde::de;
+#[cfg(feature = "serde-json")]
+use serde::ser;
 #[cfg(feature = "serde-json")]
 use serde_json::Error as SerdeJSONError;
 
 use crate::bindgen_runtime::ToNapiValue;
-use crate::{check_status, sys, Env, JsUnknown, NapiValue, Status};
+use crate::check_status;
+use crate::sys;
+use crate::Env;
+use crate::JsUnknown;
+use crate::NapiValue;
+use crate::Status;
 
 pub type Result<T, S = Status> = std::result::Result<T, Error<S>>;
 
@@ -29,7 +38,10 @@ pub struct Error<S: AsRef<str> = Status> {
 }
 
 impl<S: AsRef<str>> ToNapiValue for Error<S> {
-  unsafe fn to_napi_value(env: sys::napi_env, val: Self) -> Result<sys::napi_value> {
+  unsafe fn to_napi_value(
+    env: sys::napi_env,
+    val: Self,
+  ) -> Result<sys::napi_value> {
     if val.maybe_raw.is_null() {
       let err = unsafe { JsError::from(val).into_value(env) };
       Ok(err)
@@ -118,7 +130,10 @@ impl From<anyhow::Error> for Error {
 }
 
 impl<S: AsRef<str> + std::fmt::Debug> fmt::Display for Error<S> {
-  fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+  fn fmt(
+    &self,
+    f: &mut fmt::Formatter<'_>,
+  ) -> fmt::Result {
     if !self.reason.is_empty() {
       write!(f, "{:?}, {}", self.status, self.reason)
     } else {
@@ -128,7 +143,10 @@ impl<S: AsRef<str> + std::fmt::Debug> fmt::Display for Error<S> {
 }
 
 impl<S: AsRef<str>> Error<S> {
-  pub fn new<R: ToString>(status: S, reason: R) -> Self {
+  pub fn new<R: ToString>(
+    status: S,
+    reason: R,
+  ) -> Self {
     Error {
       status,
       reason: reason.to_string(),
@@ -221,7 +239,10 @@ macro_rules! impl_object_methods {
       /// # Safety
       ///
       /// This function is safety if env is not null ptr.
-      pub unsafe fn into_value(self, env: sys::napi_env) -> sys::napi_value {
+      pub unsafe fn into_value(
+        self,
+        env: sys::napi_env,
+      ) -> sys::napi_value {
         if !self.0.maybe_raw.is_null() {
           let mut err = ptr::null_mut();
           let get_err_status =
@@ -276,7 +297,10 @@ macro_rules! impl_object_methods {
         js_error
       }
 
-      pub fn into_unknown(self, env: Env) -> JsUnknown {
+      pub fn into_unknown(
+        self,
+        env: Env,
+      ) -> JsUnknown {
         let value = unsafe { self.into_value(env.raw()) };
         unsafe { JsUnknown::from_raw_unchecked(env.raw(), value) }
       }
@@ -284,7 +308,10 @@ macro_rules! impl_object_methods {
       /// # Safety
       ///
       /// This function is safety if env is not null ptr.
-      pub unsafe fn throw_into(self, env: sys::napi_env) {
+      pub unsafe fn throw_into(
+        self,
+        env: sys::napi_env,
+      ) {
         #[cfg(debug_assertions)]
         let reason = self.0.reason.clone();
         let status = self.0.status.as_ref().to_string();
@@ -330,7 +357,10 @@ macro_rules! impl_object_methods {
     }
 
     impl crate::bindgen_prelude::ToNapiValue for $js_value {
-      unsafe fn to_napi_value(env: sys::napi_env, val: Self) -> Result<sys::napi_value> {
+      unsafe fn to_napi_value(
+        env: sys::napi_env,
+        val: Self,
+      ) -> Result<sys::napi_value> {
         unsafe { ToNapiValue::to_napi_value(env, val.0) }
       }
     }
@@ -419,7 +449,7 @@ macro_rules! check_status_and_type {
                 .into_utf8()?;
             format!($msg, format!("{} {} ", value_type, value.as_str()?))
           }
-                    ValueType::BigInt => {
+          ValueType::BigInt => {
             let value =
               unsafe { $crate::JsUnknown::from_raw_unchecked($env, $val).coerce_to_string()? }
                 .into_utf8()?;

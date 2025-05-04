@@ -1,6 +1,7 @@
 use std::mem;
 
-use crate::{sys, Status};
+use crate::sys;
+use crate::Status;
 
 /// Notice
 /// The hook will be removed if `AsyncCleanupHook` was `dropped`.

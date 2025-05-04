@@ -1,14 +1,17 @@
 use std::mem;
 use std::ptr;
 
-use crate::bindgen_runtime::TypeName;
-use crate::bindgen_runtime::ValidateNapiValue;
-use crate::ValueType;
-use crate::{check_status, sys, Result, Value};
-
 pub use latin1::JsStringLatin1;
 pub use utf16::JsStringUtf16;
 pub use utf8::JsStringUtf8;
+
+use crate::bindgen_runtime::TypeName;
+use crate::bindgen_runtime::ValidateNapiValue;
+use crate::check_status;
+use crate::sys;
+use crate::Result;
+use crate::Value;
+use crate::ValueType;
 
 mod latin1;
 mod utf16;

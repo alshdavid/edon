@@ -1,12 +1,20 @@
 use std::mem;
-use std::ops::{Deref, DerefMut};
+use std::ops::Deref;
+use std::ops::DerefMut;
 use std::ptr;
 
-use super::{Value, ValueType};
+use super::Value;
+use super::ValueType;
+use crate::bindgen_runtime::TypeName;
 use crate::bindgen_runtime::ValidateNapiValue;
-use crate::{
-  bindgen_runtime::TypeName, check_status, sys, Error, JsUnknown, NapiValue, Ref, Result, Status,
-};
+use crate::check_status;
+use crate::sys;
+use crate::Error;
+use crate::JsUnknown;
+use crate::NapiValue;
+use crate::Ref;
+use crate::Result;
+use crate::Status;
 
 pub struct JsBuffer(pub(crate) Value);
 
@@ -21,7 +29,10 @@ impl TypeName for JsBuffer {
 }
 
 impl ValidateNapiValue for JsBuffer {
-  unsafe fn validate(env: sys::napi_env, napi_val: sys::napi_value) -> Result<sys::napi_value> {
+  unsafe fn validate(
+    env: sys::napi_env,
+    napi_val: sys::napi_value,
+  ) -> Result<sys::napi_value> {
     let mut is_buffer = false;
     check_status!(unsafe { sys::napi_is_buffer(env, napi_val, &mut is_buffer) })?;
     if !is_buffer {
@@ -58,7 +69,10 @@ impl JsBuffer {
 }
 
 impl JsBufferValue {
-  pub fn new(value: JsBuffer, data: mem::ManuallyDrop<Vec<u8>>) -> Self {
+  pub fn new(
+    value: JsBuffer,
+    data: mem::ManuallyDrop<Vec<u8>>,
+  ) -> Self {
     JsBufferValue { value, data }
   }
 

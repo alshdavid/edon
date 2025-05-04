@@ -1,8 +1,16 @@
 use std::ptr;
 
-use crate::bindgen_runtime::{FromNapiValue, TypeName};
+use crate::bindgen_runtime::FromNapiValue;
+use crate::bindgen_runtime::TypeName;
 use crate::check_status;
-use crate::{sys, Either, Env, Error, JsUndefined, NapiValue, Result, Status};
+use crate::sys;
+use crate::Either;
+use crate::Env;
+use crate::Error;
+use crate::JsUndefined;
+use crate::NapiValue;
+use crate::Result;
+use crate::Status;
 
 /// Function call context
 pub struct CallContext<'env> {
@@ -46,7 +54,10 @@ impl<'env> CallContext<'env> {
     }
   }
 
-  pub fn get<ArgType: FromNapiValue>(&self, index: usize) -> Result<ArgType> {
+  pub fn get<ArgType: FromNapiValue>(
+    &self,
+    index: usize,
+  ) -> Result<ArgType> {
     if index >= self.arg_len() {
       Err(Error::new(
         Status::GenericFailure,

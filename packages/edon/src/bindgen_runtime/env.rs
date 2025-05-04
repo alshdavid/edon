@@ -1,13 +1,20 @@
 use std::ptr;
 
-use crate::{check_status, sys, JsGlobal, JsNull, JsUndefined, NapiValue, Result};
-
 use super::Array;
-
+use crate::check_status;
+use crate::sys;
 pub use crate::Env;
+use crate::JsGlobal;
+use crate::JsNull;
+use crate::JsUndefined;
+use crate::NapiValue;
+use crate::Result;
 
 impl Env {
-  pub fn create_array(&self, len: u32) -> Result<Array> {
+  pub fn create_array(
+    &self,
+    len: u32,
+  ) -> Result<Array> {
     Array::new(self.0, len)
   }
 

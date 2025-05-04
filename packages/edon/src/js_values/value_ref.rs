@@ -1,8 +1,12 @@
 use std::ops::Deref;
 use std::ptr;
 
-use super::{check_status, Value};
-use crate::{bindgen_runtime::ToNapiValue, sys, Env, Result};
+use super::check_status;
+use super::Value;
+use crate::bindgen_runtime::ToNapiValue;
+use crate::sys;
+use crate::Env;
+use crate::Result;
 
 pub struct Ref<T> {
   pub(crate) raw_ref: sys::napi_ref,
@@ -15,7 +19,11 @@ unsafe impl<T> Send for Ref<T> {}
 unsafe impl<T> Sync for Ref<T> {}
 
 impl<T> Ref<T> {
-  pub(crate) fn new(js_value: Value, ref_count: u32, inner: T) -> Result<Ref<T>> {
+  pub(crate) fn new(
+    js_value: Value,
+    ref_count: u32,
+    inner: T,
+  ) -> Result<Ref<T>> {
     let mut raw_ref = ptr::null_mut();
     assert_ne!(ref_count, 0, "Initial `ref_count` must be > 0");
     check_status!(unsafe {
@@ -28,12 +36,18 @@ impl<T> Ref<T> {
     })
   }
 
-  pub fn reference(&mut self, env: &Env) -> Result<u32> {
+  pub fn reference(
+    &mut self,
+    env: &Env,
+  ) -> Result<u32> {
     check_status!(unsafe { sys::napi_reference_ref(env.0, self.raw_ref, &mut self.count) })?;
     Ok(self.count)
   }
 
-  pub fn unref(&mut self, env: Env) -> Result<u32> {
+  pub fn unref(
+    &mut self,
+    env: Env,
+  ) -> Result<u32> {
     check_status!(unsafe { sys::napi_reference_unref(env.0, self.raw_ref, &mut self.count) })?;
 
     if self.count == 0 {
@@ -62,7 +76,10 @@ impl<T> Drop for Ref<T> {
 }
 
 impl<T: 'static> ToNapiValue for Ref<T> {
-  unsafe fn to_napi_value(env: sys::napi_env, val: Self) -> Result<sys::napi_value> {
+  unsafe fn to_napi_value(
+    env: sys::napi_env,
+    val: Self,
+  ) -> Result<sys::napi_value> {
     let mut result = ptr::null_mut();
     check_status!(
       unsafe { sys::napi_get_reference_value(env, val.raw_ref, &mut result) },

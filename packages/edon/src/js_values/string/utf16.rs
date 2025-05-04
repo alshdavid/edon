@@ -1,7 +1,10 @@
 use std::convert::TryFrom;
 use std::ops::Deref;
 
-use crate::{Error, JsString, Result, Status};
+use crate::Error;
+use crate::JsString;
+use crate::Result;
+use crate::Status;
 
 pub struct JsStringUtf16 {
   pub(crate) inner: JsString,

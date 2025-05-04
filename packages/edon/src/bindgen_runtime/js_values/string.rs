@@ -1,10 +1,17 @@
-use crate::{bindgen_prelude::*, check_status, check_status_and_type, sys, Error, Result, Status};
-
-use std::ffi::{c_void, CStr};
+use std::ffi::c_void;
+use std::ffi::CStr;
 use std::fmt::Display;
 use std::mem;
 use std::ops::Deref;
 use std::ptr;
+
+use crate::bindgen_prelude::*;
+use crate::check_status;
+use crate::check_status_and_type;
+use crate::sys;
+use crate::Error;
+use crate::Result;
+use crate::Status;
 
 impl TypeName for String {
   fn type_name() -> &'static str {
@@ -19,11 +26,16 @@ impl TypeName for String {
 impl ValidateNapiValue for String {}
 
 impl ToNapiValue for &String {
-  unsafe fn to_napi_value(env: sys::napi_env, val: Self) -> Result<sys::napi_value> {
+  unsafe fn to_napi_value(
+    env: sys::napi_env,
+    val: Self,
+  ) -> Result<sys::napi_value> {
     let mut ptr = ptr::null_mut();
 
     check_status!(
-      unsafe { sys::napi_create_string_utf8(env, val.as_ptr().cast(), val.len() as isize, &mut ptr) },
+      unsafe {
+        sys::napi_create_string_utf8(env, val.as_ptr().cast(), val.len() as isize, &mut ptr)
+      },
       "Failed to convert rust `String` into napi `string`"
     )?;
 
@@ -33,7 +45,10 @@ impl ToNapiValue for &String {
 
 impl ToNapiValue for String {
   #[inline]
-  unsafe fn to_napi_value(env: sys::napi_env, val: Self) -> Result<sys::napi_value> {
+  unsafe fn to_napi_value(
+    env: sys::napi_env,
+    val: Self,
+  ) -> Result<sys::napi_value> {
     #[allow(clippy::needless_borrows_for_generic_args)]
     unsafe {
       ToNapiValue::to_napi_value(env, &val)
@@ -42,7 +57,10 @@ impl ToNapiValue for String {
 }
 
 impl FromNapiValue for String {
-  unsafe fn from_napi_value(env: sys::napi_env, napi_val: sys::napi_value) -> Result<Self> {
+  unsafe fn from_napi_value(
+    env: sys::napi_env,
+    napi_val: sys::napi_value,
+  ) -> Result<Self> {
     let mut len = 0;
 
     check_status_and_type!(
@@ -88,7 +106,10 @@ impl TypeName for &str {
 impl ValidateNapiValue for &str {}
 
 impl FromNapiValue for &str {
-  unsafe fn from_napi_value(env: sys::napi_env, napi_val: sys::napi_value) -> Result<Self> {
+  unsafe fn from_napi_value(
+    env: sys::napi_env,
+    napi_val: sys::napi_value,
+  ) -> Result<Self> {
     let mut len = 0;
 
     check_status_and_type!(
@@ -142,7 +163,10 @@ impl FromNapiValue for &str {
 }
 
 impl ToNapiValue for &str {
-  unsafe fn to_napi_value(env: sys::napi_env, val: Self) -> Result<sys::napi_value> {
+  unsafe fn to_napi_value(
+    env: sys::napi_env,
+    val: Self,
+  ) -> Result<sys::napi_value> {
     unsafe { String::to_napi_value(env, val.to_owned()) }
   }
 }
@@ -159,7 +183,10 @@ impl From<String> for Utf16String {
 }
 
 impl Display for Utf16String {
-  fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+  fn fmt(
+    &self,
+    f: &mut std::fmt::Formatter<'_>,
+  ) -> std::fmt::Result {
     write!(f, "{}", self.0)
   }
 }
@@ -183,7 +210,10 @@ impl TypeName for Utf16String {
 }
 
 impl FromNapiValue for Utf16String {
-  unsafe fn from_napi_value(env: sys::napi_env, napi_val: sys::napi_value) -> Result<Self> {
+  unsafe fn from_napi_value(
+    env: sys::napi_env,
+    napi_val: sys::napi_value,
+  ) -> Result<Self> {
     let mut len = 0;
 
     check_status!(
@@ -222,14 +252,22 @@ impl FromNapiValue for Utf16String {
 }
 
 impl ToNapiValue for Utf16String {
-  unsafe fn to_napi_value(env: sys::napi_env, val: Utf16String) -> Result<sys::napi_value> {
+  unsafe fn to_napi_value(
+    env: sys::napi_env,
+    val: Utf16String,
+  ) -> Result<sys::napi_value> {
     let mut ptr = ptr::null_mut();
 
     let encoded = val.0.encode_utf16().collect::<Vec<_>>();
 
     check_status!(
       unsafe {
-        sys::napi_create_string_utf16(env, encoded.as_ptr() as *const _, encoded.len() as isize, &mut ptr)
+        sys::napi_create_string_utf16(
+          env,
+          encoded.as_ptr() as *const _,
+          encoded.len() as isize,
+          &mut ptr,
+        )
       },
       "Failed to convert napi `string` into rust type `String`"
     )?;
@@ -254,7 +292,10 @@ pub mod latin1_string {
   }
 
   impl Display for Latin1String {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+    fn fmt(
+      &self,
+      f: &mut std::fmt::Formatter<'_>,
+    ) -> std::fmt::Result {
       write!(f, "{}", self.0)
     }
   }
@@ -278,7 +319,10 @@ pub mod latin1_string {
   }
 
   impl FromNapiValue for Latin1String {
-    unsafe fn from_napi_value(env: sys::napi_env, napi_val: sys::napi_value) -> Result<Self> {
+    unsafe fn from_napi_value(
+      env: sys::napi_env,
+      napi_val: sys::napi_value,
+    ) -> Result<Self> {
       let mut len = 0;
 
       check_status!(
@@ -316,7 +360,10 @@ pub mod latin1_string {
   }
 
   impl ToNapiValue for Latin1String {
-    unsafe fn to_napi_value(env: sys::napi_env, val: Self) -> Result<sys::napi_value> {
+    unsafe fn to_napi_value(
+      env: sys::napi_env,
+      val: Self,
+    ) -> Result<sys::napi_value> {
       let mut ptr = ptr::null_mut();
 
       let mut dst = vec![0; val.len()];
@@ -334,7 +381,11 @@ pub mod latin1_string {
   }
 }
 
-unsafe extern "C" fn release_string(_env: sys::napi_env, data: *mut c_void, len: *mut c_void) {
+unsafe extern "C" fn release_string(
+  _env: sys::napi_env,
+  data: *mut c_void,
+  len: *mut c_void,
+) {
   let len = unsafe { *Box::from_raw(len as *mut usize) };
   unsafe { Vec::from_raw_parts(data as *mut u8, len, len) };
 }

@@ -79,16 +79,27 @@ impl Nodejs {
     code: Code,
   ) -> crate::Result<()> {
     let (tx, rx) = channel();
-    self.tx_eval.send(NodejsEvent::Eval{
-      code: code.as_ref().to_string(),
-      resolve: tx
-    }).ok();
+    self
+      .tx_eval
+      .send(NodejsEvent::Eval {
+        code: code.as_ref().to_string(),
+        resolve: tx,
+      })
+      .ok();
     rx.recv().unwrap();
     Ok(())
   }
 
-  pub fn env<F: 'static + FnOnce(libnode_sys::napi_env)>(&self, callback: F) {
-    self.tx_eval.send(NodejsEvent::Env { callback: Box::new(callback) }).ok();
+  pub fn env<F: 'static + FnOnce(libnode_sys::napi_env)>(
+    &self,
+    callback: F,
+  ) {
+    self
+      .tx_eval
+      .send(NodejsEvent::Env {
+        callback: Box::new(callback),
+      })
+      .ok();
   }
 
   /// Evaluate block of JavaScript

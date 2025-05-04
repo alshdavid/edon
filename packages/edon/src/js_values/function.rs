@@ -1,13 +1,22 @@
 use std::ptr;
 
 use super::Value;
-use crate::{
-  bindgen_runtime::ToNapiValue,
-  threadsafe_function::{ThreadSafeCallContext, ThreadsafeFunction},
-};
-use crate::{bindgen_runtime::TypeName, JsString};
-use crate::{check_pending_exception, ValueType};
-use crate::{sys, Env, Error, JsObject, JsUnknown, NapiRaw, NapiValue, Result, Status};
+use crate::bindgen_runtime::ToNapiValue;
+use crate::bindgen_runtime::TypeName;
+use crate::check_pending_exception;
+use crate::sys;
+use crate::threadsafe_function::ThreadSafeCallContext;
+use crate::threadsafe_function::ThreadsafeFunction;
+use crate::Env;
+use crate::Error;
+use crate::JsObject;
+use crate::JsString;
+use crate::JsUnknown;
+use crate::NapiRaw;
+use crate::NapiValue;
+use crate::Result;
+use crate::Status;
+use crate::ValueType;
 
 pub struct JsFunction(pub(crate) Value);
 
@@ -37,7 +46,11 @@ impl TypeName for JsFunction {
 /// ```
 impl JsFunction {
   /// [napi_call_function](https://nodejs.org/api/n-api.html#n_api_napi_call_function)
-  pub fn call<V>(&self, this: Option<&JsObject>, args: &[V]) -> Result<JsUnknown>
+  pub fn call<V>(
+    &self,
+    this: Option<&JsObject>,
+    args: &[V],
+  ) -> Result<JsUnknown>
   where
     V: NapiRaw,
   {
@@ -71,7 +84,10 @@ impl JsFunction {
 
   /// [napi_call_function](https://nodejs.org/api/n-api.html#n_api_napi_call_function)
   /// The same with `call`, but without arguments
-  pub fn call_without_args(&self, this: Option<&JsObject>) -> Result<JsUnknown> {
+  pub fn call_without_args(
+    &self,
+    this: Option<&JsObject>,
+  ) -> Result<JsUnknown> {
     let raw_this = this
       .map(|v| unsafe { v.raw() })
       .or_else(|| {
@@ -99,7 +115,10 @@ impl JsFunction {
   /// <https://nodejs.org/api/n-api.html#n_api_napi_new_instance>
   ///
   /// This method is used to instantiate a new `JavaScript` value using a given `JsFunction` that represents the constructor for the object.
-  pub fn new_instance<V>(&self, args: &[V]) -> Result<JsObject>
+  pub fn new_instance<V>(
+    &self,
+    args: &[V],
+  ) -> Result<JsObject>
   where
     V: NapiRaw,
   {
@@ -136,7 +155,7 @@ impl JsFunction {
     Ok(name_value.into_utf8()?.as_str()?.to_owned())
   }
 
-    pub fn create_threadsafe_function<T, V, F, ES>(
+  pub fn create_threadsafe_function<T, V, F, ES>(
     &self,
     max_queue_size: usize,
     callback: F,

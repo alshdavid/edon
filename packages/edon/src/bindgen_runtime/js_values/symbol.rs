@@ -1,12 +1,15 @@
 use std::ptr;
 
-use crate::{check_status, sys};
-
-use super::{FromNapiValue, ToNapiValue, TypeName, ValidateNapiValue};
+use super::FromNapiValue;
+use super::ToNapiValue;
+use super::TypeName;
+use super::ValidateNapiValue;
+use crate::check_status;
+use crate::sys;
 
 pub struct Symbol {
   desc: Option<String>,
-    for_desc: Option<String>,
+  for_desc: Option<String>,
 }
 
 impl TypeName for Symbol {
@@ -25,18 +28,18 @@ impl Symbol {
   pub fn new(desc: String) -> Self {
     Self {
       desc: Some(desc),
-            for_desc: None,
+      for_desc: None,
     }
   }
 
   pub fn identity() -> Self {
     Self {
       desc: None,
-            for_desc: None,
+      for_desc: None,
     }
   }
 
-    pub fn for_desc(desc: String) -> Self {
+  pub fn for_desc(desc: String) -> Self {
     Self {
       desc: None,
       for_desc: Some(desc.to_owned()),
@@ -45,12 +48,20 @@ impl Symbol {
 }
 
 impl ToNapiValue for Symbol {
-  unsafe fn to_napi_value(env: sys::napi_env, val: Self) -> crate::Result<sys::napi_value> {
+  unsafe fn to_napi_value(
+    env: sys::napi_env,
+    val: Self,
+  ) -> crate::Result<sys::napi_value> {
     let mut symbol_value = ptr::null_mut();
-        if let Some(desc) = val.for_desc {
+    if let Some(desc) = val.for_desc {
       check_status!(
         unsafe {
-          sys::node_api_symbol_for(env, desc.as_ptr().cast(), desc.len() as isize, &mut symbol_value)
+          sys::node_api_symbol_for(
+            env,
+            desc.as_ptr().cast(),
+            desc.len() as isize,
+            &mut symbol_value,
+          )
         },
         "Failed to call node_api_symbol_for"
       )?;
@@ -87,7 +98,7 @@ impl FromNapiValue for Symbol {
   ) -> crate::Result<Self> {
     Ok(Self {
       desc: None,
-            for_desc: None,
+      for_desc: None,
     })
   }
 }

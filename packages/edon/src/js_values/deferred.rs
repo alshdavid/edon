@@ -3,10 +3,17 @@ use std::os::raw::c_void;
 use std::ptr;
 
 use crate::bindgen_runtime::ToNapiValue;
-use crate::{check_status, JsObject, Value};
-use crate::{sys, Env, Error, Result};
+use crate::check_status;
+use crate::sys;
+use crate::Env;
+use crate::Error;
+use crate::JsObject;
 #[cfg(feature = "deferred_trace")]
-use crate::{NapiRaw, NapiValue};
+use crate::NapiRaw;
+#[cfg(feature = "deferred_trace")]
+use crate::NapiValue;
+use crate::Result;
+use crate::Value;
 
 #[cfg(feature = "deferred_trace")]
 /// A javascript error which keeps a stack trace
@@ -41,7 +48,11 @@ impl DeferredTrace {
     Ok(Self(result))
   }
 
-  fn into_rejected(self, raw_env: sys::napi_env, err: Error) -> Result<sys::napi_value> {
+  fn into_rejected(
+    self,
+    raw_env: sys::napi_env,
+    err: Error,
+  ) -> Result<sys::napi_value> {
     let env = unsafe { Env::from_raw(raw_env) };
     let mut raw = ptr::null_mut();
     check_status!(
@@ -139,16 +150,25 @@ impl<Data: ToNapiValue, Resolver: FnOnce(Env) -> Result<Data>> JsDeferred<Data, 
 
   /// Consumes the deferred, and resolves the promise. The provided function will be called
   /// from the JavaScript thread, and should return the resolved value.
-  pub fn resolve(self, resolver: Resolver) {
+  pub fn resolve(
+    self,
+    resolver: Resolver,
+  ) {
     self.call_tsfn(Ok(resolver))
   }
 
   /// Consumes the deferred, and rejects the promise with the provided error.
-  pub fn reject(self, error: Error) {
+  pub fn reject(
+    self,
+    error: Error,
+  ) {
     self.call_tsfn(Err(error))
   }
 
-  fn call_tsfn(self, result: Result<Resolver>) {
+  fn call_tsfn(
+    self,
+    result: Result<Resolver>,
+  ) {
     let data = DeferredData {
       resolver: result,
       #[cfg(feature = "deferred_trace")]

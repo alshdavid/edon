@@ -1,12 +1,18 @@
 use std::any::type_name;
-use std::ops::{Deref, DerefMut};
+use std::ops::Deref;
+use std::ops::DerefMut;
 use std::ptr;
 
 use super::Object;
-use crate::{
-  bindgen_runtime::{FromNapiValue, TypeName, ValidateNapiValue},
-  check_status, sys, Env, NapiRaw, NapiValue, ValueType,
-};
+use crate::bindgen_runtime::FromNapiValue;
+use crate::bindgen_runtime::TypeName;
+use crate::bindgen_runtime::ValidateNapiValue;
+use crate::check_status;
+use crate::sys;
+use crate::Env;
+use crate::NapiRaw;
+use crate::NapiValue;
+use crate::ValueType;
 
 pub type This<T = Object> = T;
 
@@ -17,11 +23,17 @@ pub struct ClassInstance<T: 'static> {
 
 impl<T: 'static> ClassInstance<T> {
   #[doc(hidden)]
-  pub fn new(value: sys::napi_value, inner: &'static mut T) -> Self {
+  pub fn new(
+    value: sys::napi_value,
+    inner: &'static mut T,
+  ) -> Self {
     Self { value, inner }
   }
 
-  pub fn as_object(&self, env: Env) -> Object {
+  pub fn as_object(
+    &self,
+    env: Env,
+  ) -> Object {
     unsafe { Object::from_raw_unchecked(env.raw(), self.value) }
   }
 }
@@ -58,7 +70,10 @@ where
 }
 
 impl<T: 'static> FromNapiValue for ClassInstance<T> {
-  unsafe fn from_napi_value(env: sys::napi_env, napi_val: sys::napi_value) -> crate::Result<Self> {
+  unsafe fn from_napi_value(
+    env: sys::napi_env,
+    napi_val: sys::napi_value,
+  ) -> crate::Result<Self> {
     let mut value = ptr::null_mut();
     check_status!(
       unsafe { sys::napi_unwrap(env, napi_val, &mut value) },

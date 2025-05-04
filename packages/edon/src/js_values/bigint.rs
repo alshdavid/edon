@@ -2,7 +2,10 @@ use std::convert::TryFrom;
 use std::ptr;
 
 use super::*;
-use crate::{bindgen_runtime::TypeName, check_status, sys, Result};
+use crate::bindgen_runtime::TypeName;
+use crate::check_status;
+use crate::sys;
+use crate::Result;
 
 #[derive(Clone, Copy)]
 pub struct JsBigInt {
@@ -114,7 +117,10 @@ impl JsBigInt {
     Ok(is_buffer)
   }
 
-  pub fn instanceof<Constructor: NapiRaw>(&self, constructor: Constructor) -> Result<bool> {
+  pub fn instanceof<Constructor: NapiRaw>(
+    &self,
+    constructor: Constructor,
+  ) -> Result<bool> {
     let mut result = false;
     check_status!(unsafe {
       sys::napi_instanceof(self.raw.env, self.raw.value, constructor.raw(), &mut result)
@@ -136,7 +142,10 @@ impl<'env> NapiRaw for &'env JsBigInt {
 }
 
 impl NapiValue for JsBigInt {
-  unsafe fn from_raw(env: sys::napi_env, value: sys::napi_value) -> Result<Self> {
+  unsafe fn from_raw(
+    env: sys::napi_env,
+    value: sys::napi_value,
+  ) -> Result<Self> {
     let mut word_count = 0usize;
     check_status!(unsafe {
       sys::napi_get_value_bigint_words(
@@ -157,7 +166,10 @@ impl NapiValue for JsBigInt {
     })
   }
 
-  unsafe fn from_raw_unchecked(env: sys::napi_env, value: sys::napi_value) -> Self {
+  unsafe fn from_raw_unchecked(
+    env: sys::napi_env,
+    value: sys::napi_value,
+  ) -> Self {
     let mut word_count = 0usize;
     let status = unsafe {
       sys::napi_get_value_bigint_words(

@@ -2,9 +2,11 @@ use std::cell::Cell;
 use std::ffi::c_void;
 use std::ptr;
 use std::rc::Rc;
-use std::sync::atomic::{AtomicBool, Ordering};
+use std::sync::atomic::AtomicBool;
+use std::sync::atomic::Ordering;
 
-use crate::{bindgen_prelude::*, check_status};
+use crate::bindgen_prelude::*;
+use crate::check_status;
 
 thread_local! {
   #[doc(hidden)]
@@ -80,7 +82,10 @@ impl<const N: usize> CallbackInfo<N> {
     })
   }
 
-  pub fn get_arg(&self, index: usize) -> sys::napi_value {
+  pub fn get_arg(
+    &self,
+    index: usize,
+  ) -> sys::napi_value {
     self.args[index]
   }
 

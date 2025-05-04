@@ -1,6 +1,5 @@
-use crate::sys;
-
 use super::ValueType;
+use crate::sys;
 
 #[derive(Clone, Copy)]
 pub struct Value {

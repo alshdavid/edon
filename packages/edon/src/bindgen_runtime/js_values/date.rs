@@ -1,8 +1,16 @@
-use std::{ptr, str::FromStr};
+use std::ptr;
+use std::str::FromStr;
 
-use chrono::{DateTime, Local, LocalResult, NaiveDateTime, TimeZone};
+use chrono::DateTime;
+use chrono::Local;
+use chrono::LocalResult;
+use chrono::NaiveDateTime;
+use chrono::TimeZone;
 
-use crate::{bindgen_prelude::*, check_status, sys, ValueType};
+use crate::bindgen_prelude::*;
+use crate::check_status;
+use crate::sys;
+use crate::ValueType;
 
 impl<Tz: TimeZone> TypeName for DateTime<Tz> {
   fn type_name() -> &'static str {
@@ -15,7 +23,10 @@ impl<Tz: TimeZone> TypeName for DateTime<Tz> {
 }
 
 impl<Tz: TimeZone> ValidateNapiValue for DateTime<Tz> {
-  unsafe fn validate(env: sys::napi_env, napi_val: sys::napi_value) -> Result<sys::napi_value> {
+  unsafe fn validate(
+    env: sys::napi_env,
+    napi_val: sys::napi_value,
+  ) -> Result<sys::napi_value> {
     let mut is_date = false;
     check_status!(unsafe { sys::napi_is_date(env, napi_val, &mut is_date) })?;
     if !is_date {
@@ -30,7 +41,10 @@ impl<Tz: TimeZone> ValidateNapiValue for DateTime<Tz> {
 }
 
 impl ToNapiValue for NaiveDateTime {
-  unsafe fn to_napi_value(env: sys::napi_env, val: NaiveDateTime) -> Result<sys::napi_value> {
+  unsafe fn to_napi_value(
+    env: sys::napi_env,
+    val: NaiveDateTime,
+  ) -> Result<sys::napi_value> {
     let mut ptr = std::ptr::null_mut();
     let millis_since_epoch_utc = val.and_utc().timestamp_millis() as f64;
 
@@ -44,7 +58,10 @@ impl ToNapiValue for NaiveDateTime {
 }
 
 impl FromNapiValue for NaiveDateTime {
-  unsafe fn from_napi_value(env: sys::napi_env, napi_val: sys::napi_value) -> Result<Self> {
+  unsafe fn from_napi_value(
+    env: sys::napi_env,
+    napi_val: sys::napi_value,
+  ) -> Result<Self> {
     let mut to_iso_string = ptr::null_mut();
     check_status!(
       unsafe {
@@ -121,7 +138,10 @@ impl FromNapiValue for NaiveDateTime {
 }
 
 impl<Tz: TimeZone> ToNapiValue for DateTime<Tz> {
-  unsafe fn to_napi_value(env: sys::napi_env, val: DateTime<Tz>) -> Result<sys::napi_value> {
+  unsafe fn to_napi_value(
+    env: sys::napi_env,
+    val: DateTime<Tz>,
+  ) -> Result<sys::napi_value> {
     let mut ptr = std::ptr::null_mut();
     let millis_since_epoch_utc = val.timestamp_millis() as f64;
 
@@ -138,7 +158,10 @@ impl<Tz: TimeZone> FromNapiValue for DateTime<Tz>
 where
   DateTime<Tz>: From<DateTime<Local>>,
 {
-  unsafe fn from_napi_value(env: sys::napi_env, napi_val: sys::napi_value) -> Result<Self> {
+  unsafe fn from_napi_value(
+    env: sys::napi_env,
+    napi_val: sys::napi_value,
+  ) -> Result<Self> {
     let mut milliseconds_since_epoch_utc = 0.0;
 
     check_status!(

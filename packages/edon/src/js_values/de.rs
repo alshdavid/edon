@@ -1,12 +1,27 @@
 use std::convert::TryInto;
 
+use serde::de::DeserializeSeed;
+use serde::de::EnumAccess;
+use serde::de::MapAccess;
+use serde::de::SeqAccess;
+use serde::de::Unexpected;
+use serde::de::VariantAccess;
 use serde::de::Visitor;
-use serde::de::{DeserializeSeed, EnumAccess, MapAccess, SeqAccess, Unexpected, VariantAccess};
 
 use crate::bindgen_runtime::FromNapiValue;
+use crate::type_of;
+use crate::Error;
 use crate::JsBigInt;
-use crate::{type_of, NapiValue, Value, ValueType};
-use crate::{Error, JsBoolean, JsNumber, JsObject, JsString, JsUnknown, Result, Status};
+use crate::JsBoolean;
+use crate::JsNumber;
+use crate::JsObject;
+use crate::JsString;
+use crate::JsUnknown;
+use crate::NapiValue;
+use crate::Result;
+use crate::Status;
+use crate::Value;
+use crate::ValueType;
 
 pub struct De<'env>(pub(crate) &'env Value);
 impl<'env> De<'env> {
@@ -19,7 +34,10 @@ impl<'env> De<'env> {
 impl<'x, 'de, 'env> serde::de::Deserializer<'x> for &'de mut De<'env> {
   type Error = Error;
 
-  fn deserialize_any<V>(self, visitor: V) -> Result<V::Value>
+  fn deserialize_any<V>(
+    self,
+    visitor: V,
+  ) -> Result<V::Value>
   where
     V: Visitor<'x>,
   {
@@ -56,7 +74,7 @@ impl<'x, 'de, 'env> serde::de::Deserializer<'x> for &'de mut De<'env> {
           visitor.visit_map(&mut deserializer)
         }
       }
-            ValueType::BigInt => {
+      ValueType::BigInt => {
         let mut js_bigint = unsafe { JsBigInt::from_raw(self.0.env, self.0.value)? };
 
         let (signed, words) = js_bigint.get_words()?;
@@ -77,21 +95,30 @@ impl<'x, 'de, 'env> serde::de::Deserializer<'x> for &'de mut De<'env> {
     }
   }
 
-  fn deserialize_bytes<V>(self, visitor: V) -> Result<V::Value>
+  fn deserialize_bytes<V>(
+    self,
+    visitor: V,
+  ) -> Result<V::Value>
   where
     V: Visitor<'x>,
   {
     visitor.visit_bytes(unsafe { FromNapiValue::from_napi_value(self.0.env, self.0.value)? })
   }
 
-  fn deserialize_byte_buf<V>(self, visitor: V) -> Result<V::Value>
+  fn deserialize_byte_buf<V>(
+    self,
+    visitor: V,
+  ) -> Result<V::Value>
   where
     V: Visitor<'x>,
   {
     visitor.visit_bytes(unsafe { FromNapiValue::from_napi_value(self.0.env, self.0.value)? })
   }
 
-  fn deserialize_option<V>(self, visitor: V) -> Result<V::Value>
+  fn deserialize_option<V>(
+    self,
+    visitor: V,
+  ) -> Result<V::Value>
   where
     V: Visitor<'x>,
   {
@@ -149,7 +176,10 @@ impl<'x, 'de, 'env> serde::de::Deserializer<'x> for &'de mut De<'env> {
     }
   }
 
-  fn deserialize_ignored_any<V>(self, visitor: V) -> Result<V::Value>
+  fn deserialize_ignored_any<V>(
+    self,
+    visitor: V,
+  ) -> Result<V::Value>
   where
     V: Visitor<'x>,
   {
@@ -172,7 +202,10 @@ pub(crate) struct JsEnumAccess<'env> {
 
 #[doc(hidden)]
 impl<'env> JsEnumAccess<'env> {
-  fn new(variant: String, value: Option<&'env Value>) -> Self {
+  fn new(
+    variant: String,
+    value: Option<&'env Value>,
+  ) -> Self {
     Self { variant, value }
   }
 }
@@ -182,7 +215,10 @@ impl<'de, 'env> EnumAccess<'de> for JsEnumAccess<'env> {
   type Error = Error;
   type Variant = JsVariantAccess<'env>;
 
-  fn variant_seed<V>(self, seed: V) -> Result<(V::Value, Self::Variant)>
+  fn variant_seed<V>(
+    self,
+    seed: V,
+  ) -> Result<(V::Value, Self::Variant)>
   where
     V: DeserializeSeed<'de>,
   {
@@ -211,7 +247,10 @@ impl<'de, 'env> VariantAccess<'de> for JsVariantAccess<'env> {
     }
   }
 
-  fn newtype_variant_seed<T>(self, seed: T) -> Result<T::Value>
+  fn newtype_variant_seed<T>(
+    self,
+    seed: T,
+  ) -> Result<T::Value>
   where
     T: DeserializeSeed<'de>,
   {
@@ -227,7 +266,11 @@ impl<'de, 'env> VariantAccess<'de> for JsVariantAccess<'env> {
     }
   }
 
-  fn tuple_variant<V>(self, _len: usize, visitor: V) -> Result<V::Value>
+  fn tuple_variant<V>(
+    self,
+    _len: usize,
+    visitor: V,
+  ) -> Result<V::Value>
   where
     V: Visitor<'de>,
   {
@@ -252,7 +295,11 @@ impl<'de, 'env> VariantAccess<'de> for JsVariantAccess<'env> {
     }
   }
 
-  fn struct_variant<V>(self, _fields: &'static [&'static str], visitor: V) -> Result<V::Value>
+  fn struct_variant<V>(
+    self,
+    _fields: &'static [&'static str],
+    visitor: V,
+  ) -> Result<V::Value>
   where
     V: Visitor<'de>,
   {
@@ -285,7 +332,10 @@ struct JsArrayAccess<'env> {
 
 #[doc(hidden)]
 impl<'env> JsArrayAccess<'env> {
-  fn new(input: &'env JsObject, len: u32) -> Self {
+  fn new(
+    input: &'env JsObject,
+    len: u32,
+  ) -> Self {
     Self { input, idx: 0, len }
   }
 }
@@ -294,7 +344,10 @@ impl<'env> JsArrayAccess<'env> {
 impl<'de, 'env> SeqAccess<'de> for JsArrayAccess<'env> {
   type Error = Error;
 
-  fn next_element_seed<T>(&mut self, seed: T) -> Result<Option<T::Value>>
+  fn next_element_seed<T>(
+    &mut self,
+    seed: T,
+  ) -> Result<Option<T::Value>>
   where
     T: DeserializeSeed<'de>,
   {
@@ -335,7 +388,10 @@ impl<'env> JsObjectAccess<'env> {
 impl<'de, 'env> MapAccess<'de> for JsObjectAccess<'env> {
   type Error = Error;
 
-  fn next_key_seed<K>(&mut self, seed: K) -> Result<Option<K::Value>>
+  fn next_key_seed<K>(
+    &mut self,
+    seed: K,
+  ) -> Result<Option<K::Value>>
   where
     K: DeserializeSeed<'de>,
   {
@@ -349,7 +405,10 @@ impl<'de, 'env> MapAccess<'de> for JsObjectAccess<'env> {
     seed.deserialize(&mut de).map(Some)
   }
 
-  fn next_value_seed<V>(&mut self, seed: V) -> Result<V::Value>
+  fn next_value_seed<V>(
+    &mut self,
+    seed: V,
+  ) -> Result<V::Value>
   where
     V: DeserializeSeed<'de>,
   {

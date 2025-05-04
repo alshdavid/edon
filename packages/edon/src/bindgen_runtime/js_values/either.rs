@@ -1,8 +1,19 @@
-use super::{FromNapiValue, ToNapiValue, TypeName, ValidateNapiValue};
-use crate::{
-  bindgen_runtime::{Null, Undefined, Unknown},
-  check_status, sys, Env, Error, JsUndefined, NapiRaw, NapiValue, Status, ValueType,
-};
+use super::FromNapiValue;
+use super::ToNapiValue;
+use super::TypeName;
+use super::ValidateNapiValue;
+use crate::bindgen_runtime::Null;
+use crate::bindgen_runtime::Undefined;
+use crate::bindgen_runtime::Unknown;
+use crate::check_status;
+use crate::sys;
+use crate::Env;
+use crate::Error;
+use crate::JsUndefined;
+use crate::NapiRaw;
+use crate::NapiValue;
+use crate::Status;
+use crate::ValueType;
 
 impl<A: NapiRaw, B: NapiRaw> Either<A, B> {
   /// # Safety
@@ -191,7 +202,10 @@ either_n!(Either24, A, B, C, D, E, F, G, H, I, J, K, L, M, N, O, P, Q, R, S, T, 
 either_n!(Either25, A, B, C, D, E, F, G, H, I, J, K, L, M, N, O, P, Q, R, S, T, U, V, W, X, Y);
 either_n!(Either26, A, B, C, D, E, F, G, H, I, J, K, L, M, N, O, P, Q, R, S, T, U, V, W, X, Y, Z);
 
-fn silence_rejected_promise(env: sys::napi_env, promise: sys::napi_value) -> crate::Result<()> {
+fn silence_rejected_promise(
+  env: sys::napi_env,
+  promise: sys::napi_value,
+) -> crate::Result<()> {
   let mut catch_method = std::ptr::null_mut();
   check_status!(unsafe {
     sys::napi_get_named_property(env, promise, "catch\0".as_ptr().cast(), &mut catch_method)
@@ -220,6 +234,9 @@ fn silence_rejected_promise(env: sys::napi_env, promise: sys::napi_value) -> cra
   Ok(())
 }
 
-unsafe extern "C" fn noop(_env: sys::napi_env, _info: sys::napi_callback_info) -> sys::napi_value {
+unsafe extern "C" fn noop(
+  _env: sys::napi_env,
+  _info: sys::napi_callback_info,
+) -> sys::napi_value {
   std::ptr::null_mut()
 }

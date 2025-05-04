@@ -1,5 +1,9 @@
-use super::{check_status, sys};
-use crate::{bindgen_prelude::ToNapiValue, type_of, Error, Result};
+use super::check_status;
+use super::sys;
+use crate::bindgen_prelude::ToNapiValue;
+use crate::type_of;
+use crate::Error;
+use crate::Result;
 
 macro_rules! impl_number_conversions {
   ( $( ($name:literal, $t:ty as $st:ty, $get:ident, $create:ident) ,)* ) => {
@@ -61,7 +65,10 @@ impl_number_conversions!(
 );
 
 impl ToNapiValue for f32 {
-  unsafe fn to_napi_value(env: crate::sys::napi_env, val: f32) -> Result<crate::sys::napi_value> {
+  unsafe fn to_napi_value(
+    env: crate::sys::napi_env,
+    val: f32,
+  ) -> Result<crate::sys::napi_value> {
     let mut ptr = std::ptr::null_mut();
 
     check_status!(

@@ -1,7 +1,8 @@
-use crate::{
-  bindgen_runtime::{ToNapiValue, TypeName},
-  Env, Error, Result,
-};
+use crate::bindgen_runtime::ToNapiValue;
+use crate::bindgen_runtime::TypeName;
+use crate::Env;
+use crate::Error;
+use crate::Result;
 
 pub trait Task: Send + Sized {
   type Output: Send + Sized + 'static;
@@ -11,15 +12,26 @@ pub trait Task: Send + Sized {
   fn compute(&mut self) -> Result<Self::Output>;
 
   /// Into this method if `compute` return `Ok`
-  fn resolve(&mut self, env: Env, output: Self::Output) -> Result<Self::JsValue>;
+  fn resolve(
+    &mut self,
+    env: Env,
+    output: Self::Output,
+  ) -> Result<Self::JsValue>;
 
   /// Into this method if `compute` return `Err`
-  fn reject(&mut self, _env: Env, err: Error) -> Result<Self::JsValue> {
+  fn reject(
+    &mut self,
+    _env: Env,
+    err: Error,
+  ) -> Result<Self::JsValue> {
     Err(err)
   }
 
   // after resolve or reject
-  fn finally(&mut self, _env: Env) -> Result<()> {
+  fn finally(
+    &mut self,
+    _env: Env,
+  ) -> Result<()> {
     Ok(())
   }
 }

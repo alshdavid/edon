@@ -1,10 +1,15 @@
-use std::collections::{BTreeMap, HashMap};
-use std::hash::{BuildHasher, Hash};
+use std::collections::BTreeMap;
+use std::collections::HashMap;
+use std::hash::BuildHasher;
+use std::hash::Hash;
 
 #[cfg(feature = "object_indexmap")]
 use indexmap::IndexMap;
 
-use crate::bindgen_prelude::{Env, Result, ToNapiValue, *};
+use crate::bindgen_prelude::Env;
+use crate::bindgen_prelude::Result;
+use crate::bindgen_prelude::ToNapiValue;
+use crate::bindgen_prelude::*;
 
 impl<K, V, S> TypeName for HashMap<K, V, S> {
   fn type_name() -> &'static str {
@@ -23,7 +28,10 @@ where
   K: AsRef<str>,
   V: ToNapiValue,
 {
-  unsafe fn to_napi_value(raw_env: sys::napi_env, val: Self) -> Result<sys::napi_value> {
+  unsafe fn to_napi_value(
+    raw_env: sys::napi_env,
+    val: Self,
+  ) -> Result<sys::napi_value> {
     let env = Env::from(raw_env);
     let mut obj = env.create_object()?;
     for (k, v) in val.into_iter() {
@@ -40,7 +48,10 @@ where
   V: FromNapiValue,
   S: Default + BuildHasher,
 {
-  unsafe fn from_napi_value(env: sys::napi_env, napi_val: sys::napi_value) -> Result<Self> {
+  unsafe fn from_napi_value(
+    env: sys::napi_env,
+    napi_val: sys::napi_value,
+  ) -> Result<Self> {
     let obj = unsafe { Object::from_napi_value(env, napi_val)? };
     let mut map = HashMap::default();
     for key in Object::keys(&obj)?.into_iter() {
@@ -70,7 +81,10 @@ where
   K: AsRef<str>,
   V: ToNapiValue,
 {
-  unsafe fn to_napi_value(raw_env: sys::napi_env, val: Self) -> Result<sys::napi_value> {
+  unsafe fn to_napi_value(
+    raw_env: sys::napi_env,
+    val: Self,
+  ) -> Result<sys::napi_value> {
     let env = Env::from(raw_env);
     let mut obj = env.create_object()?;
     for (k, v) in val.into_iter() {
@@ -86,7 +100,10 @@ where
   K: From<String> + Ord,
   V: FromNapiValue,
 {
-  unsafe fn from_napi_value(env: sys::napi_env, napi_val: sys::napi_value) -> Result<Self> {
+  unsafe fn from_napi_value(
+    env: sys::napi_env,
+    napi_val: sys::napi_value,
+  ) -> Result<Self> {
     let obj = unsafe { Object::from_napi_value(env, napi_val)? };
     let mut map = BTreeMap::default();
     for key in Object::keys(&obj)?.into_iter() {
@@ -120,7 +137,10 @@ where
   V: ToNapiValue,
   S: Default + BuildHasher,
 {
-  unsafe fn to_napi_value(raw_env: sys::napi_env, val: Self) -> Result<sys::napi_value> {
+  unsafe fn to_napi_value(
+    raw_env: sys::napi_env,
+    val: Self,
+  ) -> Result<sys::napi_value> {
     let env = Env::from(raw_env);
     let mut obj = env.create_object()?;
     for (k, v) in val.into_iter() {
@@ -138,7 +158,10 @@ where
   V: FromNapiValue,
   S: Default + BuildHasher,
 {
-  unsafe fn from_napi_value(env: sys::napi_env, napi_val: sys::napi_value) -> Result<Self> {
+  unsafe fn from_napi_value(
+    env: sys::napi_env,
+    napi_val: sys::napi_value,
+  ) -> Result<Self> {
     let obj = unsafe { Object::from_napi_value(env, napi_val)? };
     let mut map = IndexMap::default();
     for key in Object::keys(&obj)?.into_iter() {

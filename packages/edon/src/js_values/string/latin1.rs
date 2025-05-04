@@ -1,7 +1,6 @@
 use std::mem::ManuallyDrop;
 
 use crate::JsString;
-
 #[cfg(feature = "latin1")]
 use crate::Result;
 

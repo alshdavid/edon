@@ -9,7 +9,9 @@ pub use js_values::*;
 pub use module_register::*;
 
 use super::sys;
-use crate::{JsError, Result, Status};
+use crate::JsError;
+use crate::Result;
+use crate::Status;
 
 mod callback_info;
 mod env;
@@ -20,7 +22,10 @@ mod module_register;
 
 pub trait ObjectFinalize: Sized {
   #[allow(unused)]
-  fn finalize(self, env: Env) -> Result<()> {
+  fn finalize(
+    self,
+    env: Env,
+  ) -> Result<()> {
     Ok(())
   }
 }

@@ -1,6 +1,13 @@
 use std::ptr;
 
-use crate::{bindgen_prelude::*, check_status, sys, type_of, Error, Result, Status, ValueType};
+use crate::bindgen_prelude::*;
+use crate::check_status;
+use crate::sys;
+use crate::type_of;
+use crate::Error;
+use crate::Result;
+use crate::Status;
+use crate::ValueType;
 
 #[derive(Clone, Copy, Debug, Default, Eq, PartialEq, Ord, PartialOrd)]
 pub struct Null;
@@ -19,7 +26,10 @@ impl TypeName for Null {
 impl ValidateNapiValue for Null {}
 
 impl FromNapiValue for Null {
-  unsafe fn from_napi_value(env: sys::napi_env, napi_val: sys::napi_value) -> Result<Self> {
+  unsafe fn from_napi_value(
+    env: sys::napi_env,
+    napi_val: sys::napi_value,
+  ) -> Result<Self> {
     match type_of!(env, napi_val) {
       Ok(ValueType::Null) => Ok(Null),
       _ => Err(Error::new(
@@ -31,7 +41,10 @@ impl FromNapiValue for Null {
 }
 
 impl ToNapiValue for Null {
-  unsafe fn to_napi_value(env: sys::napi_env, _val: Self) -> Result<sys::napi_value> {
+  unsafe fn to_napi_value(
+    env: sys::napi_env,
+    _val: Self,
+  ) -> Result<sys::napi_value> {
     let mut ret = ptr::null_mut();
 
     check_status!(
@@ -56,7 +69,10 @@ impl TypeName for Undefined {
 impl ValidateNapiValue for Undefined {}
 
 impl FromNapiValue for Undefined {
-  unsafe fn from_napi_value(env: sys::napi_env, napi_val: sys::napi_value) -> Result<Self> {
+  unsafe fn from_napi_value(
+    env: sys::napi_env,
+    napi_val: sys::napi_value,
+  ) -> Result<Self> {
     match type_of!(env, napi_val) {
       Ok(ValueType::Undefined) => Ok(()),
       _ => Err(Error::new(
@@ -68,7 +84,10 @@ impl FromNapiValue for Undefined {
 }
 
 impl ToNapiValue for Undefined {
-  unsafe fn to_napi_value(env: sys::napi_env, _val: Self) -> Result<sys::napi_value> {
+  unsafe fn to_napi_value(
+    env: sys::napi_env,
+    _val: Self,
+  ) -> Result<sys::napi_value> {
     let mut ret = ptr::null_mut();
 
     check_status!(
