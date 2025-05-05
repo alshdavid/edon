@@ -7,6 +7,9 @@ use super::NodejsWorker;
 use crate::internal::constants::LIB_NAME;
 use crate::internal::NodejsEvent;
 use crate::internal::PathExt;
+use crate::napi::FromNapiValue;
+use crate::napi::JsObject;
+use crate::napi::NapiValue;
 use crate::Env;
 
 pub struct Nodejs {
@@ -65,13 +68,19 @@ impl Nodejs {
     F: 'static
       + Sync
       + Send
-      + Fn(libnode_sys::napi_env, libnode_sys::napi_value) -> libnode_sys::napi_value,
+      + Fn(Env, JsObject) -> crate::Result<JsObject>
   >(
     &self,
     module_name: S,
     register_function: F,
-  ) {
-    internal::napi_module_register(module_name, register_function)
+  ) -> crate::Result<()> {
+    let wrapped_fn =  move |napi_env: libnode_sys::napi_env, napi_value: libnode_sys::napi_value| -> libnode_sys::napi_value  {
+      let env = unsafe { Env::from_raw(napi_env) };
+      let exports = unsafe { JsObject::from_raw_unchecked(napi_env, napi_value) };
+      register_function(env, exports).unwrap();
+      napi_value
+    };
+    internal::napi_module_register(module_name, wrapped_fn)
   }
 
   /// Evaluate block of JavaScript
@@ -94,13 +103,18 @@ impl Nodejs {
   pub fn exec<F: 'static + FnOnce(Env) -> crate::Result<()>>(
     &self,
     callback: F,
-  ) {
+  ) -> crate::Result<()> {
+    let (tx, rx) = channel();
+
     self
       .tx_eval
       .send(NodejsEvent::Env {
         callback: Box::new(callback),
+        resolve: tx
       })
       .ok();
+
+    rx.recv().unwrap()
   }
 
   /// Evaluate block of JavaScript

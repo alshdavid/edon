@@ -5,6 +5,7 @@ use crate::internal::constants::LIB_NAME;
 pub type Result<T> = std::result::Result<T, Error>;
 
 pub enum Error {
+  NapiModuleAlreadyRegistered,
   NodejsAlreadyRunning,
   NodejsNotRunning,
   LibnodeNotLoaded,
@@ -21,6 +22,7 @@ impl std::fmt::Debug for Error {
     f: &mut std::fmt::Formatter<'_>,
   ) -> std::fmt::Result {
     match self {
+      Self::NapiModuleAlreadyRegistered => write!(f, "NapiModuleAlreadyRegistered"),
       Self::NodejsAlreadyRunning => write!(f, "NodejsAlreadyRunning"),
       Self::NodejsNotRunning => write!(f, "NodejsNotRunning"),
       Self::LibnodeNotLoaded => write!(f, "LibnodeNotLoaded"),
@@ -39,6 +41,7 @@ impl std::fmt::Display for Error {
     f: &mut std::fmt::Formatter<'_>,
   ) -> std::fmt::Result {
     match self {
+      Error::NapiModuleAlreadyRegistered => write!(f, "NapiModuleAlreadyRegistered"),
       Error::NodejsAlreadyRunning => write!(f, "AlreadyRunning"),
       Error::NodejsNotRunning => write!(f, "NotRunning"),
       Error::LibnodeFailedToLoad => write!(f, "LibnodeFailedToLoad"),
@@ -65,6 +68,7 @@ impl std::error::Error for Error {}
 impl From<&Error> for Error {
   fn from(value: &Error) -> Self {
     match value {
+      Error::NapiModuleAlreadyRegistered => Error::NapiModuleAlreadyRegistered,
       Error::NodejsAlreadyRunning => Error::NodejsAlreadyRunning,
       Error::NodejsNotRunning => Error::NodejsNotRunning,
       Error::LibnodeNotFound => Error::LibnodeNotFound,

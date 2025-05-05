@@ -17,6 +17,7 @@ pub enum NodejsEvent {
   },
   Env {
     callback: Box<dyn FnOnce(Env) -> crate::Result<()>>,
+    resolve: Sender<crate::Result<()>>,
   },
 }
 
@@ -106,9 +107,9 @@ unsafe extern "C" fn edon_prelude_main(
 
         resolve.send(()).unwrap();
       }
-      NodejsEvent::Env { callback } => {
+      NodejsEvent::Env { callback, resolve } => {
         let env = Env::from_raw(env);
-        callback(env).ok();
+        resolve.send(callback(env)).ok();
       },
     }
   }

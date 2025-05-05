@@ -8,6 +8,8 @@ use std::ptr;
 use std::sync::LazyLock;
 use std::sync::RwLock;
 
+use crate::napi::check_status;
+
 type InitFn =
   unsafe extern "C" fn(libnode_sys::napi_env, libnode_sys::napi_value) -> libnode_sys::napi_value;
 
@@ -37,9 +39,9 @@ pub fn napi_module_register<
 >(
   module_name: S,
   register_function: F,
-) {
+) -> crate::Result<()> {
   if !set_napi_module_register_name(&module_name) {
-    return;
+    return Err(crate::Error::NapiModuleAlreadyRegistered);
   }
 
   let target_fn_leaked: &'static _ = Box::leak(Box::new(register_function));
@@ -64,6 +66,8 @@ pub fn napi_module_register<
   }));
 
   unsafe {
-    libnode_sys::napi_module_register(nm);
+    check_status!(libnode_sys::napi_module_register(nm));
   }
+
+  Ok(())
 }
