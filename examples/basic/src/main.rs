@@ -2,6 +2,7 @@ pub fn main() -> anyhow::Result<()> {
   let nodejs = edon::Nodejs::load_auto()?;
 
   nodejs.napi_module_register("my_test_module", |env, mut exports| {
+    println!("hello world");
     let num = env.create_uint32(32)?;
     exports.set_named_property("world", num)?;
     Ok(exports)
@@ -10,23 +11,27 @@ pub fn main() -> anyhow::Result<()> {
   nodejs.exec(|env| {
     let mut global_this = env.get_global()?;
 
-    let num = env.create_uint32(32)?;
-
+    let num = env.create_uint32(42)?;
     global_this.set_named_property("hello", num)?;
 
     Ok(())
   })?;
 
-  nodejs.eval_script(
+  nodejs.eval_module(
     r#"
-    setTimeout(() => console.log('done'), 1000)
-    console.log(globalThis.hello);
-    console.log(process._linkedBinding("my_test_module"));  
+    import * as fs from 'node:fs';
+
+    console.log(fs)
+    console.log('Done sync' as string)
+    console.log(importNative('my_test_module'))
+    console.log(globalThis.hello)
+
+    await new Promise(res => setTimeout(() => {
+      console.log('Done async')
+      res()
+    }, 1000))
   "#,
   )?;
-
-  // let w0 = nodejs.spawn_worker()?;
-  // w0.eval(r#"console.log('hello world')"#)?;
 
   Ok(())
 }

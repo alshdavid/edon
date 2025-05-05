@@ -8,7 +8,9 @@ use std::ptr;
 use std::sync::LazyLock;
 use std::sync::RwLock;
 
-use crate::napi::check_status;
+use crate::napi::JsObject;
+use crate::napi::NapiValue;
+use crate::Env;
 
 type InitFn =
   unsafe extern "C" fn(libnode_sys::napi_env, libnode_sys::napi_value) -> libnode_sys::napi_value;
@@ -35,7 +37,7 @@ fn get_napi_module_register_name<S: AsRef<str>>(name: S) -> Option<*const c_char
 
 pub fn napi_module_register<
   S: AsRef<str>,
-  F: 'static + Fn(libnode_sys::napi_env, libnode_sys::napi_value) -> libnode_sys::napi_value,
+  F: 'static + Fn(Env, JsObject) -> crate::Result<JsObject>,
 >(
   module_name: S,
   register_function: F,
@@ -44,7 +46,14 @@ pub fn napi_module_register<
     return Err(crate::Error::NapiModuleAlreadyRegistered);
   }
 
-  let target_fn_leaked: &'static _ = Box::leak(Box::new(register_function));
+  let wrapped_fn =  move |napi_env: libnode_sys::napi_env, napi_value: libnode_sys::napi_value| -> libnode_sys::napi_value  {
+    let env = unsafe { Env::from_raw(napi_env) };
+    let exports = unsafe { JsObject::from_raw_unchecked(napi_env, napi_value) };
+    register_function(env, exports).unwrap();
+    napi_value
+  };
+
+  let target_fn_leaked: &'static _ = Box::leak(Box::new(wrapped_fn));
   let target_fn_closure = libffi::high::Closure2::new(target_fn_leaked);
   let &target_fn_ptr = target_fn_closure.code_ptr();
   let target_fn: InitFn = unsafe { std::mem::transmute(target_fn_ptr) };
@@ -66,7 +75,7 @@ pub fn napi_module_register<
   }));
 
   unsafe {
-    check_status!(libnode_sys::napi_module_register(nm))?;
+    libnode_sys::napi_module_register(nm);
   }
 
   Ok(())

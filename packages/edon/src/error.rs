@@ -4,6 +4,7 @@ use crate::internal::constants::LIB_NAME;
 
 pub type Result<T> = std::result::Result<T, Error>;
 
+#[derive(Clone)]
 pub enum Error {
   NapiModuleAlreadyRegistered,
   NodejsAlreadyRunning,
