@@ -13,6 +13,7 @@ pub enum Error {
   LibnodeNotFound,
   LibnodeFailedToLoad,
   LibnodeSymbolNotFound,
+  Generic(String),
   IoError(Arc<std::io::Error>),
   NapiError(crate::napi::Error),
 }
@@ -30,6 +31,7 @@ impl std::fmt::Debug for Error {
       Self::LibnodeNotFound => write!(f, "{}", self),
       Self::LibnodeFailedToLoad => write!(f, "LibnodeFailedToLoad"),
       Self::LibnodeSymbolNotFound => write!(f, "LibnodeSymbolNotFound"),
+      Self::Generic(s) => write!(f, "Generic {}", s),
       Self::IoError(arg0) => f.debug_tuple("IoError").field(arg0).finish(),
       Self::NapiError(arg0) => f.debug_tuple("NapiError").field(arg0).finish(),
     }
@@ -48,6 +50,7 @@ impl std::fmt::Display for Error {
       Error::LibnodeFailedToLoad => write!(f, "LibnodeFailedToLoad"),
       Error::LibnodeNotLoaded => write!(f, "LibnodeNotLoaded"),
       Error::LibnodeSymbolNotFound => write!(f, "LibnodeSymbolNotFound"),
+      Error::Generic(s) => write!(f, "Generic {}", s),
       Error::IoError(err) => write!(f, "{}", err),
       Error::NapiError(err) => write!(f, "{}", err),
       Error::LibnodeNotFound => write!(
@@ -64,6 +67,12 @@ How to fix:
   }
 }
 
+impl Error {
+  pub fn generic<S: AsRef<str>>(message: S) -> Self {
+    Error::Generic(message.as_ref().to_string())
+  }
+}
+
 impl std::error::Error for Error {}
 
 impl From<&Error> for Error {
@@ -76,6 +85,7 @@ impl From<&Error> for Error {
       Error::LibnodeNotLoaded => Error::LibnodeNotLoaded,
       Error::LibnodeFailedToLoad => Error::LibnodeFailedToLoad,
       Error::LibnodeSymbolNotFound => Error::LibnodeSymbolNotFound,
+      Error::Generic(s) => Error::Generic(s.clone()),
       Error::IoError(error) => Error::IoError(error.clone()),
       Error::NapiError(error) => Error::NapiError(error.clone()),
     }

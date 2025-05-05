@@ -5,8 +5,9 @@ use std::sync::Arc;
 use std::sync::OnceLock;
 
 use super::internal;
-use super::NodejsWorker;
+use super::NodejsContext;
 use crate::internal::constants::LIB_NAME;
+use crate::internal::NodejsContextEvent;
 use crate::internal::NodejsEvent;
 use crate::internal::PathExt;
 use crate::napi::JsObject;
@@ -92,6 +93,23 @@ impl Nodejs {
     internal::napi_module_register(module_name, register_function)
   }
 
+
+  /// Spawn a Nodejs worker thread
+  pub fn spawn_context(&self) -> crate::Result<NodejsContext> {
+    let (tx, rx) = channel();
+    let (tx_wrk, rx_wrk) = channel::<NodejsContextEvent>();
+
+    self
+      .tx_eval
+      .send(NodejsEvent::StartCommonjsWorker { rx_wrk, resolve: tx })
+      .ok();
+
+    rx.recv().unwrap();
+    NodejsContext::start(tx_wrk)
+  }
+}
+
+/*
   /// Evaluate Block of Commonjs JavaScript
   ///
   /// The last line of the script will be returned
@@ -111,6 +129,7 @@ impl Nodejs {
     Ok(())
   }
 
+
   /// Evaluate Block of ESM JavaScript
   ///
   /// The last line of the script will be returned
@@ -129,33 +148,4 @@ impl Nodejs {
     rx.recv().unwrap();
     Ok(())
   }
-
-  /// Evaluate Native JavaScript
-  ///
-  /// This will provide a Nodejs Env and allow execution of
-  /// native code in the JavaScript context
-  pub fn exec<F: 'static + Send + FnOnce(Env) -> crate::Result<()>>(
-    &self,
-    callback: F,
-  ) -> crate::Result<()> {
-    let (tx, rx) = channel();
-
-    self
-      .tx_eval
-      .send(NodejsEvent::Env {
-        callback: Box::new(callback),
-        resolve: tx,
-      })
-      .ok();
-
-    rx.recv().unwrap()
-  }
-
-  /// Spawn a Nodejs worker thread
-  pub fn spawn_worker(&self) -> crate::Result<NodejsWorker> {
-    // let (tx, rx) = channel();
-    // self.tx_eval.send((code.as_ref().to_string(), tx)).unwrap();
-    // rx.recv().unwrap();
-    Ok(NodejsWorker {})
-  }
-}
+*/

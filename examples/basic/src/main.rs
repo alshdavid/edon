@@ -1,37 +1,23 @@
 pub fn main() -> anyhow::Result<()> {
   let nodejs = edon::Nodejs::load_auto()?;
 
-  nodejs.napi_module_register("my_test_module", |env, mut exports| {
-    println!("hello world");
-    let num = env.create_uint32(32)?;
-    exports.set_named_property("world", num)?;
-    Ok(exports)
-  })?;
+  let wk0 = nodejs.spawn_context()?;
+  let wk1 = nodejs.spawn_context()?;
+  let wk2 = nodejs.spawn_context()?;
+  
+  wk0.eval("globalThis.i = 0;")?;
+  wk1.eval("globalThis.i = 0;")?;
+  wk2.eval("globalThis.i = 0;")?;
 
-  nodejs.exec(|env| {
-    let mut global_this = env.get_global()?;
+  for _ in 0..100 {
+    wk0.eval("globalThis.i += 1")?;
+    wk1.eval("globalThis.i += 1")?;
+    wk2.eval("globalThis.i += 1")?;
+  }
 
-    let num = env.create_uint32(42)?;
-    global_this.set_named_property("hello", num)?;
-
-    Ok(())
-  })?;
-
-  nodejs.eval_module(
-    r#"
-    import * as fs from 'node:fs';
-
-    console.log(fs)
-    console.log('Done sync' as string)
-    console.log(importNative('my_test_module'))
-    console.log(globalThis.hello)
-
-    await new Promise(res => setTimeout(() => {
-      console.log('Done async')
-      res()
-    }, 1000))
-  "#,
-  )?;
+  wk0.eval("console.log(globalThis.i)")?;
+  wk1.eval("console.log(globalThis.i)")?;
+  wk2.eval("console.log(globalThis.i)")?;
 
   Ok(())
 }
