@@ -28,8 +28,7 @@ impl NodejsContext {
       .send(NodejsContextEvent::Eval { code, resolve: tx })
       .ok();
 
-    rx.recv().unwrap();
-    Ok(())
+    rx.recv().unwrap()
   }
 
   /// Evaluate Native JavaScript

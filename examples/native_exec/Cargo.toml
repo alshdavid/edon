@@ -1,5 +1,5 @@
 [package]
-name = "edon_example_basic"
+name = "example_native_exec"
 version = "0.0.0-local"
 authors = ["alshdavid"]
 edition = "2021"

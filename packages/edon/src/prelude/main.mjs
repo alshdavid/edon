@@ -1,14 +1,13 @@
 void (function () {
-  const { Worker, workerData } = require("node:worker_threads");
+  // This is a shim that adds in the functionality 
+  // which will be added into libnode later
+  const { Worker } = require("node:worker_threads");
 
   const cjsWorker = /*javascript*/`
     const vm = require("node:vm");
     const module = require("node:module");
     const { parentPort, workerData } = require("node:worker_threads");
 
-    // Shim for "_linkedBinding"
-    globalThis.importNative = (specifier) => process._linkedBinding(specifier);
-    
     // HACK: If the thread exits before the host process
     // has time to clean up then Nodejs will throw a segfault
     setInterval(() => {}, 1000)
@@ -45,7 +44,7 @@ void (function () {
     parentPort.postMessage(null)
   `
 
-  const wrks = []
+  const workers = []
 
   // Handle requests from the host
   process
@@ -53,10 +52,10 @@ void (function () {
     .onEvent((action, payload, done) => {
       switch (action) {
         case 0: {
-          let wrk = new Worker(cjsWorker, { workerData: payload, eval: true })
-          wrk.once('message', done)
-          wrk.ref()
-          wrks.push(wrks)
+          let worker = new Worker(cjsWorker, { workerData: payload, eval: true })
+          worker.ref()
+          workers.push(worker)
+          worker.once('message', done)
           break;
         }
         default:
