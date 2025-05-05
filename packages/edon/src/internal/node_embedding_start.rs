@@ -2,11 +2,7 @@ use std::ffi::c_char;
 use std::ffi::c_int;
 use std::ffi::CString;
 
-use super::mark_running;
-use super::mark_stopped;
-
 pub fn start_blocking<Args: AsRef<str>>(argv: &[Args]) -> crate::Result<()> {
-  mark_running()?;
   let current_exe = CString::new(std::env::current_exe().unwrap().to_str().unwrap()).unwrap();
 
   let args = argv
@@ -24,6 +20,15 @@ pub fn start_blocking<Args: AsRef<str>>(argv: &[Args]) -> crate::Result<()> {
 
   unsafe { libnode_sys::node_embedding_start(c_args.len() as c_int, c_args.as_ptr()) };
 
-  mark_stopped()?;
+  Ok(())
+}
+
+pub fn eval_blocking<Code: AsRef<str>>(code: Code) -> crate::Result<()> {
+  start_blocking(&[
+    "--experimental-strip-types",
+    "--disable-warning=ExperimentalWarning",
+    "-e",
+    code.as_ref(),
+  ])?;
   Ok(())
 }

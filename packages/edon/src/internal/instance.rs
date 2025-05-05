@@ -1,5 +1,7 @@
 use std::ffi::CString;
 use std::ptr;
+use std::sync::atomic::AtomicBool;
+use std::sync::atomic::Ordering;
 use std::sync::mpsc::channel;
 use std::sync::mpsc::Receiver;
 use std::sync::mpsc::Sender;
@@ -9,6 +11,8 @@ use libnode_sys::napi_env;
 use libnode_sys::napi_value;
 
 use crate::Env;
+
+static STARTED: AtomicBool = AtomicBool::new(false);
 
 pub enum NodejsEvent {
   EvalScript {
@@ -21,7 +25,11 @@ pub enum NodejsEvent {
   },
 }
 
-pub fn start_node_instance() -> Sender<NodejsEvent> {
+pub fn start_node_instance() -> crate::Result<Sender<NodejsEvent>> {
+  if STARTED.compare_exchange(false, true, Ordering::Acquire, Ordering::Acquire).is_err() {
+    return Err(crate::Error::NodejsAlreadyRunning)
+  };
+
   let (tx, rx) = channel();
   let closure_data_ptr = Box::into_raw(Box::new(rx));
 
@@ -42,7 +50,6 @@ pub fn start_node_instance() -> Sender<NodejsEvent> {
       &mut raw_result,
     );
 
-    // Set number on exports object
     libnode_sys::napi_set_named_property(
       env,
       exports.cast(),
@@ -50,15 +57,14 @@ pub fn start_node_instance() -> Sender<NodejsEvent> {
       raw_result,
     );
 
-    // Return exports object
     exports
-  });
+  }).unwrap();
 
   std::thread::spawn(|| {
     super::eval_blocking(format!("{};\n", crate::prelude::MAIN_JS)).unwrap();
   });
 
-  tx
+  Ok(tx)
 }
 
 unsafe extern "C" fn edon_prelude_main(

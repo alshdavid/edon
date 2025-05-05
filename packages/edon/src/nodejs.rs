@@ -7,7 +7,6 @@ use super::NodejsWorker;
 use crate::internal::constants::LIB_NAME;
 use crate::internal::NodejsEvent;
 use crate::internal::PathExt;
-use crate::napi::FromNapiValue;
 use crate::napi::JsObject;
 use crate::napi::NapiValue;
 use crate::Env;
@@ -20,7 +19,7 @@ impl Nodejs {
   /// Load libnode.so by path
   pub fn load<P: AsRef<Path>>(path: P) -> crate::Result<Self> {
     let _ = libnode_sys::load::cdylib(path);
-    let tx_eval = internal::start_node_instance();
+    let tx_eval = internal::start_node_instance()?;
     Ok(Self { tx_eval })
   }
 
@@ -53,12 +52,8 @@ impl Nodejs {
       }
     };
 
-    let tx_eval = internal::start_node_instance();
+    let tx_eval = internal::start_node_instance()?;
     Ok(Self { tx_eval })
-  }
-
-  pub fn is_running() -> bool {
-    internal::is_running()
   }
 
   /// Register native module
@@ -83,7 +78,7 @@ impl Nodejs {
     internal::napi_module_register(module_name, wrapped_fn)
   }
 
-  /// Evaluate block of JavaScript
+  /// Evaluate Commonjs JavaScript Block
   pub fn eval_script<Code: AsRef<str>>(
     &self,
     code: Code,
@@ -100,6 +95,7 @@ impl Nodejs {
     Ok(())
   }
 
+  /// Evaluate Native JavaScript
   pub fn exec<F: 'static + FnOnce(Env) -> crate::Result<()>>(
     &self,
     callback: F,

@@ -66,7 +66,7 @@ pub fn napi_module_register<
   }));
 
   unsafe {
-    check_status!(libnode_sys::napi_module_register(nm));
+    check_status!(libnode_sys::napi_module_register(nm))?;
   }
 
   Ok(())
