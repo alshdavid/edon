@@ -1524,6 +1524,40 @@ impl Env {
   pub fn raw(&self) -> libnode_sys::napi_env {
     self.0
   }
+
+  //
+  // ALSH: Extended Functionality
+  //
+  pub fn create_promise<Res>(
+    &self,
+    executor: crate::napi_ext::PromiseExecutor<Res>,
+  ) -> crate::napi::Result<JsObject>
+  where
+    Res: NapiValue + 'static,
+  {
+    crate::napi_ext::create_promise(self, executor)
+  }
+
+  pub fn spawn_local_promise<R, Fut>(
+    env: &Env,
+    future: Fut,
+  ) -> crate::napi::Result<JsObject>
+  where
+    R: NapiValue + 'static,
+    Fut: futures::Future<Output = crate::napi::Result<R>> + 'static,
+  {
+    crate::napi_ext::spawn_local_promise(env, future)
+  }
+
+  pub fn spawn_local<Fut>(
+    env: &Env,
+    future: Fut,
+  ) -> crate::napi::Result<()>
+  where
+    Fut: futures::Future<Output = crate::napi::Result<()>> + 'static,
+  {
+    crate::napi_ext::spawn_local(env, future)
+  }
 }
 
 /// This function could be used for `create_buffer_with_borrowed_data` and want do noting when Buffer finalized.
