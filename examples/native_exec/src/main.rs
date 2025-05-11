@@ -1,3 +1,5 @@
+use std::time::Duration;
+
 pub fn main() -> anyhow::Result<()> {
   let nodejs = edon::Nodejs::load_auto()?;
 
@@ -25,5 +27,13 @@ pub fn main() -> anyhow::Result<()> {
   // Inspect the value set by the native code
   ctx0.eval("console.log(globalThis.meaning)")?; // "42"
 
+  ctx0.eval_module(r#"await import('node:fs').then(() => console.log(1));"#)?; // "42"
+  // ctx0.eval_module(r#"
+  //   import * as fs from 'node:fs'
+  //   console.log(globalThis.done)
+  //   console.log(fs)
+  // "#)?; // "42"
+
+  // std::thread::sleep(Duration::from_secs(2));
   Ok(())
 }

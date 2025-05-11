@@ -10,6 +10,7 @@ use std::thread;
 use crate::napi::threadsafe_function::ErrorStrategy;
 use crate::napi::threadsafe_function::ThreadsafeFunctionCallMode;
 use crate::napi::JsFunction;
+use crate::napi::JsString;
 use crate::napi::JsUnknown;
 use crate::Env;
 
@@ -20,6 +21,10 @@ static STARTED: AtomicBool = AtomicBool::new(false);
 pub enum NodejsEvent {
   StartCommonjsWorker {
     rx_wrk: Receiver<NodejsContextEvent>,
+    resolve: Sender<String>,
+  },
+  StopCommonjsWorker {
+    id: String,
     resolve: Sender<()>,
   },
 }
@@ -30,6 +35,10 @@ pub enum NodejsContextEvent {
     resolve: Sender<crate::Result<()>>,
   },
   Eval {
+    code: String,
+    resolve: Sender<crate::Result<()>>,
+  },
+  EvalModule {
     code: String,
     resolve: Sender<crate::Result<()>>,
   },
@@ -68,6 +77,20 @@ pub fn start_node_instance() -> crate::Result<Sender<NodejsEvent>> {
                 let action = ctx.env.create_uint32(0)?.into_unknown();
                 let payload =
                   JsTransferable::new(Mutex::new(Some(rx_wrk))).into_unknown(&ctx.env)?;
+                let resolve = ctx
+                  .env
+                  .create_function_from_closure("NodejsEvent::done", move |ctx| {
+                    let id = ctx.get::<JsString>(0)?;
+                    resolve.send(id.into_utf8()?.as_str()?.to_string()).unwrap();
+                    ctx.env.get_undefined()
+                  })?
+                  .into_unknown();
+
+                Ok(vec![action, payload, resolve])
+              },
+              NodejsEvent::StopCommonjsWorker { id, resolve } => {
+                let action = ctx.env.create_uint32(1)?.into_unknown();
+                let payload = ctx.env.create_string(&id)?.into_unknown();
                 let resolve = ctx
                   .env
                   .create_function_from_closure("NodejsEvent::done", move |ctx| {
@@ -128,8 +151,22 @@ pub fn start_node_instance() -> crate::Result<Sender<NodejsEvent>> {
 
               Ok(vec![action, payload, resolve])
             }
-            NodejsContextEvent::Require { specifier, resolve } => {
+            NodejsContextEvent::EvalModule { code, resolve } => {
               let action = ctx.env.create_uint32(1)?.into_unknown();
+              let payload = ctx.env.create_string(&code)?.into_unknown();
+              let resolve = ctx
+                .env
+                .create_function_from_closure("NodejsContextEvent::done", move |ctx| {
+                  resolve.send(Ok(())).unwrap();
+                  println!("done");
+                  ctx.env.get_undefined()
+                })?
+                .into_unknown();
+
+              Ok(vec![action, payload, resolve])
+            }
+            NodejsContextEvent::Require { specifier, resolve } => {
+              let action = ctx.env.create_uint32(2)?.into_unknown();
               let payload = ctx.env.create_string(&specifier)?.into_unknown();
               let resolve = ctx
                 .env
@@ -142,7 +179,7 @@ pub fn start_node_instance() -> crate::Result<Sender<NodejsEvent>> {
               Ok(vec![action, payload, resolve])
             },
             NodejsContextEvent::Import { specifier, resolve } => {
-              let action = ctx.env.create_uint32(2)?.into_unknown();
+              let action = ctx.env.create_uint32(3)?.into_unknown();
               let payload = ctx.env.create_string(&specifier)?.into_unknown();
               let resolve = ctx
                 .env

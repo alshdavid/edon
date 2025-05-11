@@ -1,16 +1,22 @@
 use std::sync::mpsc::{channel, Sender};
 
-use crate::{internal::NodejsContextEvent, Env};
+use crate::{internal::{NodejsContextEvent, NodejsEvent}, Env};
 
 
 
 pub struct NodejsContext {
+  id: String,
+  tx_main: Sender<NodejsEvent>,
   tx_wrk: Sender<NodejsContextEvent>,
 }
 
 impl NodejsContext {
-  pub (crate) fn start(tx_wrk: Sender<NodejsContextEvent>) -> crate::Result<Self> {
-    return Ok(Self { tx_wrk })
+  pub (crate) fn start(
+    id: String,
+    tx_main: Sender<NodejsEvent>,
+    tx_wrk: Sender<NodejsContextEvent>,
+  ) -> crate::Result<Self> {
+    return Ok(Self { id, tx_main, tx_wrk })
   }
 
   /// Evaluate Block of Commonjs JavaScript
@@ -26,6 +32,22 @@ impl NodejsContext {
 
     tx_eval
       .send(NodejsContextEvent::Eval { code, resolve: tx })
+      .ok();
+
+    rx.recv().unwrap()
+  }
+
+  /// Evaluate Block of ESM JavaScript
+  pub fn eval_module<Code: AsRef<str>>(
+    &self,
+    code: Code,
+  ) -> crate::Result<()> {
+    let (tx, rx) = channel();
+    let tx_eval = self.tx_wrk.clone();
+    let code = code.as_ref().to_string();
+
+    tx_eval
+      .send(NodejsContextEvent::EvalModule { code, resolve: tx })
       .ok();
 
     rx.recv().unwrap()
@@ -78,5 +100,13 @@ impl NodejsContext {
       .ok();
 
     rx.recv().unwrap()
+  }
+}
+
+impl Drop for NodejsContext {
+  fn drop(&mut self) {
+    let (tx, rx) = channel();
+    self.tx_main.send(NodejsEvent::StopCommonjsWorker { id: self.id.clone(), resolve: tx }).unwrap();
+    rx.recv().unwrap();
   }
 }

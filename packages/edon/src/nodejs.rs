@@ -104,7 +104,7 @@ impl Nodejs {
       .send(NodejsEvent::StartCommonjsWorker { rx_wrk, resolve: tx })
       .ok();
 
-    rx.recv().unwrap();
-    NodejsContext::start(tx_wrk)
+    let id = rx.recv().unwrap();
+    NodejsContext::start(id, self.tx_eval.clone(), tx_wrk)
   }
 }
