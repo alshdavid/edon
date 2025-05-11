@@ -120,8 +120,8 @@ pub fn main() -> anyhow::Result<()> {
 
 ## Use Async Rust to interact with JsValues 
 
-Run native code against a specific Nodejs context. This is essentially `eval` but using
-Node's n-api.
+Use a Rust async runtime that works cooperatively with Nodejs's libuv event loop to work with
+JavaScript values in a non-blocking/asynchronous fashion.
 
 ```rust
 pub fn main() -> anyhow::Result<()> {
@@ -142,7 +142,7 @@ pub fn main() -> anyhow::Result<()> {
       // to work in async contexts
       let arg0 = ctx.get::<JsRc<JsNumber>>(0)?;
       
-      // Spawn a promise that return the summed values
+      // Spawn a promise that return the summed value
       // Note: This works using a custom async runtime that runs on 
       //       the Nodejs thread cooperatively with libuv.
       //       Make sure you spawn an OS thread or use a runtime like
@@ -235,3 +235,10 @@ pub fn main() -> anyhow::Result<()> {
   let nodejs = edon::Nodejs::load("/path/to/libnode.so")?;
 }
 ```
+
+## Credits
+
+Project is inspired by and contains code from:
+
+- [https://github.com/napi-rs/napi-rs](https://github.com/napi-rs/napi-rs)
+- [https://github.com/metacall/libnode](https://github.com/metacall/libnode)
