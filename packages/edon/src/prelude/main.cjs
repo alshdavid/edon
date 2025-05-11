@@ -1,6 +1,6 @@
 void (function () {
   // This is a shim that adds in the functionality 
-  // which will be added into libnode later
+  // which will possibly be added into libnode later
   const { Worker } = require("node:worker_threads");
 
   const cjsWorker = /*javascript*/`
@@ -40,19 +40,18 @@ void (function () {
       return m;
     }
 
-    let inProgress = new Set()
     let active = true
     
     process
       ._linkedBinding("edon:worker")
-      .onEvent(workerData, async (action, payload, done_) => {
-        if (!active) return
-        const done = () => {
-          inProgress.delete(current)
-          done_()
+      .onEvent(workerData, async (action, payload, done) => {
+        if (!active) {
+          // TODO return error
+          // This shouldn't happen though it's nice just in case
+          throw new Error("Context shutting down")
         }
-        const current = new Promise(res => setTimeout(res, 0))
-          .then(async () => {
+        // Do each action asynchronously
+        setTimeout(async () => {
             switch (action) {
               // NodejsContextEvent::Eval
               case 0: {
@@ -90,17 +89,12 @@ void (function () {
                 done()
                 break;
               }
-              default:
-                break;
             }
-          })
-        
-          inProgress.add(current)
+          }, 0)
         })
 
     parentPort.once('message', async () => {
       active = false
-      await Promise.all(Array.from(inProgress))
       process.stdout.end()
       process.stderr.end()
       parentPort.postMessage(null)
@@ -115,51 +109,53 @@ void (function () {
   process
     ._linkedBinding("edon:main")
     .onEvent(async (action, payload, done) => {
-      // console.log({ action, payload })
-      // NodejsEvent::StartCommonjsWorker
-      if (action === 0) {
-        let worker = new Worker(cjsWorker, { 
-          workerData: payload,
-          eval: true,
-          stderr: true,
-          stdout: true,
-          stdin: false,
-        })
+      switch (action) {
+        // NodejsEvent::StartCommonjsWorker
+        case 0: {
+          let worker = new Worker(cjsWorker, { 
+            workerData: payload,
+            eval: true,
+            stderr: true,
+            stdout: true,
+            stdin: false,
+          })
 
-        worker.ref()
-        workers[worker.threadId] = worker
-        worker.stdout.on('data', d => process.stdout.write(d))
-        worker.stderr.on('data', d => process.stderr.write(d))
+          worker.ref()
+          workers[worker.threadId] = worker
+          worker.stdout.on('data', d => process.stdout.write(d))
+          worker.stderr.on('data', d => process.stderr.write(d))
 
-        await new Promise(res => worker.once('message', res))
-        done(`${worker.threadId}`)
-      }
-
-      // NodejsEvent::StopCommonjsWorker
-      else if (action === 1) {
-        if (workers[payload]) {
-          const onend = new Promise(res => workers[payload].once('message', res))
-          workers[payload].postMessage(null)
-          await onend
-          await workers[payload].terminate()
-          delete workers[payload]
+          await new Promise(res => worker.once('message', res))
+          done(`${worker.threadId}`)
+          break
         }
-        done()
-      }
-
-      // NodejsEvent::StopMain
-      else if (action === 2) {
-        for (const worker of Object.values(workers)) {
-          const onend = new Promise(res => worker.once('message', res))
-          worker.postMessage(null)
-          await onend
-          const onclose = new Promise(res => worker.once('exit', res))
-          await worker.terminate()
-          await onclose
+        // NodejsEvent::StopCommonjsWorker
+        case 1: {
+          if (workers[payload]) {
+            const onend = new Promise(res => workers[payload].once('message', res))
+            workers[payload].postMessage(null)
+            await onend
+            await workers[payload].terminate()
+            delete workers[payload]
+          }
+          done()
+          break
         }
-        // Flush promises
-        await new Promise(res => setTimeout(res, 0))
-        done()
+        // NodejsEvent::StopMain
+        case 2: {
+          for (const worker of Object.values(workers)) {
+            const onend = new Promise(res => worker.once('message', res))
+            worker.postMessage(null)
+            await onend
+            const onclose = new Promise(res => worker.once('exit', res))
+            await worker.terminate()
+            await onclose
+          }
+          // Flush promises
+          await new Promise(res => setTimeout(res, 0))
+          done()
+          break
+        }  
       }
     });
 })();
