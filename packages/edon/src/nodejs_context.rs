@@ -1,4 +1,3 @@
-use std::path::PathBuf;
 use std::sync::atomic::Ordering;
 use std::sync::mpsc::channel;
 use std::sync::mpsc::Sender;
@@ -6,7 +5,7 @@ use std::sync::mpsc::Sender;
 use crate::internal::NodejsContextEvent;
 use crate::internal::NodejsEvent;
 use crate::Env;
-use crate::NodeOptions;
+use crate::NodejsOptions;
 use crate::NODEJS_CONTEXT_COUNT;
 
 pub struct NodejsContext {
@@ -17,11 +16,23 @@ pub struct NodejsContext {
 
 impl NodejsContext {
   pub(crate) fn start(
-    id: String,
-    _options: &NodeOptions,
+    options: &NodejsOptions,
     tx_main: Sender<NodejsEvent>,
-    tx_wrk: Sender<NodejsContextEvent>,
   ) -> crate::Result<Self> {
+    NODEJS_CONTEXT_COUNT.fetch_add(1, Ordering::AcqRel);
+    let (tx, rx) = channel();
+    let (tx_wrk, rx_wrk) = channel::<NodejsContextEvent>();
+
+    tx_main
+      .send(NodejsEvent::StartCommonjsWorker {
+        rx_wrk,
+        argv: options.as_argv(),
+        resolve: tx,
+      })
+      .ok();
+
+    let id = rx.recv().unwrap();
+
     return Ok(Self {
       id,
       tx_main,

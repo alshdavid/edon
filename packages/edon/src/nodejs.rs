@@ -9,12 +9,11 @@ use libnode_sys::constants::LIB_NAME;
 
 use super::internal;
 use super::NodejsContext;
-use crate::internal::NodejsContextEvent;
 use crate::internal::NodejsEvent;
 use crate::internal::PathExt;
 use crate::napi::JsObject;
 use crate::Env;
-use crate::NodeOptions;
+use crate::NodejsOptions;
 
 // Due to a quirk of v8, only one instance of Nodejs can be used per process.
 // The current C FFI does not allow spawning multiple contexts so to get around
@@ -104,27 +103,14 @@ impl Nodejs {
 
   /// Spawn a Nodejs worker thread
   pub fn spawn_context(&self) -> crate::Result<NodejsContext> {
-    self.spawn_context_with_options(&NodeOptions::default())
+    self.spawn_context_with_options(&NodejsOptions::default())
   }
 
   pub fn spawn_context_with_options(
     &self,
-    options: &NodeOptions,
+    options: &NodejsOptions,
   ) -> crate::Result<NodejsContext> {
-    NODEJS_CONTEXT_COUNT.fetch_add(1, Ordering::AcqRel);
-    let (tx, rx) = channel();
-    let (tx_wrk, rx_wrk) = channel::<NodejsContextEvent>();
-
-    self
-      .tx_main
-      .send(NodejsEvent::StartCommonjsWorker {
-        rx_wrk,
-        resolve: tx,
-      })
-      .ok();
-
-    let id = rx.recv().unwrap();
-    NodejsContext::start(id, options, self.tx_main.clone(), tx_wrk)
+    NodejsContext::start(options, self.tx_main.clone())
   }
 }
 

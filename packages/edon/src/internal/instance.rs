@@ -20,6 +20,7 @@ static STARTED: AtomicBool = AtomicBool::new(false);
 pub enum NodejsEvent {
   StartCommonjsWorker {
     rx_wrk: Receiver<NodejsContextEvent>,
+    argv: Vec<String>,
     resolve: Sender<String>,
   },
   StopCommonjsWorker {
@@ -75,10 +76,28 @@ pub fn start_node_instance() -> crate::Result<Sender<NodejsEvent>> {
           .create_threadsafe_function::<NodejsEvent, JsUnknown, _, ErrorStrategy::Fatal>(
             0,
             move |ctx| match ctx.value {
-              NodejsEvent::StartCommonjsWorker { rx_wrk, resolve } => {
+              NodejsEvent::StartCommonjsWorker {
+                rx_wrk,
+                argv,
+                resolve,
+              } => {
                 let action = ctx.env.create_uint32(0)?.into_unknown();
-                let payload =
-                  JsTransferable::new(Mutex::new(Some(rx_wrk))).into_unknown(&ctx.env)?;
+
+                // [argv, tx_worker]
+                let mut payload = ctx.env.create_array(2)?;
+
+                let mut argv_js = ctx.env.create_array(0)?;
+                for (i, v) in argv.iter().enumerate() {
+                  argv_js.set(i as u32, ctx.env.create_string(v)?)?;
+                }
+
+                payload.set(0, argv_js)?;
+                payload.set(
+                  1,
+                  JsTransferable::new(Mutex::new(Some(rx_wrk))).into_unknown(&ctx.env)?,
+                )?;
+                let payload = payload.coerce_to_object()?.into_unknown();
+
                 let resolve = ctx
                   .env
                   .create_function_from_closure("NodejsEvent::done", move |ctx| {

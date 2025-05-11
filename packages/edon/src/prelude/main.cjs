@@ -112,8 +112,11 @@ void (function () {
       switch (action) {
         // NodejsEvent::StartCommonjsWorker
         case 0: {
+          const [argv, tx_worker] = payload
+
           let worker = new Worker(cjsWorker, { 
-            workerData: payload,
+            argv,
+            workerData: tx_worker,
             eval: true,
             stderr: true,
             stdout: true,
