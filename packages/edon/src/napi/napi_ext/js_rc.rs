@@ -15,7 +15,7 @@ thread_local! {
   static NAPI_ENV: OnceCell<*mut napi_sys::napi_env__> = OnceCell::default();
 }
 
-unsafe impl<T> Send for JsRc<T> {}
+// unsafe impl<T> Send for JsRc<T> {}
 
 pub struct JsRc<T> {
   raw_ref: napi_sys::napi_ref,
@@ -123,5 +123,23 @@ impl<T: NapiValue> NapiValue for JsRc<T> {
     value: napi_sys::napi_value,
   ) -> Self {
     JsRc::new_raw(env, value).unwrap()
+  }
+}
+
+pub trait JsRcExt<T: NapiRaw> {
+  /// Wraps the JavaScript value in a reference counted container
+  /// that prevents Nodejs's GC from dropping it
+  fn into_rc(
+    self,
+    env: &Env,
+  ) -> crate::napi::Result<JsRc<T>>;
+}
+
+impl<T: NapiValue> JsRcExt<T> for T {
+  fn into_rc(
+    self,
+    env: &Env,
+  ) -> crate::napi::Result<JsRc<T>> {
+    JsRc::new(env, self)
   }
 }

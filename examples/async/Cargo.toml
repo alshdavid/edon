@@ -1,0 +1,11 @@
+[package]
+name = "example_async"
+version = "0.0.0-local"
+authors = ["alshdavid"]
+edition = "2021"
+license = "MIT"
+
+[dependencies]
+edon = { path = "../../packages/edon" }
+anyhow = "*"
+async-io = "*"

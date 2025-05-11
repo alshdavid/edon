@@ -1530,33 +1530,33 @@ impl Env {
   //
   pub fn create_promise<Res>(
     &self,
-    executor: crate::napi_ext::PromiseExecutor<Res>,
+    executor: super::napi_ext::PromiseExecutor<Res>,
   ) -> crate::napi::Result<JsObject>
   where
     Res: NapiValue + 'static,
   {
-    crate::napi_ext::create_promise(self, executor)
+    super::napi_ext::create_promise(self, executor)
   }
 
   pub fn spawn_local_promise<R, Fut>(
-    env: &Env,
+    &self,
     future: Fut,
   ) -> crate::napi::Result<JsObject>
   where
     R: NapiValue + 'static,
     Fut: futures::Future<Output = crate::napi::Result<R>> + 'static,
   {
-    crate::napi_ext::spawn_local_promise(env, future)
+    super::napi_ext::spawn_local_promise(self, future)
   }
 
   pub fn spawn_local<Fut>(
-    env: &Env,
+    &self,
     future: Fut,
   ) -> crate::napi::Result<()>
   where
     Fut: futures::Future<Output = crate::napi::Result<()>> + 'static,
   {
-    crate::napi_ext::spawn_local(env, future)
+    super::napi_ext::spawn_local(self, future)
   }
 }
 

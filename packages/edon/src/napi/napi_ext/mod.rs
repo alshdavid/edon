@@ -2,7 +2,6 @@ mod create_promise;
 mod js_rc;
 pub mod runtime;
 mod spawn_local;
-mod utils_ext;
 
 pub use self::create_promise::*;
 pub use self::js_rc::*;
