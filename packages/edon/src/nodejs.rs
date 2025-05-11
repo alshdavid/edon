@@ -1,7 +1,8 @@
 use std::path::Path;
+use std::sync::atomic::AtomicU32;
+use std::sync::atomic::Ordering;
 use std::sync::mpsc::channel;
 use std::sync::mpsc::Sender;
-use std::sync::Arc;
 use std::sync::OnceLock;
 
 use super::internal;
@@ -20,10 +21,12 @@ use crate::Env;
 //
 // The consumer can also spawn and interact with Nodejs worker threads.
 static NODEJS: OnceLock<crate::Result<NodejsRef>> = OnceLock::new();
-pub type NodejsRef = Arc<Nodejs>;
+pub(crate) static NODEJS_CONTEXT_COUNT: AtomicU32 = AtomicU32::new(0);
+
+pub type NodejsRef = Sender<NodejsEvent>;
 
 pub struct Nodejs {
-  tx_eval: Sender<NodejsEvent>,
+  tx_main: NodejsRef,
 }
 
 impl Nodejs {
@@ -33,15 +36,19 @@ impl Nodejs {
   /// MacOS:    "libnode.dylib"
   /// Linux:    "libnode.so"
   /// ```
-  pub fn load<P: AsRef<Path>>(path: P) -> crate::Result<NodejsRef> {
+  pub fn load<P: AsRef<Path>>(path: P) -> crate::Result<Nodejs> {
+    NODEJS_CONTEXT_COUNT.fetch_add(1, Ordering::AcqRel);
+
     let nodejs = NODEJS.get_or_init(move || {
       let _ = libnode_sys::load::cdylib(path);
-      let tx_eval = internal::start_node_instance()?;
-      Ok(Arc::new(Self { tx_eval }))
+      let tx_main = internal::start_node_instance()?;
+      Ok(tx_main)
     });
 
     match nodejs {
-      Ok(nodejs) => Ok(nodejs.clone()),
+      Ok(nodejs) => Ok(Self {
+        tx_main: nodejs.clone()
+      }),
       Err(err) => Err(err.clone()),
     }
   }
@@ -54,7 +61,7 @@ impl Nodejs {
   /// * <exe_path>/share/libnode.so
   /// * <exe_path>/../lib/libnode.so
   /// * <exe_path>/../share/libnode.so
-  pub fn load_auto() -> crate::Result<NodejsRef> {
+  pub fn load_auto() -> crate::Result<Nodejs> {
     if let Ok(path) = std::env::var("EDON_LIBNODE_PATH") {
       Self::load(&path)
     } else {
@@ -96,15 +103,27 @@ impl Nodejs {
 
   /// Spawn a Nodejs worker thread
   pub fn spawn_context(&self) -> crate::Result<NodejsContext> {
+    NODEJS_CONTEXT_COUNT.fetch_add(1, Ordering::AcqRel);
     let (tx, rx) = channel();
     let (tx_wrk, rx_wrk) = channel::<NodejsContextEvent>();
 
     self
-      .tx_eval
+      .tx_main
       .send(NodejsEvent::StartCommonjsWorker { rx_wrk, resolve: tx })
       .ok();
 
     let id = rx.recv().unwrap();
-    NodejsContext::start(id, self.tx_eval.clone(), tx_wrk)
+    NodejsContext::start(id, self.tx_main.clone(), tx_wrk)
+  }
+}
+
+impl Drop for Nodejs {
+  fn drop(&mut self) {
+    let context_count = NODEJS_CONTEXT_COUNT.fetch_sub(1, Ordering::AcqRel);
+    if context_count == 1 {
+      let (tx, rx) = channel();
+      self.tx_main.send(NodejsEvent::StopMain { resolve: tx }).unwrap();
+      rx.recv().unwrap();
+    }
   }
 }

@@ -1,6 +1,6 @@
-use std::sync::mpsc::{channel, Sender};
+use std::sync::{atomic::Ordering, mpsc::{channel, Sender}};
 
-use crate::{internal::{NodejsContextEvent, NodejsEvent}, Env};
+use crate::{internal::{NodejsContextEvent, NodejsEvent}, Env, NODEJS_CONTEXT_COUNT};
 
 
 
@@ -108,5 +108,12 @@ impl Drop for NodejsContext {
     let (tx, rx) = channel();
     self.tx_main.send(NodejsEvent::StopCommonjsWorker { id: self.id.clone(), resolve: tx }).unwrap();
     rx.recv().unwrap();
+
+    let context_count = NODEJS_CONTEXT_COUNT.fetch_sub(1, Ordering::AcqRel);
+    if context_count == 1 {
+      let (tx, rx) = channel();
+      self.tx_main.send(NodejsEvent::StopMain { resolve: tx }).unwrap();
+      rx.recv().unwrap();
+    }
   }
 }

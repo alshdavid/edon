@@ -27,6 +27,9 @@ pub enum NodejsEvent {
     id: String,
     resolve: Sender<()>,
   },
+  StopMain {
+    resolve: Sender<()>,
+  },
 }
 
 pub enum NodejsContextEvent {
@@ -101,6 +104,19 @@ pub fn start_node_instance() -> crate::Result<Sender<NodejsEvent>> {
 
                 Ok(vec![action, payload, resolve])
               }
+              NodejsEvent::StopMain { resolve } => {
+                let action = ctx.env.create_uint32(2)?.into_unknown();
+                let payload = ctx.env.get_undefined()?.into_unknown();
+                let resolve = ctx
+                  .env
+                  .create_function_from_closure("NodejsEvent::done", move |ctx| {
+                    resolve.send(()).unwrap();
+                    ctx.env.get_undefined()
+                  })?
+                  .into_unknown();
+
+                Ok(vec![action, payload, resolve])
+              }
             },
           )?;
 
@@ -158,7 +174,6 @@ pub fn start_node_instance() -> crate::Result<Sender<NodejsEvent>> {
                 .env
                 .create_function_from_closure("NodejsContextEvent::done", move |ctx| {
                   resolve.send(Ok(())).unwrap();
-                  println!("done");
                   ctx.env.get_undefined()
                 })?
                 .into_unknown();
