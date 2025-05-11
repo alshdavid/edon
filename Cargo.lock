@@ -24,6 +24,18 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "e16d2d3311acee920a9eb8d33b8cbc1787ce4a264e85f964c2404b969bdcd487"
 
 [[package]]
+name = "async-channel"
+version = "2.3.1"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "89b47800b0be77592da0afd425cc03468052844aff33b84e33cc696f64e77b6a"
+dependencies = [
+ "concurrent-queue",
+ "event-listener-strategy",
+ "futures-core",
+ "pin-project-lite",
+]
+
+[[package]]
 name = "async-io"
 version = "2.4.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -204,9 +216,10 @@ checksum = "7454e41ff9012c00d53cf7f475c5e3afa3b91b7c90568495495e8d9bf47a1055"
 
 [[package]]
 name = "edon"
-version = "0.0.15"
+version = "0.0.16"
 dependencies = [
  "anyhow",
+ "async-io",
  "bitflags",
  "chrono",
  "ctor",
@@ -255,6 +268,15 @@ version = "0.0.0-local"
 dependencies = [
  "anyhow",
  "async-io",
+ "edon",
+]
+
+[[package]]
+name = "example_async_channel"
+version = "0.0.0-local"
+dependencies = [
+ "anyhow",
+ "async-channel",
  "edon",
 ]
 

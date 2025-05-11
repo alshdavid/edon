@@ -10,7 +10,7 @@ Features:
 - [x] Multi-threading support
 - [x] Evaluate arbitrary JavaScript
 - [x] Execute arbitrary n-api code
-- [ ] Support for async Rust (coming soon)
+- [x] Support for async Rust
 
 # Use Cases
 
@@ -116,6 +116,72 @@ pub fn main() -> anyhow::Result<()> {
   Ok(())
 }
 
+```
+
+## Use Async Rust to interact with JsValues 
+
+Run native code against a specific Nodejs context. This is essentially `eval` but using
+Node's n-api.
+
+```rust
+pub fn main() -> anyhow::Result<()> {
+  let nodejs = edon::Nodejs::load_auto()?;
+
+  /*
+    Register a native extension with the following interface
+
+    interface MyAsyncExtension {
+      add_one(a: number): Promise<number>
+    }
+  */
+  nodejs.napi_module_register("my_async_extension", |env, mut exports| {
+    // Declare a function called "add_one" on the "module.exports"
+    exports.set_named_property("add_one", env.create_function_from_closure("add_one", |ctx| {
+      // Get the first argument passed to it. Note that a "JsRc<T>" 
+      // prevents the Nodejs GC from freeing the value which allows it
+      // to work in async contexts
+      let arg0 = ctx.get::<JsRc<JsNumber>>(0)?;
+      
+      // Spawn a promise that return the summed values
+      // Note: This works using a custom async runtime that runs on 
+      //       the Nodejs thread cooperatively with libuv.
+      //       Make sure you spawn an OS thread or use a runtime like
+      //       rayon or tokio _in addition_ to do actual work on
+      ctx.env.spawn_local_promise({
+        // Clone the env and pass it into the async closure
+        let env = ctx.env.clone();
+        async move {
+          // Do some work asynchronously coordinate via channels.
+          async_io::Timer::after(Duration::from_secs(1)).await;
+          let value = arg0.get_int32()?;
+
+          // Return the value back to JavaScript
+          let js_value = env.create_int32(value + 1)?;
+          Ok(js_value)
+        }
+      })
+    })?)?;
+
+    Ok(exports)
+  })?;
+
+  // Start a new Nodejs context
+  let ctx0 = nodejs.spawn_context()?;
+
+  // Consume the native module
+  ctx0.eval(
+    r#"
+    const native = process._linkedBinding('my_async_extension');
+
+    (async () => {
+      const result = await native.add_one(41)
+      console.log(result)                       // "42"
+    })();
+  "#,
+  )?;
+
+  Ok(())
+}
 ```
 
 ## Libnode Shared Library

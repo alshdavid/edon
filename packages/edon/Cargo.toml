@@ -1,6 +1,6 @@
 [package]
 name = "edon"
-version = "0.0.15"
+version = "0.0.16"
 authors = ["David Alsh"]
 repository = "https://github.com/alshdavid/edon"
 description = "Library embedding Nodejs (libnode) within Rust"
@@ -25,3 +25,4 @@ serde = { version = "^1", optional = true }
 serde_json = { version = "^1", optional = true }
 chrono = { version = "^0.4", optional = true }
 futures = "^0.3"
+async-io = "^2.0.0"
