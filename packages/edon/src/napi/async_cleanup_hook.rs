@@ -1,6 +1,7 @@
 use std::mem;
 
 use libnode_sys;
+
 use crate::napi::Status;
 
 /// Notice

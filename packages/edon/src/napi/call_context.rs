@@ -1,9 +1,10 @@
 use std::ptr;
 
+use libnode_sys;
+
 use crate::napi::bindgen_runtime::FromNapiValue;
 use crate::napi::bindgen_runtime::TypeName;
 use crate::napi::check_status;
-use libnode_sys;
 use crate::napi::Either;
 use crate::napi::Env;
 use crate::napi::Error;
@@ -98,7 +99,9 @@ impl<'env> CallContext<'env> {
     V: NapiValue,
   {
     let mut value = ptr::null_mut();
-    check_status!(unsafe { libnode_sys::napi_get_new_target(self.env.0, self.callback_info, &mut value) })?;
+    check_status!(unsafe {
+      libnode_sys::napi_get_new_target(self.env.0, self.callback_info, &mut value)
+    })?;
     unsafe { V::from_raw(self.env.0, value) }
   }
 

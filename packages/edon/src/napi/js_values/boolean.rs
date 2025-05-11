@@ -1,10 +1,11 @@
 use std::convert::TryFrom;
 
+use libnode_sys;
+
 use super::Value;
 use crate::napi::bindgen_runtime::TypeName;
 use crate::napi::bindgen_runtime::ValidateNapiValue;
 use crate::napi::check_status;
-use libnode_sys;
 use crate::napi::Error;
 use crate::napi::Result;
 use crate::napi::ValueType;
@@ -27,7 +28,9 @@ impl ValidateNapiValue for JsBoolean {}
 impl JsBoolean {
   pub fn get_value(&self) -> Result<bool> {
     let mut result = false;
-    check_status!(unsafe { libnode_sys::napi_get_value_bool(self.0.env, self.0.value, &mut result) })?;
+    check_status!(unsafe {
+      libnode_sys::napi_get_value_bool(self.0.env, self.0.value, &mut result)
+    })?;
     Ok(result)
   }
 }

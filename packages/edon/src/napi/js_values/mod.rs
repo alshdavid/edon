@@ -3,12 +3,13 @@ use std::ffi::c_void;
 use std::ffi::CString;
 use std::ptr;
 
+use libnode_sys;
+
 use crate::napi::bindgen_runtime::FromNapiValue;
 use crate::napi::bindgen_runtime::ToNapiValue;
 use crate::napi::bindgen_runtime::TypeName;
 use crate::napi::bindgen_runtime::ValidateNapiValue;
 use crate::napi::check_status;
-use libnode_sys;
 use crate::napi::type_of;
 use crate::napi::Callback;
 use crate::napi::Error;
@@ -222,43 +223,57 @@ macro_rules! impl_js_value_methods {
 
       pub fn is_date(&self) -> Result<bool> {
         let mut is_date = true;
-        check_status!(unsafe { libnode_sys::napi_is_date(self.0.env, self.0.value, &mut is_date) })?;
+        check_status!(unsafe {
+          libnode_sys::napi_is_date(self.0.env, self.0.value, &mut is_date)
+        })?;
         Ok(is_date)
       }
 
       pub fn is_promise(&self) -> Result<bool> {
         let mut is_promise = true;
-        check_status!(unsafe { libnode_sys::napi_is_promise(self.0.env, self.0.value, &mut is_promise) })?;
+        check_status!(unsafe {
+          libnode_sys::napi_is_promise(self.0.env, self.0.value, &mut is_promise)
+        })?;
         Ok(is_promise)
       }
 
       pub fn is_error(&self) -> Result<bool> {
         let mut result = false;
-        check_status!(unsafe { libnode_sys::napi_is_error(self.0.env, self.0.value, &mut result) })?;
+        check_status!(unsafe {
+          libnode_sys::napi_is_error(self.0.env, self.0.value, &mut result)
+        })?;
         Ok(result)
       }
 
       pub fn is_typedarray(&self) -> Result<bool> {
         let mut result = false;
-        check_status!(unsafe { libnode_sys::napi_is_typedarray(self.0.env, self.0.value, &mut result) })?;
+        check_status!(unsafe {
+          libnode_sys::napi_is_typedarray(self.0.env, self.0.value, &mut result)
+        })?;
         Ok(result)
       }
 
       pub fn is_dataview(&self) -> Result<bool> {
         let mut result = false;
-        check_status!(unsafe { libnode_sys::napi_is_dataview(self.0.env, self.0.value, &mut result) })?;
+        check_status!(unsafe {
+          libnode_sys::napi_is_dataview(self.0.env, self.0.value, &mut result)
+        })?;
         Ok(result)
       }
 
       pub fn is_array(&self) -> Result<bool> {
         let mut is_array = false;
-        check_status!(unsafe { libnode_sys::napi_is_array(self.0.env, self.0.value, &mut is_array) })?;
+        check_status!(unsafe {
+          libnode_sys::napi_is_array(self.0.env, self.0.value, &mut is_array)
+        })?;
         Ok(is_array)
       }
 
       pub fn is_buffer(&self) -> Result<bool> {
         let mut is_buffer = false;
-        check_status!(unsafe { libnode_sys::napi_is_buffer(self.0.env, self.0.value, &mut is_buffer) })?;
+        check_status!(unsafe {
+          libnode_sys::napi_is_buffer(self.0.env, self.0.value, &mut is_buffer)
+        })?;
         Ok(is_buffer)
       }
 
@@ -365,7 +380,12 @@ macro_rules! impl_object_methods {
         })?;
         check_status!(
           unsafe {
-            libnode_sys::napi_set_named_property(self.0.env, self.0.value, name.as_ptr(), js_function)
+            libnode_sys::napi_set_named_property(
+              self.0.env,
+              self.0.value,
+              name.as_ptr(),
+              js_function,
+            )
           },
           "create_named_method error"
         )
@@ -382,7 +402,12 @@ macro_rules! impl_object_methods {
         let mut raw_value = ptr::null_mut();
         check_status!(
           unsafe {
-            libnode_sys::napi_get_named_property(self.0.env, self.0.value, key.as_ptr(), &mut raw_value)
+            libnode_sys::napi_get_named_property(
+              self.0.env,
+              self.0.value,
+              key.as_ptr(),
+              &mut raw_value,
+            )
           },
           "get_named_property error"
         )?;
@@ -406,7 +431,12 @@ macro_rules! impl_object_methods {
         let mut raw_value = ptr::null_mut();
         check_status!(
           unsafe {
-            libnode_sys::napi_get_named_property(self.0.env, self.0.value, key.as_ptr(), &mut raw_value)
+            libnode_sys::napi_get_named_property(
+              self.0.env,
+              self.0.value,
+              key.as_ptr(),
+              &mut raw_value,
+            )
           },
           "get_named_property_unchecked error"
         )?;
@@ -421,7 +451,12 @@ macro_rules! impl_object_methods {
         let key = CString::new(name.as_ref())?;
         check_status!(
           unsafe {
-            libnode_sys::napi_has_named_property(self.0.env, self.0.value, key.as_ptr(), &mut result)
+            libnode_sys::napi_has_named_property(
+              self.0.env,
+              self.0.value,
+              key.as_ptr(),
+              &mut result,
+            )
           },
           "napi_has_named_property error"
         )?;
@@ -566,7 +601,9 @@ macro_rules! impl_object_methods {
         T: NapiValue,
       {
         let mut result = ptr::null_mut();
-        check_status!(unsafe { libnode_sys::napi_get_prototype(self.0.env, self.0.value, &mut result) })?;
+        check_status!(unsafe {
+          libnode_sys::napi_get_prototype(self.0.env, self.0.value, &mut result)
+        })?;
         unsafe { T::from_raw(self.0.env, result) }
       }
 
@@ -575,7 +612,9 @@ macro_rules! impl_object_methods {
         T: NapiValue,
       {
         let mut result = ptr::null_mut();
-        check_status!(unsafe { libnode_sys::napi_get_prototype(self.0.env, self.0.value, &mut result) })?;
+        check_status!(unsafe {
+          libnode_sys::napi_get_prototype(self.0.env, self.0.value, &mut result)
+        })?;
         Ok(unsafe { T::from_raw_unchecked(self.0.env, result) })
       }
 

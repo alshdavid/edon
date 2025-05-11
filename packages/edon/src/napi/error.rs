@@ -9,6 +9,7 @@ use std::os::raw::c_char;
 use std::os::raw::c_void;
 use std::ptr;
 
+use libnode_sys;
 #[cfg(feature = "serde-json")]
 use serde::de;
 #[cfg(feature = "serde-json")]
@@ -17,7 +18,6 @@ use serde::ser;
 use serde_json::Error as SerdeJSONError;
 
 use crate::napi::bindgen_runtime::ToNapiValue;
-use libnode_sys;
 use crate::napi::Env;
 use crate::napi::JsUnknown;
 use crate::napi::NapiValue;
@@ -94,7 +94,8 @@ impl From<SerdeJSONError> for Error {
 impl From<JsUnknown> for Error {
   fn from(value: JsUnknown) -> Self {
     let mut result = std::ptr::null_mut();
-    let status = unsafe { libnode_sys::napi_create_reference(value.0.env, value.0.value, 1, &mut result) };
+    let status =
+      unsafe { libnode_sys::napi_create_reference(value.0.env, value.0.value, 1, &mut result) };
     if status != libnode_sys::Status::napi_ok {
       return Error::new(
         Status::from(status),
@@ -250,7 +251,8 @@ macro_rules! impl_object_methods {
             get_err_status == libnode_sys::Status::napi_ok,
             "Get Error from Reference failed"
           );
-          let delete_err_status = unsafe { libnode_sys::napi_delete_reference(env, self.0.maybe_raw) };
+          let delete_err_status =
+            unsafe { libnode_sys::napi_delete_reference(env, self.0.maybe_raw) };
           debug_assert!(
             delete_err_status == libnode_sys::Status::napi_ok,
             "Delete Error Reference failed"
@@ -436,7 +438,8 @@ macro_rules! _check_status_and_type {
           }
           ValueType::Object => {
             let env_ = $crate::napi::Env::from($env);
-            let json: $crate::napi::JSON = env_.get_global()?.get_named_property_unchecked("JSON")?;
+            let json: $crate::napi::JSON =
+              env_.get_global()?.get_named_property_unchecked("JSON")?;
             let object = json.stringify($crate::napi::JsObject($crate::napi::Value {
               value: $val,
               env: $env,
@@ -445,20 +448,25 @@ macro_rules! _check_status_and_type {
             format!($msg, format!("Object {}", object))
           }
           ValueType::Boolean | ValueType::Number => {
-            let value =
-              unsafe { $crate::napi::JsUnknown::from_raw_unchecked($env, $val).coerce_to_string()? }
-                .into_utf8()?;
+            let value = unsafe {
+              $crate::napi::JsUnknown::from_raw_unchecked($env, $val).coerce_to_string()?
+            }
+            .into_utf8()?;
             format!($msg, format!("{} {} ", value_type, value.as_str()?))
           }
           ValueType::BigInt => {
-            let value =
-              unsafe { $crate::napi::JsUnknown::from_raw_unchecked($env, $val).coerce_to_string()? }
-                .into_utf8()?;
+            let value = unsafe {
+              $crate::napi::JsUnknown::from_raw_unchecked($env, $val).coerce_to_string()?
+            }
+            .into_utf8()?;
             format!($msg, format!("{} {} ", value_type, value.as_str()?))
           }
           _ => format!($msg, value_type),
         };
-        Err($crate::napi::Error::new($crate::napi::Status::from(c), error_msg))
+        Err($crate::napi::Error::new(
+          $crate::napi::Status::from(c),
+          error_msg,
+        ))
       }
     }
   }};

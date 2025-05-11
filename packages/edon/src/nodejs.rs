@@ -5,14 +5,16 @@ use std::sync::mpsc::channel;
 use std::sync::mpsc::Sender;
 use std::sync::OnceLock;
 
+use libnode_sys::constants::LIB_NAME;
+
 use super::internal;
 use super::NodejsContext;
-use crate::internal::constants::LIB_NAME;
 use crate::internal::NodejsContextEvent;
 use crate::internal::NodejsEvent;
 use crate::internal::PathExt;
 use crate::napi::JsObject;
 use crate::Env;
+use crate::NodeOptions;
 
 // Due to a quirk of v8, only one instance of Nodejs can be used per process.
 // The current C FFI does not allow spawning multiple contexts so to get around
@@ -47,7 +49,7 @@ impl Nodejs {
 
     match nodejs {
       Ok(nodejs) => Ok(Self {
-        tx_main: nodejs.clone()
+        tx_main: nodejs.clone(),
       }),
       Err(err) => Err(err.clone()),
     }
@@ -100,20 +102,29 @@ impl Nodejs {
     internal::napi_module_register(module_name, register_function)
   }
 
-
   /// Spawn a Nodejs worker thread
   pub fn spawn_context(&self) -> crate::Result<NodejsContext> {
+    self.spawn_context_with_options(&NodeOptions::default())
+  }
+
+  pub fn spawn_context_with_options(
+    &self,
+    options: &NodeOptions,
+  ) -> crate::Result<NodejsContext> {
     NODEJS_CONTEXT_COUNT.fetch_add(1, Ordering::AcqRel);
     let (tx, rx) = channel();
     let (tx_wrk, rx_wrk) = channel::<NodejsContextEvent>();
 
     self
       .tx_main
-      .send(NodejsEvent::StartCommonjsWorker { rx_wrk, resolve: tx })
+      .send(NodejsEvent::StartCommonjsWorker {
+        rx_wrk,
+        resolve: tx,
+      })
       .ok();
 
     let id = rx.recv().unwrap();
-    NodejsContext::start(id, self.tx_main.clone(), tx_wrk)
+    NodejsContext::start(id, options, self.tx_main.clone(), tx_wrk)
   }
 }
 
@@ -122,7 +133,10 @@ impl Drop for Nodejs {
     let context_count = NODEJS_CONTEXT_COUNT.fetch_sub(1, Ordering::AcqRel);
     if context_count == 1 {
       let (tx, rx) = channel();
-      self.tx_main.send(NodejsEvent::StopMain { resolve: tx }).unwrap();
+      self
+        .tx_main
+        .send(NodejsEvent::StopMain { resolve: tx })
+        .unwrap();
       rx.recv().unwrap();
     }
   }

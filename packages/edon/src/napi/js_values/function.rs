@@ -1,10 +1,11 @@
 use std::ptr;
 
+use libnode_sys;
+
 use super::Value;
 use crate::napi::bindgen_runtime::ToNapiValue;
 use crate::napi::bindgen_runtime::TypeName;
 use crate::napi::check_pending_exception;
-use libnode_sys;
 use crate::napi::threadsafe_function::ThreadSafeCallContext;
 use crate::napi::threadsafe_function::ThreadsafeFunction;
 use crate::napi::Env;

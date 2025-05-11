@@ -4,10 +4,10 @@ use std::rc::Rc;
 pub use callback_info::*;
 pub use ctor::ctor;
 pub use env::*;
+pub use error::*;
 pub use iterator::Generator;
 pub use js_values::*;
 pub use module_register::*;
-pub use error::*;
 
 use crate::napi::JsError;
 use crate::napi::Result;

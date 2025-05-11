@@ -1,6 +1,6 @@
 use std::sync::Arc;
 
-use crate::internal::constants::LIB_NAME;
+use libnode_sys::constants::LIB_NAME;
 
 pub type Result<T> = std::result::Result<T, Error>;
 

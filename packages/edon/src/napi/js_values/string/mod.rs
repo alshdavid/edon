@@ -2,13 +2,13 @@ use std::mem;
 use std::ptr;
 
 pub use latin1::JsStringLatin1;
+use libnode_sys;
 pub use utf16::JsStringUtf16;
 pub use utf8::JsStringUtf8;
 
 use crate::napi::bindgen_runtime::TypeName;
 use crate::napi::bindgen_runtime::ValidateNapiValue;
 use crate::napi::check_status;
-use libnode_sys;
 use crate::napi::Result;
 use crate::napi::Value;
 use crate::napi::ValueType;
@@ -36,7 +36,13 @@ impl JsString {
   pub fn utf8_len(&self) -> Result<usize> {
     let mut length = 0;
     check_status!(unsafe {
-      libnode_sys::napi_get_value_string_utf8(self.0.env, self.0.value, ptr::null_mut(), 0, &mut length)
+      libnode_sys::napi_get_value_string_utf8(
+        self.0.env,
+        self.0.value,
+        ptr::null_mut(),
+        0,
+        &mut length,
+      )
     })?;
     Ok(length)
   }
@@ -44,7 +50,13 @@ impl JsString {
   pub fn utf16_len(&self) -> Result<usize> {
     let mut length = 0;
     check_status!(unsafe {
-      libnode_sys::napi_get_value_string_utf16(self.0.env, self.0.value, ptr::null_mut(), 0, &mut length)
+      libnode_sys::napi_get_value_string_utf16(
+        self.0.env,
+        self.0.value,
+        ptr::null_mut(),
+        0,
+        &mut length,
+      )
     })?;
     Ok(length)
   }
@@ -52,7 +64,13 @@ impl JsString {
   pub fn latin1_len(&self) -> Result<usize> {
     let mut length = 0;
     check_status!(unsafe {
-      libnode_sys::napi_get_value_string_latin1(self.0.env, self.0.value, ptr::null_mut(), 0, &mut length)
+      libnode_sys::napi_get_value_string_latin1(
+        self.0.env,
+        self.0.value,
+        ptr::null_mut(),
+        0,
+        &mut length,
+      )
     })?;
     Ok(length)
   }

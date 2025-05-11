@@ -99,7 +99,9 @@ impl From<i32> for Status {
       libnode_sys::Status::napi_bigint_expected => Status::BigintExpected,
       libnode_sys::Status::napi_date_expected => Status::DateExpected,
       libnode_sys::Status::napi_arraybuffer_expected => Status::ArrayBufferExpected,
-      libnode_sys::Status::napi_detachable_arraybuffer_expected => Status::DetachableArraybufferExpected,
+      libnode_sys::Status::napi_detachable_arraybuffer_expected => {
+        Status::DetachableArraybufferExpected
+      }
       libnode_sys::Status::napi_would_deadlock => Status::WouldDeadlock,
       libnode_sys::Status::napi_no_external_buffers_allowed => Status::NoExternalBuffersAllowed,
       _ => Status::Unknown,
@@ -130,7 +132,9 @@ impl From<Status> for i32 {
       Status::BigintExpected => libnode_sys::Status::napi_bigint_expected,
       Status::DateExpected => libnode_sys::Status::napi_date_expected,
       Status::ArrayBufferExpected => libnode_sys::Status::napi_arraybuffer_expected,
-      Status::DetachableArraybufferExpected => libnode_sys::Status::napi_detachable_arraybuffer_expected,
+      Status::DetachableArraybufferExpected => {
+        libnode_sys::Status::napi_detachable_arraybuffer_expected
+      }
       Status::WouldDeadlock => libnode_sys::Status::napi_would_deadlock,
       Status::NoExternalBuffersAllowed => libnode_sys::Status::napi_no_external_buffers_allowed,
       Status::Unknown => libnode_sys::Status::napi_generic_failure,

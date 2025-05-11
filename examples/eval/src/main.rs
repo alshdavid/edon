@@ -11,24 +11,30 @@ pub fn main() -> anyhow::Result<()> {
   ctx0.eval("console.log(globalThis.meaningOfLife)")?;
 
   // Evaluate ESM script that inspects the global variable
-  ctx0.eval_module(r#"
+  ctx0.eval_module(
+    r#"
     import * as process from 'node:process'
     console.log(globalThis.meaningOfLife)
-  "#)?;
+  "#,
+  )?;
 
   // Evaluate ESM script that demonstrates waiting for tasks to end before continuing
-  ctx0.eval_module(r#"
+  ctx0.eval_module(
+    r#"
     import('node:fs')
       .then(() => console.log(globalThis.meaningOfLife));
-  "#)?;
+  "#,
+  )?;
 
-  // Evaluate ESM script that prints out the contents of cwd 
-  ctx0.eval_module(r#"
+  // Evaluate ESM script that prints out the contents of cwd
+  ctx0.eval_module(
+    r#"
     import * as fs from 'node:fs'
     import * as process from 'node:process'
 
     console.log(fs.readdirSync(process.cwd()))
-  "#)?;
-  
+  "#,
+  )?;
+
   Ok(())
 }

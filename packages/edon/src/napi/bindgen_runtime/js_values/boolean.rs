@@ -1,6 +1,7 @@
+use libnode_sys;
+
 use crate::napi::bindgen_prelude::*;
 use crate::napi::check_status;
-use libnode_sys;
 use crate::napi::ValueType;
 
 impl TypeName for bool {

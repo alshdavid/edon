@@ -65,11 +65,9 @@ impl_number_conversions!(
 
 impl ToNapiValue for f32 {
   unsafe fn to_napi_value(
-    env: libnode_sys::
-napi_env,
+    env: libnode_sys::napi_env,
     val: f32,
-  ) -> Result<libnode_sys::
-napi_value> {
+  ) -> Result<libnode_sys::napi_value> {
     let mut ptr = std::ptr::null_mut();
 
     check_status!(

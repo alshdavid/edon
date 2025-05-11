@@ -2,9 +2,10 @@ use std::convert::TryFrom;
 use std::ffi::c_void;
 use std::ptr;
 
+use libnode_sys;
+
 use super::check_status;
 use super::Value;
-use libnode_sys;
 use crate::napi::Env;
 use crate::napi::Error;
 use crate::napi::Result;

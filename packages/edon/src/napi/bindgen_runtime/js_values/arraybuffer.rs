@@ -7,6 +7,8 @@ use std::sync::atomic::AtomicBool;
 use std::sync::atomic::Ordering;
 use std::sync::Arc;
 
+use libnode_sys;
+
 use super::FromNapiValue;
 use super::ToNapiValue;
 use super::TypeName;
@@ -16,7 +18,6 @@ use crate::napi::bindgen_prelude::CUSTOM_GC_TSFN_DESTROYED;
 use crate::napi::bindgen_prelude::THREADS_CAN_ACCESS_ENV;
 use crate::napi::check_status;
 pub use crate::napi::js_values::TypedArrayType;
-use libnode_sys;
 use crate::napi::Error;
 use crate::napi::Result;
 use crate::napi::Status;
@@ -92,7 +93,8 @@ macro_rules! impl_typed_array {
                   )
                 };
                 assert!(
-                  status == libnode_sys::Status::napi_ok || status == libnode_sys::Status::napi_closing,
+                  status == libnode_sys::Status::napi_ok
+                    || status == libnode_sys::Status::napi_closing,
                   "Call custom GC in ArrayBuffer::drop failed {}",
                   Status::from(status)
                 );
@@ -150,15 +152,13 @@ macro_rules! impl_typed_array {
           let mut array_buffer = ptr::null_mut();
           crate::napi::check_status_or_throw!(
             env.raw(),
-            unsafe { libnode_sys::
-napi_get_reference_value(env.raw(), reference, &mut value) },
+            unsafe { libnode_sys::napi_get_reference_value(env.raw(), reference, &mut value) },
             "Failed to get reference value from TypedArray while syncing"
           );
           crate::napi::check_status_or_throw!(
             env.raw(),
             unsafe {
-              libnode_sys::
-napi_get_typedarray_info(
+              libnode_sys::napi_get_typedarray_info(
                 env.raw(),
                 value,
                 &mut ($typed_array_type as i32) as *mut i32,
@@ -403,7 +403,12 @@ napi_get_typedarray_info(
             // but NAPI/V8 only allows multiple buffers to have
             // the same data pointer if it's 0x0.
             unsafe {
-              libnode_sys::napi_create_arraybuffer(env, length, ptr::null_mut(), &mut arraybuffer_value)
+              libnode_sys::napi_create_arraybuffer(
+                env,
+                length,
+                ptr::null_mut(),
+                &mut arraybuffer_value,
+              )
             }
           } else {
             let hint_ptr = Box::into_raw(Box::new(val));

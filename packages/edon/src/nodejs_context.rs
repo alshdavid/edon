@@ -1,8 +1,13 @@
-use std::sync::{atomic::Ordering, mpsc::{channel, Sender}};
+use std::path::PathBuf;
+use std::sync::atomic::Ordering;
+use std::sync::mpsc::channel;
+use std::sync::mpsc::Sender;
 
-use crate::{internal::{NodejsContextEvent, NodejsEvent}, Env, NODEJS_CONTEXT_COUNT};
-
-
+use crate::internal::NodejsContextEvent;
+use crate::internal::NodejsEvent;
+use crate::Env;
+use crate::NodeOptions;
+use crate::NODEJS_CONTEXT_COUNT;
 
 pub struct NodejsContext {
   id: String,
@@ -11,12 +16,17 @@ pub struct NodejsContext {
 }
 
 impl NodejsContext {
-  pub (crate) fn start(
+  pub(crate) fn start(
     id: String,
+    _options: &NodeOptions,
     tx_main: Sender<NodejsEvent>,
     tx_wrk: Sender<NodejsContextEvent>,
   ) -> crate::Result<Self> {
-    return Ok(Self { id, tx_main, tx_wrk })
+    return Ok(Self {
+      id,
+      tx_main,
+      tx_wrk,
+    });
   }
 
   /// Evaluate Block of Commonjs JavaScript
@@ -74,7 +84,10 @@ impl NodejsContext {
     rx.recv().unwrap()
   }
 
-  pub fn require<Specifier: AsRef<str>>(&self, specifier: Specifier) -> crate::Result<()> {
+  pub fn require<Specifier: AsRef<str>>(
+    &self,
+    specifier: Specifier,
+  ) -> crate::Result<()> {
     let (tx, rx) = channel();
 
     self
@@ -88,7 +101,10 @@ impl NodejsContext {
     rx.recv().unwrap()
   }
 
-  pub fn import<Specifier: AsRef<str>>(&self, specifier: Specifier) -> crate::Result<()> {
+  pub fn import<Specifier: AsRef<str>>(
+    &self,
+    specifier: Specifier,
+  ) -> crate::Result<()> {
     let (tx, rx) = channel();
 
     self
@@ -106,13 +122,22 @@ impl NodejsContext {
 impl Drop for NodejsContext {
   fn drop(&mut self) {
     let (tx, rx) = channel();
-    self.tx_main.send(NodejsEvent::StopCommonjsWorker { id: self.id.clone(), resolve: tx }).unwrap();
+    self
+      .tx_main
+      .send(NodejsEvent::StopCommonjsWorker {
+        id: self.id.clone(),
+        resolve: tx,
+      })
+      .unwrap();
     rx.recv().unwrap();
 
     let context_count = NODEJS_CONTEXT_COUNT.fetch_sub(1, Ordering::AcqRel);
     if context_count == 1 {
       let (tx, rx) = channel();
-      self.tx_main.send(NodejsEvent::StopMain { resolve: tx }).unwrap();
+      self
+        .tx_main
+        .send(NodejsEvent::StopMain { resolve: tx })
+        .unwrap();
       rx.recv().unwrap();
     }
   }

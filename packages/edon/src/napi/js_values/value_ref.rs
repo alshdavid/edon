@@ -1,10 +1,11 @@
 use std::ops::Deref;
 use std::ptr;
 
+use libnode_sys;
+
 use super::check_status;
 use super::Value;
 use crate::napi::bindgen_runtime::ToNapiValue;
-use libnode_sys;
 use crate::napi::Env;
 use crate::napi::Result;
 
@@ -40,7 +41,9 @@ impl<T> Ref<T> {
     &mut self,
     env: &Env,
   ) -> Result<u32> {
-    check_status!(unsafe { libnode_sys::napi_reference_ref(env.0, self.raw_ref, &mut self.count) })?;
+    check_status!(unsafe {
+      libnode_sys::napi_reference_ref(env.0, self.raw_ref, &mut self.count)
+    })?;
     Ok(self.count)
   }
 
@@ -48,7 +51,9 @@ impl<T> Ref<T> {
     &mut self,
     env: Env,
   ) -> Result<u32> {
-    check_status!(unsafe { libnode_sys::napi_reference_unref(env.0, self.raw_ref, &mut self.count) })?;
+    check_status!(unsafe {
+      libnode_sys::napi_reference_unref(env.0, self.raw_ref, &mut self.count)
+    })?;
 
     if self.count == 0 {
       check_status!(unsafe { libnode_sys::napi_delete_reference(env.0, self.raw_ref) })?;

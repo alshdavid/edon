@@ -11,12 +11,13 @@ use std::sync::Arc;
 #[cfg(all(debug_assertions, not(windows)))]
 use std::sync::Mutex;
 
+use libnode_sys;
+
 use crate::napi::bindgen_prelude::CUSTOM_GC_TSFN;
 use crate::napi::bindgen_prelude::CUSTOM_GC_TSFN_DESTROYED;
 use crate::napi::bindgen_prelude::THREADS_CAN_ACCESS_ENV;
 use crate::napi::bindgen_prelude::*;
 use crate::napi::check_status;
-use libnode_sys;
 use crate::napi::Result;
 use crate::napi::ValueType;
 

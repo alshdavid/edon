@@ -6,10 +6,10 @@ use chrono::Local;
 use chrono::LocalResult;
 use chrono::NaiveDateTime;
 use chrono::TimeZone;
+use libnode_sys;
 
 use crate::napi::bindgen_prelude::*;
 use crate::napi::check_status;
-use libnode_sys;
 use crate::napi::ValueType;
 
 impl<Tz: TimeZone> TypeName for DateTime<Tz> {
@@ -76,7 +76,9 @@ impl FromNapiValue for NaiveDateTime {
     )?;
     let mut to_iso_string_method = ptr::null_mut();
     check_status!(
-      unsafe { libnode_sys::napi_get_property(env, napi_val, to_iso_string, &mut to_iso_string_method) },
+      unsafe {
+        libnode_sys::napi_get_property(env, napi_val, to_iso_string, &mut to_iso_string_method)
+      },
       "get toISOString method failed"
     )?;
     let mut iso_string_value = ptr::null_mut();

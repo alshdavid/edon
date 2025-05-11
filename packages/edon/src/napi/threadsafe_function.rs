@@ -14,13 +14,14 @@ use std::sync::RwLock;
 use std::sync::RwLockWriteGuard;
 use std::sync::Weak;
 
+use libnode_sys;
+
 use crate::napi::bindgen_runtime::FromNapiValue;
 use crate::napi::bindgen_runtime::JsValuesTupleIntoVec;
 use crate::napi::bindgen_runtime::ToNapiValue;
 use crate::napi::bindgen_runtime::TypeName;
 use crate::napi::bindgen_runtime::ValidateNapiValue;
 use crate::napi::check_status;
-use libnode_sys;
 use crate::napi::Env;
 use crate::napi::JsError;
 use crate::napi::JsUnknown;
@@ -45,7 +46,9 @@ impl From<ThreadsafeFunctionCallMode> for libnode_sys::napi_threadsafe_function_
   fn from(value: ThreadsafeFunctionCallMode) -> Self {
     match value {
       ThreadsafeFunctionCallMode::Blocking => libnode_sys::ThreadsafeFunctionCallMode::blocking,
-      ThreadsafeFunctionCallMode::NonBlocking => libnode_sys::ThreadsafeFunctionCallMode::nonblocking,
+      ThreadsafeFunctionCallMode::NonBlocking => {
+        libnode_sys::ThreadsafeFunctionCallMode::nonblocking
+      }
     }
   }
 }
@@ -402,7 +405,9 @@ impl<T: 'static, ES: ErrorStrategy::T> ThreadsafeFunction<T, ES> {
   ) -> Result<()> {
     self.handle.with_read_aborted(|aborted| {
       if !aborted && !self.handle.referred.load(Ordering::Relaxed) {
-        check_status!(unsafe { libnode_sys::napi_ref_threadsafe_function(env.0, self.handle.get_raw()) })?;
+        check_status!(unsafe {
+          libnode_sys::napi_ref_threadsafe_function(env.0, self.handle.get_raw())
+        })?;
         self.handle.referred.store(true, Ordering::Relaxed);
       }
       Ok(())
@@ -641,13 +646,14 @@ unsafe extern "C" fn call_js_cb<T: 'static, V: ToNapiValue, R, ES>(
       let values = values
         .into_iter()
         .map(|v| unsafe { ToNapiValue::to_napi_value(raw_env, v) });
-      let args: Result<Vec<libnode_sys::napi_value>> = if ES::VALUE == ErrorStrategy::CalleeHandled::VALUE {
-        let mut js_null = ptr::null_mut();
-        unsafe { libnode_sys::napi_get_null(raw_env, &mut js_null) };
-        ::core::iter::once(Ok(js_null)).chain(values).collect()
-      } else {
-        values.collect()
-      };
+      let args: Result<Vec<libnode_sys::napi_value>> =
+        if ES::VALUE == ErrorStrategy::CalleeHandled::VALUE {
+          let mut js_null = ptr::null_mut();
+          unsafe { libnode_sys::napi_get_null(raw_env, &mut js_null) };
+          ::core::iter::once(Ok(js_null)).chain(values).collect()
+        } else {
+          values.collect()
+        };
       let mut return_value = ptr::null_mut();
       let mut status = match args {
         Ok(args) => unsafe {
@@ -680,7 +686,8 @@ unsafe extern "C" fn call_js_cb<T: 'static, V: ToNapiValue, R, ES>(
         // throw Error in JavaScript callback
         let callback_arg = if status == libnode_sys::Status::napi_pending_exception {
           let mut exception = ptr::null_mut();
-          status = unsafe { libnode_sys::napi_get_and_clear_last_exception(raw_env, &mut exception) };
+          status =
+            unsafe { libnode_sys::napi_get_and_clear_last_exception(raw_env, &mut exception) };
           Err(
             JsUnknown(crate::napi::Value {
               env: raw_env,
@@ -747,7 +754,9 @@ fn handle_call_js_cb_status(
 
     // When shutting down, napi_fatal_exception sometimes returns another exception
     let stat = unsafe { libnode_sys::napi_fatal_exception(raw_env, error_result) };
-    assert!(stat == libnode_sys::Status::napi_ok || stat == libnode_sys::Status::napi_pending_exception);
+    assert!(
+      stat == libnode_sys::Status::napi_ok || stat == libnode_sys::Status::napi_pending_exception
+    );
   } else {
     let error_code: Status = status.into();
     let error_code_string = format!("{error_code:?}");

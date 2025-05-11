@@ -5,10 +5,11 @@ use std::mem;
 use std::ops::Deref;
 use std::ptr;
 
+use libnode_sys;
+
 use crate::napi::bindgen_prelude::*;
 use crate::napi::check_status;
 use crate::napi::check_status_and_type;
-use libnode_sys;
 use crate::napi::Error;
 use crate::napi::Result;
 use crate::napi::Status;
@@ -64,7 +65,9 @@ impl FromNapiValue for String {
     let mut len = 0;
 
     check_status_and_type!(
-      unsafe { libnode_sys::napi_get_value_string_utf8(env, napi_val, ptr::null_mut(), 0, &mut len) },
+      unsafe {
+        libnode_sys::napi_get_value_string_utf8(env, napi_val, ptr::null_mut(), 0, &mut len)
+      },
       env,
       napi_val,
       "Failed to convert JavaScript value `{}` into rust type `String`"
@@ -79,7 +82,13 @@ impl FromNapiValue for String {
 
     check_status_and_type!(
       unsafe {
-        libnode_sys::napi_get_value_string_utf8(env, napi_val, buf_ptr, len, &mut written_char_count)
+        libnode_sys::napi_get_value_string_utf8(
+          env,
+          napi_val,
+          buf_ptr,
+          len,
+          &mut written_char_count,
+        )
       },
       env,
       napi_val,
@@ -113,7 +122,9 @@ impl FromNapiValue for &str {
     let mut len = 0;
 
     check_status_and_type!(
-      unsafe { libnode_sys::napi_get_value_string_utf8(env, napi_val, ptr::null_mut(), 0, &mut len) },
+      unsafe {
+        libnode_sys::napi_get_value_string_utf8(env, napi_val, ptr::null_mut(), 0, &mut len)
+      },
       env,
       napi_val,
       "Failed to convert napi `{}` into rust type `String`"
@@ -127,7 +138,13 @@ impl FromNapiValue for &str {
 
     check_status_and_type!(
       unsafe {
-        libnode_sys::napi_get_value_string_utf8(env, napi_val, buf_ptr, len, &mut written_char_count)
+        libnode_sys::napi_get_value_string_utf8(
+          env,
+          napi_val,
+          buf_ptr,
+          len,
+          &mut written_char_count,
+        )
       },
       env,
       napi_val,
@@ -217,7 +234,9 @@ impl FromNapiValue for Utf16String {
     let mut len = 0;
 
     check_status!(
-      unsafe { libnode_sys::napi_get_value_string_utf16(env, napi_val, ptr::null_mut(), 0, &mut len) },
+      unsafe {
+        libnode_sys::napi_get_value_string_utf16(env, napi_val, ptr::null_mut(), 0, &mut len)
+      },
       "Failed to convert napi `utf16 string` into rust type `String`",
     )?;
 

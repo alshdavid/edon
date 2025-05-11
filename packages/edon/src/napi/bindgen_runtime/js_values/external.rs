@@ -2,12 +2,13 @@ use std::any::TypeId;
 use std::ops::Deref;
 use std::ops::DerefMut;
 
+use libnode_sys;
+
 use super::FromNapiValue;
 use super::ToNapiValue;
 use super::TypeName;
 use super::ValidateNapiValue;
 use crate::napi::check_status;
-use libnode_sys;
 use crate::napi::Error;
 use crate::napi::Status;
 use crate::napi::TaggedObject;

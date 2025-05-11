@@ -9,6 +9,7 @@ use std::os::raw::c_char;
 use std::os::raw::c_void;
 use std::ptr;
 
+use libnode_sys;
 #[cfg(feature = "serde-json")]
 use serde::de::DeserializeOwned;
 #[cfg(feature = "serde-json")]
@@ -27,7 +28,6 @@ use crate::napi::js_values::De;
 #[cfg(feature = "serde-json")]
 use crate::napi::js_values::Ser;
 use crate::napi::js_values::*;
-use libnode_sys;
 use crate::napi::task::Task;
 use crate::napi::threadsafe_function::ThreadSafeCallContext;
 use crate::napi::threadsafe_function::ThreadsafeFunction;
@@ -39,7 +39,10 @@ use crate::napi::Result;
 use crate::napi::Status;
 use crate::napi::ValueType;
 
-pub type Callback = unsafe extern "C" fn(libnode_sys::napi_env, libnode_sys::napi_callback_info) -> libnode_sys::napi_value;
+pub type Callback = unsafe extern "C" fn(
+  libnode_sys::napi_env,
+  libnode_sys::napi_callback_info,
+) -> libnode_sys::napi_value;
 
 pub(crate) static EMPTY_VEC: Vec<u8> = vec![];
 
@@ -82,7 +85,11 @@ impl Env {
   ) -> Result<JsNumber> {
     let mut raw_value = ptr::null_mut();
     check_status!(unsafe {
-      libnode_sys::napi_create_int32(self.0, int, (&mut raw_value) as *mut libnode_sys::napi_value)
+      libnode_sys::napi_create_int32(
+        self.0,
+        int,
+        (&mut raw_value) as *mut libnode_sys::napi_value,
+      )
     })?;
     Ok(unsafe { JsNumber::from_raw_unchecked(self.0, raw_value) })
   }
@@ -93,7 +100,11 @@ impl Env {
   ) -> Result<JsNumber> {
     let mut raw_value = ptr::null_mut();
     check_status!(unsafe {
-      libnode_sys::napi_create_int64(self.0, int, (&mut raw_value) as *mut libnode_sys::napi_value)
+      libnode_sys::napi_create_int64(
+        self.0,
+        int,
+        (&mut raw_value) as *mut libnode_sys::napi_value,
+      )
     })?;
     Ok(unsafe { JsNumber::from_raw_unchecked(self.0, raw_value) })
   }
@@ -113,7 +124,11 @@ impl Env {
   ) -> Result<JsNumber> {
     let mut raw_value = ptr::null_mut();
     check_status!(unsafe {
-      libnode_sys::napi_create_double(self.0, double, (&mut raw_value) as *mut libnode_sys::napi_value)
+      libnode_sys::napi_create_double(
+        self.0,
+        double,
+        (&mut raw_value) as *mut libnode_sys::napi_value,
+      )
     })?;
     Ok(unsafe { JsNumber::from_raw_unchecked(self.0, raw_value) })
   }
@@ -133,7 +148,9 @@ impl Env {
     value: u64,
   ) -> Result<JsBigInt> {
     let mut raw_value = ptr::null_mut();
-    check_status!(unsafe { libnode_sys::napi_create_bigint_uint64(self.0, value, &mut raw_value) })?;
+    check_status!(unsafe {
+      libnode_sys::napi_create_bigint_uint64(self.0, value, &mut raw_value)
+    })?;
     Ok(JsBigInt::from_raw_unchecked(self.0, raw_value, 1))
   }
 
@@ -156,7 +173,9 @@ impl Env {
   ) -> Result<JsBigInt> {
     let mut raw_value = ptr::null_mut();
     let words = &value as *const u128 as *const u64;
-    check_status!(unsafe { libnode_sys::napi_create_bigint_words(self.0, 0, 2, words, &mut raw_value) })?;
+    check_status!(unsafe {
+      libnode_sys::napi_create_bigint_words(self.0, 0, 2, words, &mut raw_value)
+    })?;
     Ok(JsBigInt::from_raw_unchecked(self.0, raw_value, 2))
   }
 
@@ -223,7 +242,12 @@ impl Env {
   ) -> Result<JsString> {
     let mut raw_value = ptr::null_mut();
     check_status!(unsafe {
-      libnode_sys::napi_create_string_utf16(self.0, chars.as_ptr(), chars.len() as isize, &mut raw_value)
+      libnode_sys::napi_create_string_utf16(
+        self.0,
+        chars.as_ptr(),
+        chars.len() as isize,
+        &mut raw_value,
+      )
     })?;
     Ok(unsafe { JsString::from_raw_unchecked(self.0, raw_value) })
   }
@@ -249,7 +273,9 @@ impl Env {
     description: JsString,
   ) -> Result<JsSymbol> {
     let mut result = ptr::null_mut();
-    check_status!(unsafe { libnode_sys::napi_create_symbol(self.0, description.0.value, &mut result) })?;
+    check_status!(unsafe {
+      libnode_sys::napi_create_symbol(self.0, description.0.value, &mut result)
+    })?;
     Ok(unsafe { JsSymbol::from_raw_unchecked(self.0, result) })
   }
 
@@ -288,7 +314,9 @@ impl Env {
     length: usize,
   ) -> Result<JsObject> {
     let mut raw_value = ptr::null_mut();
-    check_status!(unsafe { libnode_sys::napi_create_array_with_length(self.0, length, &mut raw_value) })?;
+    check_status!(unsafe {
+      libnode_sys::napi_create_array_with_length(self.0, length, &mut raw_value)
+    })?;
     Ok(unsafe { JsObject::from_raw_unchecked(self.0, raw_value) })
   }
 
@@ -543,8 +571,12 @@ impl Env {
         if status == libnode_sys::Status::napi_no_external_buffers_allowed {
           drop(Box::from_raw(hint_ptr));
           let mut underlying_data = ptr::null_mut();
-          let status =
-            libnode_sys::napi_create_arraybuffer(self.0, length, &mut underlying_data, &mut raw_value);
+          let status = libnode_sys::napi_create_arraybuffer(
+            self.0,
+            length,
+            &mut underlying_data,
+            &mut raw_value,
+          );
           ptr::copy_nonoverlapping(data_ptr, underlying_data.cast(), length);
           status
         } else {
@@ -618,8 +650,12 @@ impl Env {
       if status == libnode_sys::Status::napi_no_external_buffers_allowed {
         let (hint, finalize) = *Box::from_raw(hint_ptr);
         let mut underlying_data = ptr::null_mut();
-        let status =
-          libnode_sys::napi_create_arraybuffer(self.0, length, &mut underlying_data, &mut raw_value);
+        let status = libnode_sys::napi_create_arraybuffer(
+          self.0,
+          length,
+          &mut underlying_data,
+          &mut raw_value,
+        );
         ptr::copy_nonoverlapping(data, underlying_data.cast(), length);
         finalize(hint, *self);
         check_status!(status)?;
@@ -723,7 +759,9 @@ impl Env {
   /// This API can be called even if there is a pending JavaScript exception.
   pub fn get_last_error_info(&self) -> Result<ExtendedErrorInfo> {
     let mut raw_extended_error = ptr::null();
-    check_status!(unsafe { libnode_sys::napi_get_last_error_info(self.0, &mut raw_extended_error) })?;
+    check_status!(unsafe {
+      libnode_sys::napi_get_last_error_info(self.0, &mut raw_extended_error)
+    })?;
     unsafe { ptr::read(raw_extended_error) }.try_into()
   }
 
@@ -841,7 +879,9 @@ impl Env {
   ) {
     unsafe {
       let js_error = JsError::from(err).into_value(self.0);
-      debug_assert!(libnode_sys::napi_fatal_exception(self.0, js_error) == libnode_sys::Status::napi_ok);
+      debug_assert!(
+        libnode_sys::napi_fatal_exception(self.0, js_error) == libnode_sys::Status::napi_ok
+      );
     };
   }
 
@@ -1323,7 +1363,10 @@ impl Env {
         self.0,
         Some(
           async_finalize::<Arg, F>
-            as unsafe extern "C" fn(handle: libnode_sys::napi_async_cleanup_hook_handle, data: *mut c_void),
+            as unsafe extern "C" fn(
+              handle: libnode_sys::napi_async_cleanup_hook_handle,
+              data: *mut c_void,
+            ),
         ),
         Box::leak(Box::new((arg, cleanup_fn))) as *mut (Arg, F) as *mut c_void,
         &mut handle,
@@ -1349,7 +1392,10 @@ impl Env {
         self.0,
         Some(
           async_finalize::<Arg, F>
-            as unsafe extern "C" fn(handle: libnode_sys::napi_async_cleanup_hook_handle, data: *mut c_void),
+            as unsafe extern "C" fn(
+              handle: libnode_sys::napi_async_cleanup_hook_handle,
+              data: *mut c_void,
+            ),
         ),
         Box::leak(Box::new((arg, cleanup_fn))) as *mut (Arg, F) as *mut c_void,
         ptr::null_mut(),
@@ -1461,7 +1507,9 @@ impl Env {
     b: B,
   ) -> Result<bool> {
     let mut result = false;
-    check_status!(unsafe { libnode_sys::napi_strict_equals(self.0, a.raw(), b.raw(), &mut result) })?;
+    check_status!(unsafe {
+      libnode_sys::napi_strict_equals(self.0, a.raw(), b.raw(), &mut result)
+    })?;
     Ok(result)
   }
 
@@ -1508,7 +1556,8 @@ pub(crate) unsafe extern "C" fn raw_finalize<T>(
     if let Some(changed) = size_hint {
       if changed != 0 {
         let mut adjusted = 0i64;
-        let status = unsafe { libnode_sys::napi_adjust_external_memory(env, -changed, &mut adjusted) };
+        let status =
+          unsafe { libnode_sys::napi_adjust_external_memory(env, -changed, &mut adjusted) };
         debug_assert!(
           status == libnode_sys::Status::napi_ok,
           "Calling napi_adjust_external_memory failed"

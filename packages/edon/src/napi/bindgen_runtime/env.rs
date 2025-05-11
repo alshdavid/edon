@@ -1,8 +1,9 @@
 use std::ptr;
 
+use libnode_sys;
+
 use super::Array;
 use crate::napi::check_status;
-use libnode_sys;
 pub use crate::napi::Env;
 use crate::napi::JsGlobal;
 use crate::napi::JsNull;

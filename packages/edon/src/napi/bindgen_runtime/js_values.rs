@@ -3,8 +3,9 @@ use std::rc::Rc;
 use std::sync::Arc;
 use std::sync::Mutex;
 
-use crate::napi::check_status;
 use libnode_sys;
+
+use crate::napi::check_status;
 use crate::napi::Error;
 use crate::napi::JsUnknown;
 use crate::napi::NapiRaw;

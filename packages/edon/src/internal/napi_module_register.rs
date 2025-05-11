@@ -46,7 +46,9 @@ pub fn napi_module_register<
     return Err(crate::Error::NapiModuleAlreadyRegistered);
   }
 
-  let wrapped_fn =  move |napi_env: libnode_sys::napi_env, napi_value: libnode_sys::napi_value| -> libnode_sys::napi_value  {
+  let wrapped_fn = move |napi_env: libnode_sys::napi_env,
+                         napi_value: libnode_sys::napi_value|
+        -> libnode_sys::napi_value {
     let env = unsafe { Env::from_raw(napi_env) };
     let exports = unsafe { JsObject::from_raw_unchecked(napi_env, napi_value) };
     register_function(env, exports).unwrap();

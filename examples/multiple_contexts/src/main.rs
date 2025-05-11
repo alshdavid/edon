@@ -6,7 +6,7 @@ pub fn main() -> anyhow::Result<()> {
   let wk0 = nodejs.spawn_context()?;
   let wk1 = nodejs.spawn_context()?;
   let wk2 = nodejs.spawn_context()?;
-  
+
   // Declare some global variables
   wk0.eval("globalThis.i = 0;")?;
   wk1.eval("globalThis.i = 0;")?;

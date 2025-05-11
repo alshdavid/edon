@@ -7,11 +7,11 @@ use std::sync::atomic::Ordering;
 use std::sync::RwLock;
 use std::thread::ThreadId;
 
+use libnode_sys;
 use once_cell::sync::Lazy;
 
 use crate::napi::check_status;
 use crate::napi::check_status_or_throw;
-use libnode_sys;
 use crate::napi::Env;
 use crate::napi::JsError;
 use crate::napi::JsFunction;
@@ -20,7 +20,8 @@ use crate::napi::Result;
 use crate::napi::Value;
 use crate::napi::ValueType;
 
-pub type ExportRegisterCallback = unsafe fn(libnode_sys::napi_env) -> Result<libnode_sys::napi_value>;
+pub type ExportRegisterCallback =
+  unsafe fn(libnode_sys::napi_env) -> Result<libnode_sys::napi_value>;
 pub type ModuleExportsCallback =
   unsafe fn(env: libnode_sys::napi_env, exports: libnode_sys::napi_value) -> Result<()>;
 
@@ -72,16 +73,19 @@ static IS_FIRST_MODULE: AtomicBool = AtomicBool::new(true);
 static FIRST_MODULE_REGISTERED: AtomicBool = AtomicBool::new(false);
 static REGISTERED_CLASSES: Lazy<RegisteredClassesMap> = Lazy::new(Default::default);
 static FN_REGISTER_MAP: Lazy<FnRegisterMap> = Lazy::new(Default::default);
-pub(crate) static CUSTOM_GC_TSFN: std::sync::atomic::AtomicPtr<libnode_sys::napi_threadsafe_function__> =
-  std::sync::atomic::AtomicPtr::new(ptr::null_mut());
+pub(crate) static CUSTOM_GC_TSFN: std::sync::atomic::AtomicPtr<
+  libnode_sys::napi_threadsafe_function__,
+> = std::sync::atomic::AtomicPtr::new(ptr::null_mut());
 pub(crate) static CUSTOM_GC_TSFN_DESTROYED: AtomicBool = AtomicBool::new(false);
 // Store thread id of the thread that created the CustomGC ThreadsafeFunction.
 pub(crate) static THREADS_CAN_ACCESS_ENV: once_cell::sync::Lazy<
   PersistedPerInstanceHashMap<ThreadId, bool>,
 > = once_cell::sync::Lazy::new(Default::default);
 
-type RegisteredClasses =
-  PersistedPerInstanceHashMap</* export name */ String, /* constructor */ libnode_sys::napi_ref>;
+type RegisteredClasses = PersistedPerInstanceHashMap<
+  /* export name */ String,
+  /* constructor */ libnode_sys::napi_ref,
+>;
 
 // compatibility for #[module_exports]
 static MODULE_EXPORTS: Lazy<RwLock<Vec<ModuleExportsCallback>>> = Lazy::new(Default::default);
@@ -304,7 +308,12 @@ pub unsafe extern "C" fn napi_register_module_v1(
             check_status_or_throw!(
               env,
               unsafe {
-                libnode_sys::napi_set_named_property(env, exports, mod_name_c_str.as_ptr(), exports_js_mod)
+                libnode_sys::napi_set_named_property(
+                  env,
+                  exports,
+                  mod_name_c_str.as_ptr(),
+                  exports_js_mod,
+                )
               },
               "Set exports Object [{}] into exports object failed",
               js_mod_str
@@ -364,7 +373,12 @@ pub unsafe extern "C" fn napi_register_module_v1(
               );
               check_status_or_throw!(
                 env,
-                libnode_sys::napi_set_named_property(env, exports, mod_name_c_str.as_ptr(), exports_js_mod),
+                libnode_sys::napi_set_named_property(
+                  env,
+                  exports,
+                  mod_name_c_str.as_ptr(),
+                  exports_js_mod
+                ),
                 "Set exports Object [{}] into exports object failed",
                 js_mod_str
               );
@@ -483,7 +497,12 @@ fn create_custom_gc(env: libnode_sys::napi_env) {
     check_status_or_throw!(
       env,
       unsafe {
-        libnode_sys::napi_create_string_utf8(env, "CustomGC".as_ptr().cast(), 8, &mut async_resource_name)
+        libnode_sys::napi_create_string_utf8(
+          env,
+          "CustomGC".as_ptr().cast(),
+          8,
+          &mut async_resource_name,
+        )
       },
       "Create async resource string in napi_register_module_v1"
     );

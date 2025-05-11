@@ -7,11 +7,11 @@ pub fn main() -> anyhow::Result<()> {
   // Open a native execution context and set a global variable
   ctx0.exec(|env| {
     // Add the following to globalThis:
-    // { 
+    // {
     //    ...globalThis,
-    //    meaning: 42 
+    //    meaning: 42
     //  }
-    
+
     let mut global_this = env.get_global()?;
 
     let key = env.create_string("meaning")?;
@@ -26,18 +26,22 @@ pub fn main() -> anyhow::Result<()> {
   ctx0.eval("console.log(globalThis.meaning)")?; // "42"
 
   // Evaluate ESM script that demonstrates waiting for tasks to end before continuing
-  ctx0.eval_module(r#"
+  ctx0.eval_module(
+    r#"
     import('node:fs')
       .then(() => console.log(globalThis.meaning));
-  "#)?; // "42"
+  "#,
+  )?; // "42"
 
-  // Evaluate ESM script that prints out the contents of cwd 
-  ctx0.eval_module(r#"
+  // Evaluate ESM script that prints out the contents of cwd
+  ctx0.eval_module(
+    r#"
     import * as fs from 'node:fs'
     import * as fs from 'node:process'
 
     console.log(fs.readdirSync(process.cwd()))
-  "#)?; // "42"
+  "#,
+  )?; // "42"
 
   Ok(())
 }

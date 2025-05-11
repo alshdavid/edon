@@ -1,9 +1,10 @@
 use std::ffi::CString;
 use std::ptr;
 
+use libnode_sys;
+
 use crate::napi::bindgen_prelude::*;
 use crate::napi::check_status;
-use libnode_sys;
 use crate::napi::type_of;
 use crate::napi::JsObject;
 use crate::napi::ValueType;

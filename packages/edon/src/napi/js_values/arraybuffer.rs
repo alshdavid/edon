@@ -4,10 +4,11 @@ use std::os::raw::c_void;
 use std::ptr;
 use std::slice;
 
+use libnode_sys;
+
 use crate::napi::bindgen_runtime::TypeName;
 use crate::napi::bindgen_runtime::ValidateNapiValue;
 use crate::napi::check_status;
-use libnode_sys;
 use crate::napi::Error;
 use crate::napi::JsUnknown;
 use crate::napi::NapiValue;
@@ -35,7 +36,9 @@ impl ValidateNapiValue for JsArrayBuffer {
     napi_val: libnode_sys::napi_value,
   ) -> Result<libnode_sys::napi_value> {
     let mut is_array_buffer = false;
-    check_status!(unsafe { libnode_sys::napi_is_arraybuffer(env, napi_val, &mut is_array_buffer) })?;
+    check_status!(unsafe {
+      libnode_sys::napi_is_arraybuffer(env, napi_val, &mut is_array_buffer)
+    })?;
     if !is_array_buffer {
       return Err(Error::new(
         Status::InvalidArg,

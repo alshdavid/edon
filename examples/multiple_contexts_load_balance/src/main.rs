@@ -8,7 +8,7 @@ use edon::napi::JsNumber;
 
   This example spawns (n) Rust threads and (n) Nodejs Worker contexts
   then gets each Nodejs context to add numbers until (add_until).
-  
+
   The main thread then sums the values of (add_until) and validates that
   (total) = (n)*(add_until)
 */
@@ -20,7 +20,7 @@ pub fn main() -> anyhow::Result<()> {
   let threads = 5;
   let add_until = 100;
 
-  // Rust thread handles 
+  // Rust thread handles
   let mut handles = vec![];
 
   for _ in 0..threads {
@@ -28,7 +28,7 @@ pub fn main() -> anyhow::Result<()> {
     let ctx = nodejs.spawn_context()?;
 
     // Spawn a Rust thread
-    handles.push(std::thread::spawn(move || -> anyhow::Result<i32>{
+    handles.push(std::thread::spawn(move || -> anyhow::Result<i32> {
       // Set the initial value in the JavaScript context
       ctx.eval("globalThis.sum = 0;")?;
 
@@ -36,7 +36,7 @@ pub fn main() -> anyhow::Result<()> {
       for _ in 0..add_until {
         ctx.eval("globalThis.sum += 1;")?;
       }
-      
+
       // Extract value stored inside JavaScript using native code
       let (tx, rx) = channel();
 

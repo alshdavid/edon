@@ -1,3 +1,5 @@
+use libnode_sys;
+
 use super::FromNapiValue;
 use super::ToNapiValue;
 use super::TypeName;
@@ -6,7 +8,6 @@ use crate::napi::bindgen_runtime::Null;
 use crate::napi::bindgen_runtime::Undefined;
 use crate::napi::bindgen_runtime::Unknown;
 use crate::napi::check_status;
-use libnode_sys;
 use crate::napi::Env;
 use crate::napi::Error;
 use crate::napi::JsUndefined;

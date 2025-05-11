@@ -2,9 +2,10 @@ use std::marker::PhantomData;
 use std::os::raw::c_void;
 use std::ptr;
 
+use libnode_sys;
+
 use crate::napi::bindgen_runtime::ToNapiValue;
 use crate::napi::check_status;
-use libnode_sys;
 use crate::napi::Env;
 use crate::napi::Error;
 use crate::napi::JsObject;
@@ -90,7 +91,10 @@ impl<Data: ToNapiValue, Resolver: FnOnce(Env) -> Result<Data>> JsDeferred<Data, 
     );
 
     let status = unsafe {
-      libnode_sys::napi_release_threadsafe_function(self.tsfn, libnode_sys::ThreadsafeFunctionReleaseMode::release)
+      libnode_sys::napi_release_threadsafe_function(
+        self.tsfn,
+        libnode_sys::ThreadsafeFunctionReleaseMode::release,
+      )
     };
     debug_assert!(
       status == libnode_sys::Status::napi_ok,
@@ -171,7 +175,9 @@ extern "C" fn napi_resolve_deferred<Data: ToNapiValue, Resolver: FnOnce(Env) -> 
       "Resolve deferred value failed"
     )
   }) {
-    let error = Ok::<libnode_sys::napi_value, Error>(unsafe { crate::napi::JsError::from(e).into_value(env) });
+    let error = Ok::<libnode_sys::napi_value, Error>(unsafe {
+      crate::napi::JsError::from(e).into_value(env)
+    });
 
     match error {
       Ok(error) => {

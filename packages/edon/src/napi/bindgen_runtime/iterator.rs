@@ -2,11 +2,12 @@ use std::ffi::c_void;
 use std::os::raw::c_char;
 use std::ptr;
 
+use libnode_sys;
+
 use super::FromNapiValue;
 use super::ToNapiValue;
 use crate::napi::bindgen_runtime::Unknown;
 use crate::napi::check_status_or_throw;
-use libnode_sys;
 use crate::napi::Env;
 use crate::napi::Value;
 
@@ -64,7 +65,12 @@ pub fn create_iterator<T: Generator>(
   check_status_or_throw!(
     env,
     unsafe {
-      libnode_sys::napi_get_named_property(env, global, "Symbol\0".as_ptr().cast(), &mut symbol_object)
+      libnode_sys::napi_get_named_property(
+        env,
+        global,
+        "Symbol\0".as_ptr().cast(),
+        &mut symbol_object,
+      )
     },
     "Get global object failed",
   );
@@ -547,7 +553,9 @@ extern "C" fn generator_throw<T: Generator>(
   );
   check_status_or_throw!(
     env,
-    unsafe { libnode_sys::napi_set_named_property(env, result, "done\0".as_ptr().cast(), generator_state) },
+    unsafe {
+      libnode_sys::napi_set_named_property(env, result, "done\0".as_ptr().cast(), generator_state)
+    },
     "Get generator state failed"
   );
 

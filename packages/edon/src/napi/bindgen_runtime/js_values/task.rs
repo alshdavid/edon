@@ -5,12 +5,13 @@ use std::sync::atomic::AtomicPtr;
 use std::sync::atomic::AtomicU8;
 use std::sync::atomic::Ordering;
 
+use libnode_sys;
+
 use super::FromNapiValue;
 use super::ToNapiValue;
 use super::TypeName;
 use crate::napi::async_work;
 use crate::napi::check_status;
-use libnode_sys;
 use crate::napi::Env;
 use crate::napi::Error;
 use crate::napi::JsError;
@@ -78,7 +79,8 @@ impl FromNapiValue for AbortSignal {
     let mut signal = unsafe { JsObject::from_raw_unchecked(env, napi_val) };
     let async_work_inner: Rc<AtomicPtr<libnode_sys::napi_async_work__>> =
       Rc::new(AtomicPtr::new(ptr::null_mut()));
-    let raw_promise: Rc<AtomicPtr<libnode_sys::napi_deferred__>> = Rc::new(AtomicPtr::new(ptr::null_mut()));
+    let raw_promise: Rc<AtomicPtr<libnode_sys::napi_deferred__>> =
+      Rc::new(AtomicPtr::new(ptr::null_mut()));
     let task_status = Rc::new(AtomicU8::new(0));
     let abort_controller = AbortSignal {
       raw_work: async_work_inner.clone(),

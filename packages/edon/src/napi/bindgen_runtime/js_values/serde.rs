@@ -1,3 +1,4 @@
+use libnode_sys;
 use serde_json::Map;
 use serde_json::Number;
 use serde_json::Value;
@@ -8,7 +9,6 @@ use super::Object;
 use super::ToNapiValue;
 use crate::napi::bindgen_runtime::Null;
 use crate::napi::check_status;
-use libnode_sys;
 use crate::napi::type_of;
 use crate::napi::Error;
 use crate::napi::JsObject;

@@ -11,14 +11,15 @@ mod error;
 pub mod js_values;
 mod status;
 mod task;
-mod value_type;
 pub mod threadsafe_function;
+mod value_type;
 mod version;
 
 pub use cleanup_env::CleanupEnvHook;
 
 pub use self::async_work::AsyncWorkPromise;
 pub use self::bindgen_runtime::iterator;
+pub use self::bindgen_runtime::*;
 pub use self::call_context::CallContext;
 pub use self::env::*;
 pub use self::error::*;
@@ -27,7 +28,6 @@ pub use self::status::Status;
 pub use self::task::Task;
 pub use self::value_type::*;
 pub use self::version::NodeVersion;
-pub use self::bindgen_runtime::*;
 
 #[cfg(feature = "serde-json")]
 #[macro_use]
@@ -41,8 +41,10 @@ macro_rules! _type_of {
   ($env:expr, $value:expr) => {{
     let mut value_type = 0;
     #[allow(unused_unsafe)]
-    crate::napi::error::check_status!(unsafe { libnode_sys::napi_typeof($env, $value, &mut value_type) })
-      .and_then(|_| Ok($crate::napi::ValueType::from(value_type)))
+    crate::napi::error::check_status!(unsafe {
+      libnode_sys::napi_typeof($env, $value, &mut value_type)
+    })
+    .and_then(|_| Ok($crate::napi::ValueType::from(value_type)))
   }};
 }
 pub use _type_of as type_of;
@@ -71,11 +73,11 @@ pub use _assert_type_of as assert_type_of;
 pub use crate::napi::bindgen_runtime::ctor as module_init;
 
 pub mod bindgen_prelude {
+  pub use self::check_status_or_throw;
   pub use super::assert_type_of;
   pub use super::bindgen_runtime::*;
   pub use crate::napi::check_pending_exception;
   pub use crate::napi::check_status;
-  pub use self::check_status_or_throw;
   pub use crate::napi::error;
   pub use crate::napi::error::*;
   pub use crate::napi::type_of;
@@ -90,11 +92,12 @@ pub mod bindgen_prelude {
 
 #[doc(hidden)]
 pub mod __private {
+  use libnode_sys;
+
   pub use crate::napi::bindgen_runtime::get_class_constructor;
   pub use crate::napi::bindgen_runtime::iterator::create_iterator;
   pub use crate::napi::bindgen_runtime::register_class;
   pub use crate::napi::bindgen_runtime::___CALL_FROM_FACTORY;
-  use libnode_sys;
 
   pub unsafe fn log_js_value<V: AsRef<[libnode_sys::napi_value]>>(
     // `info`, `log`, `warning` or `error`
@@ -110,10 +113,17 @@ pub mod __private {
     let mut console = ptr::null_mut();
     let console_c_string = CString::new("console").unwrap();
     let method_c_string = CString::new(method).unwrap();
-    unsafe { libnode_sys::napi_get_named_property(env, g, console_c_string.as_ptr(), &mut console) };
+    unsafe {
+      libnode_sys::napi_get_named_property(env, g, console_c_string.as_ptr(), &mut console)
+    };
     let mut method_js_fn = ptr::null_mut();
     unsafe {
-      libnode_sys::napi_get_named_property(env, console, method_c_string.as_ptr(), &mut method_js_fn)
+      libnode_sys::napi_get_named_property(
+        env,
+        console,
+        method_c_string.as_ptr(),
+        &mut method_js_fn,
+      )
     };
     unsafe {
       libnode_sys::napi_call_function(

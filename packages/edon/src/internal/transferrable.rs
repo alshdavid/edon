@@ -10,13 +10,14 @@ use std::sync::atomic::Ordering;
 use std::sync::Arc;
 use std::sync::Mutex;
 
+use once_cell::sync::Lazy;
+
 use crate::napi::bindgen_prelude::FromNapiValue;
 use crate::napi::bindgen_prelude::ToNapiValue;
 use crate::napi::Env;
 use crate::napi::JsNumber;
 use crate::napi::JsUnknown;
 use crate::napi::NapiRaw;
-use once_cell::sync::Lazy;
 
 type Inner = Arc<dyn Any + Send + Sync>;
 
@@ -96,7 +97,10 @@ impl<T: Send + Sync + 'static> JsTransferable<T> {
     Ok(JsTransferableRef(val))
   }
 
-  pub fn into_unknown(&self, env: &Env) -> crate::napi::Result<JsUnknown> {
+  pub fn into_unknown(
+    &self,
+    env: &Env,
+  ) -> crate::napi::Result<JsUnknown> {
     Ok(env.create_int32(self.id.clone())?.into_unknown())
   }
 }
@@ -113,27 +117,27 @@ impl<T> Deref for JsTransferableRef<T> {
 
 /// Allows Transferable to be returned from a Napi functions
 impl<T> ToNapiValue for JsTransferable<T> {
-    unsafe fn to_napi_value(
-        env: libnode_sys::napi_env,
-        val: Self,
-      ) -> crate::napi::Result<libnode_sys::napi_value> {
-        let env = Env::from_raw(env);
-        let pointer = env.create_int32(val.id)?;
-        Ok(pointer.raw())
-    }
+  unsafe fn to_napi_value(
+    env: libnode_sys::napi_env,
+    val: Self,
+  ) -> crate::napi::Result<libnode_sys::napi_value> {
+    let env = Env::from_raw(env);
+    let pointer = env.create_int32(val.id)?;
+    Ok(pointer.raw())
+  }
 }
 
 /// Allows Transferable to be accepted as an argument for a Napi function
 impl<T> FromNapiValue for JsTransferable<T> {
-    unsafe fn from_napi_value(
-        env: libnode_sys::napi_env,
-        napi_val: libnode_sys::napi_value,
-      ) -> crate::napi::Result<Self> {
-        let pointer = JsNumber::from_napi_value(env, napi_val)?;
-        let id = pointer.get_int32()?;
-        Ok(Self {
-          id,
-          _value: Default::default(),
-        })
-    }
+  unsafe fn from_napi_value(
+    env: libnode_sys::napi_env,
+    napi_val: libnode_sys::napi_value,
+  ) -> crate::napi::Result<Self> {
+    let pointer = JsNumber::from_napi_value(env, napi_val)?;
+    let id = pointer.get_int32()?;
+    Ok(Self {
+      id,
+      _value: Default::default(),
+    })
+  }
 }

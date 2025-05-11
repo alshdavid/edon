@@ -1,10 +1,11 @@
 use std::convert::TryFrom;
 use std::ptr;
 
+use libnode_sys;
+
 use super::*;
 use crate::napi::bindgen_runtime::TypeName;
 use crate::napi::check_status;
-use libnode_sys;
 use crate::napi::Result;
 
 #[derive(Clone, Copy)]
@@ -83,37 +84,49 @@ impl JsBigInt {
 
   pub fn is_date(&self) -> Result<bool> {
     let mut is_date = true;
-    check_status!(unsafe { libnode_sys::napi_is_date(self.raw.env, self.raw.value, &mut is_date) })?;
+    check_status!(unsafe {
+      libnode_sys::napi_is_date(self.raw.env, self.raw.value, &mut is_date)
+    })?;
     Ok(is_date)
   }
 
   pub fn is_error(&self) -> Result<bool> {
     let mut result = false;
-    check_status!(unsafe { libnode_sys::napi_is_error(self.raw.env, self.raw.value, &mut result) })?;
+    check_status!(unsafe {
+      libnode_sys::napi_is_error(self.raw.env, self.raw.value, &mut result)
+    })?;
     Ok(result)
   }
 
   pub fn is_typedarray(&self) -> Result<bool> {
     let mut result = false;
-    check_status!(unsafe { libnode_sys::napi_is_typedarray(self.raw.env, self.raw.value, &mut result) })?;
+    check_status!(unsafe {
+      libnode_sys::napi_is_typedarray(self.raw.env, self.raw.value, &mut result)
+    })?;
     Ok(result)
   }
 
   pub fn is_dataview(&self) -> Result<bool> {
     let mut result = false;
-    check_status!(unsafe { libnode_sys::napi_is_dataview(self.raw.env, self.raw.value, &mut result) })?;
+    check_status!(unsafe {
+      libnode_sys::napi_is_dataview(self.raw.env, self.raw.value, &mut result)
+    })?;
     Ok(result)
   }
 
   pub fn is_array(&self) -> Result<bool> {
     let mut is_array = false;
-    check_status!(unsafe { libnode_sys::napi_is_array(self.raw.env, self.raw.value, &mut is_array) })?;
+    check_status!(unsafe {
+      libnode_sys::napi_is_array(self.raw.env, self.raw.value, &mut is_array)
+    })?;
     Ok(is_array)
   }
 
   pub fn is_buffer(&self) -> Result<bool> {
     let mut is_buffer = false;
-    check_status!(unsafe { libnode_sys::napi_is_buffer(self.raw.env, self.raw.value, &mut is_buffer) })?;
+    check_status!(unsafe {
+      libnode_sys::napi_is_buffer(self.raw.env, self.raw.value, &mut is_buffer)
+    })?;
     Ok(is_buffer)
   }
 
@@ -240,7 +253,12 @@ impl JsBigInt {
     let mut val: u64 = 0;
     let mut lossless = false;
     check_status!(unsafe {
-      libnode_sys::napi_get_value_bigint_uint64(self.raw.env, self.raw.value, &mut val, &mut lossless)
+      libnode_sys::napi_get_value_bigint_uint64(
+        self.raw.env,
+        self.raw.value,
+        &mut val,
+        &mut lossless,
+      )
     })?;
 
     Ok((val, lossless))
@@ -250,7 +268,12 @@ impl JsBigInt {
     let mut val: i64 = 0;
     let mut lossless: bool = false;
     check_status!(unsafe {
-      libnode_sys::napi_get_value_bigint_int64(self.raw.env, self.raw.value, &mut val, &mut lossless)
+      libnode_sys::napi_get_value_bigint_int64(
+        self.raw.env,
+        self.raw.value,
+        &mut val,
+        &mut lossless,
+      )
     })?;
     Ok((val, lossless))
   }

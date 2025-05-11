@@ -88,7 +88,9 @@ impl Array {
 
   pub fn coerce_to_object(self) -> Result<JsObject> {
     let mut new_raw_value = ptr::null_mut();
-    check_status!(unsafe { libnode_sys::napi_coerce_to_object(self.env, self.inner, &mut new_raw_value) })?;
+    check_status!(unsafe {
+      libnode_sys::napi_coerce_to_object(self.env, self.inner, &mut new_raw_value)
+    })?;
     Ok(JsObject(Value {
       env: self.env,
       value: new_raw_value,

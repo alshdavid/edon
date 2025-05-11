@@ -18,8 +18,7 @@ use crate::napi::Status;
 
 type RefInformation = (
   /* wrapped_value */ *mut c_void,
-  /* napi_ref */ libnode_sys::
-napi_ref,
+  /* napi_ref */ libnode_sys::napi_ref,
   /* finalize_callback */ *const Cell<*mut dyn FnOnce()>,
 );
 
@@ -33,8 +32,7 @@ thread_local! {
 /// Unref the `Reference` when the `Reference` is dropped.
 pub struct Reference<T: 'static> {
   raw: *mut T,
-  napi_ref: libnode_sys::
-napi_ref,
+  napi_ref: libnode_sys::napi_ref,
   env: *mut c_void,
   finalize_callbacks: Rc<Cell<*mut dyn FnOnce()>>,
 }
@@ -51,17 +49,14 @@ impl<T> Drop for Reference<T> {
     // In general, the `drop` of the `Reference` would happen first
     if rc_strong_count > 1 {
       let status = unsafe {
-        libnode_sys::
-napi_reference_unref(
-          self.env as libnode_sys::
-napi_env,
+        libnode_sys::napi_reference_unref(
+          self.env as libnode_sys::napi_env,
           self.napi_ref,
           &mut ref_count,
         )
       };
       debug_assert!(
-        status == libnode_sys::
-Status::napi_ok,
+        status == libnode_sys::Status::napi_ok,
         "Reference unref failed, status code: {}",
         crate::napi::Status::from(status)
       );
@@ -73,16 +68,14 @@ impl<T: 'static> Reference<T> {
   #[doc(hidden)]
   #[allow(clippy::not_unsafe_ptr_arg_deref)]
   pub fn add_ref(
-    env: libnode_sys::
-napi_env,
+    env: libnode_sys::napi_env,
     t: *mut c_void,
     value: RefInformation,
   ) {
     REFERENCE_MAP.with(|map| {
       if let Some((_, previous_ref, previous_rc)) = map.borrow_mut().insert(t, value) {
         unsafe { Rc::from_raw(previous_rc) };
-        unsafe { libnode_sys::
-napi_delete_reference(env, previous_ref) };
+        unsafe { libnode_sys::napi_delete_reference(env, previous_ref) };
       }
     });
   }
@@ -90,16 +83,14 @@ napi_delete_reference(env, previous_ref) };
   #[doc(hidden)]
   pub unsafe fn from_value_ptr(
     t: *mut c_void,
-    env: libnode_sys::
-napi_env,
+    env: libnode_sys::napi_env,
   ) -> Result<Self> {
     if let Some((wrapped_value, napi_ref, finalize_callbacks_ptr)) =
       REFERENCE_MAP.with(|map| map.borrow().get(&t).cloned())
     {
       let mut ref_count = 0;
       check_status!(
-        unsafe { libnode_sys::
-napi_reference_ref(env, napi_ref, &mut ref_count) },
+        unsafe { libnode_sys::napi_reference_ref(env, napi_ref, &mut ref_count) },
         "Failed to ref napi reference"
       )?;
       let finalize_callbacks_raw = unsafe { Rc::from_raw(finalize_callbacks_ptr) };
@@ -123,15 +114,12 @@ napi_reference_ref(env, napi_ref, &mut ref_count) },
 
 impl<T: 'static> ToNapiValue for Reference<T> {
   unsafe fn to_napi_value(
-    env: libnode_sys::
-napi_env,
+    env: libnode_sys::napi_env,
     val: Self,
-  ) -> Result<libnode_sys::
-napi_value> {
+  ) -> Result<libnode_sys::napi_value> {
     let mut result = ptr::null_mut();
     check_status!(
-      unsafe { libnode_sys::
-napi_get_reference_value(env, val.napi_ref, &mut result) },
+      unsafe { libnode_sys::napi_get_reference_value(env, val.napi_ref, &mut result) },
       "Failed to get reference value"
     )?;
     Ok(result)
@@ -140,15 +128,12 @@ napi_get_reference_value(env, val.napi_ref, &mut result) },
 
 impl<T: 'static> FromNapiValue for Reference<T> {
   unsafe fn from_napi_value(
-    env: libnode_sys::
-napi_env,
-    napi_val: libnode_sys::
-napi_value,
+    env: libnode_sys::napi_env,
+    napi_val: libnode_sys::napi_value,
   ) -> Result<Self> {
     let mut value = ptr::null_mut();
     check_status!(
-      unsafe { libnode_sys::
-napi_unwrap(env, napi_val, &mut value) },
+      unsafe { libnode_sys::napi_unwrap(env, napi_val, &mut value) },
       "Unwrap value [{}] from class Reference failed",
       std::any::type_name::<T>(),
     )?;
@@ -163,8 +148,7 @@ impl<T: 'static> Reference<T> {
   ) -> Result<Self> {
     let mut ref_count = 0;
     check_status!(
-      unsafe { libnode_sys::
-napi_reference_ref(env.0, self.napi_ref, &mut ref_count) },
+      unsafe { libnode_sys::napi_reference_ref(env.0, self.napi_ref, &mut ref_count) },
       "Failed to ref napi reference"
     )?;
     Ok(Self {
@@ -220,8 +204,7 @@ impl<T: 'static> DerefMut for Reference<T> {
 
 pub struct WeakReference<T: 'static> {
   raw: *mut T,
-  napi_ref: libnode_sys::
-napi_ref,
+  napi_ref: libnode_sys::napi_ref,
   finalize_callbacks: Weak<Cell<*mut dyn FnOnce()>>,
 }
 
@@ -237,11 +220,9 @@ impl<T> Clone for WeakReference<T> {
 
 impl<T: 'static> ToNapiValue for WeakReference<T> {
   unsafe fn to_napi_value(
-    env: libnode_sys::
-napi_env,
+    env: libnode_sys::napi_env,
     val: Self,
-  ) -> Result<libnode_sys::
-napi_value> {
+  ) -> Result<libnode_sys::napi_value> {
     if Weak::strong_count(&val.finalize_callbacks) == 0 {
       return Err(Error::new(
         Status::GenericFailure,
@@ -253,8 +234,7 @@ napi_value> {
     };
     let mut result = ptr::null_mut();
     check_status!(
-      unsafe { libnode_sys::
-napi_get_reference_value(env, val.napi_ref, &mut result) },
+      unsafe { libnode_sys::napi_get_reference_value(env, val.napi_ref, &mut result) },
       "Failed to get reference value"
     )?;
     Ok(result)
@@ -269,8 +249,7 @@ impl<T: 'static> WeakReference<T> {
     if let Some(finalize_callbacks) = self.finalize_callbacks.upgrade() {
       let mut ref_count = 0;
       check_status!(
-        unsafe { libnode_sys::
-napi_reference_ref(env.0, self.napi_ref, &mut ref_count) },
+        unsafe { libnode_sys::napi_reference_ref(env.0, self.napi_ref, &mut ref_count) },
         "Failed to ref napi reference"
       )?;
       Ok(Some(Reference {
@@ -350,15 +329,12 @@ impl<T: 'static, S: 'static> SharedReference<T, S> {
 
 impl<T: 'static, S: 'static> ToNapiValue for SharedReference<T, S> {
   unsafe fn to_napi_value(
-    env: libnode_sys::
-napi_env,
+    env: libnode_sys::napi_env,
     val: Self,
-  ) -> Result<libnode_sys::
-napi_value> {
+  ) -> Result<libnode_sys::napi_value> {
     let mut result = ptr::null_mut();
     check_status!(
-      unsafe { libnode_sys::
-napi_get_reference_value(env, val.owner.napi_ref, &mut result) },
+      unsafe { libnode_sys::napi_get_reference_value(env, val.owner.napi_ref, &mut result) },
       "Failed to get reference value"
     )?;
     Ok(result)

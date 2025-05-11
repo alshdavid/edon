@@ -10,12 +10,13 @@
 /// ```
 use std::ptr;
 
+use libnode_sys;
+
 use super::FromNapiValue;
 use super::ToNapiValue;
 use super::TypeName;
 use super::ValidateNapiValue;
 use crate::napi::check_status;
-use libnode_sys;
 
 /// i64 is converted to `Number`
 #[repr(transparent)]
@@ -186,7 +187,9 @@ pub(crate) unsafe fn u128_with_sign_to_napi_value(
 
   let arr: [u64; 2] = [val as _, (val >> 64) as _];
   let words = &arr as *const u64;
-  check_status!(unsafe { libnode_sys::napi_create_bigint_words(env, sign_bit, 2, words, &mut raw_value) })?;
+  check_status!(unsafe {
+    libnode_sys::napi_create_bigint_words(env, sign_bit, 2, words, &mut raw_value)
+  })?;
   Ok(raw_value)
 }
 
@@ -238,7 +241,9 @@ impl ToNapiValue for usize {
     val: Self,
   ) -> crate::napi::Result<libnode_sys::napi_value> {
     let mut raw_value = ptr::null_mut();
-    check_status!(unsafe { libnode_sys::napi_create_bigint_uint64(env, val as u64, &mut raw_value) })?;
+    check_status!(unsafe {
+      libnode_sys::napi_create_bigint_uint64(env, val as u64, &mut raw_value)
+    })?;
     Ok(raw_value)
   }
 }
@@ -249,7 +254,9 @@ impl ToNapiValue for isize {
     val: Self,
   ) -> crate::napi::Result<libnode_sys::napi_value> {
     let mut raw_value = ptr::null_mut();
-    check_status!(unsafe { libnode_sys::napi_create_bigint_int64(env, val as i64, &mut raw_value) })?;
+    check_status!(unsafe {
+      libnode_sys::napi_create_bigint_int64(env, val as i64, &mut raw_value)
+    })?;
     Ok(raw_value)
   }
 }

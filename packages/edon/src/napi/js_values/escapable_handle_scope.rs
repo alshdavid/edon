@@ -1,8 +1,9 @@
 use std::ops::Deref;
 use std::ptr;
 
-use crate::napi::check_status;
 use libnode_sys;
+
+use crate::napi::check_status;
 use crate::napi::Env;
 use crate::napi::NapiRaw;
 use crate::napi::Result;
@@ -18,7 +19,9 @@ impl<T: NapiRaw> EscapableHandleScope<T> {
     value: T,
   ) -> Result<Self> {
     let mut handle_scope = ptr::null_mut();
-    check_status!(unsafe { libnode_sys::napi_open_escapable_handle_scope(env.0, &mut handle_scope) })?;
+    check_status!(unsafe {
+      libnode_sys::napi_open_escapable_handle_scope(env.0, &mut handle_scope)
+    })?;
     let mut result = ptr::null_mut();
     check_status!(unsafe {
       libnode_sys::napi_escape_handle(env.0, handle_scope, NapiRaw::raw(&value), &mut result)
@@ -33,7 +36,9 @@ impl<T: NapiRaw> EscapableHandleScope<T> {
     self,
     env: Env,
   ) -> Result<()> {
-    check_status!(unsafe { libnode_sys::napi_close_escapable_handle_scope(env.0, self.handle_scope) })
+    check_status!(unsafe {
+      libnode_sys::napi_close_escapable_handle_scope(env.0, self.handle_scope)
+    })
   }
 }
 

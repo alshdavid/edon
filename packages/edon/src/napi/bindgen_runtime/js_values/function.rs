@@ -1,12 +1,13 @@
 use std::ptr;
 
+use libnode_sys;
+
 use super::FromNapiValue;
 use super::ToNapiValue;
 use super::TypeName;
 use super::ValidateNapiValue;
 use crate::napi::check_pending_exception;
 use crate::napi::check_status;
-use libnode_sys;
 use crate::napi::Env;
 pub use crate::napi::JsFunction;
 use crate::napi::NapiRaw;
@@ -185,7 +186,11 @@ impl<Args: JsValuesTupleIntoVec, Return: FromNapiValue> FunctionRef<Args, Return
 impl<Args: JsValuesTupleIntoVec, Return: FromNapiValue> Drop for FunctionRef<Args, Return> {
   fn drop(&mut self) {
     let status = unsafe { libnode_sys::napi_delete_reference(self.env, self.inner) };
-    debug_assert_eq!(status, libnode_sys::Status::napi_ok, "Drop FunctionRef failed");
+    debug_assert_eq!(
+      status,
+      libnode_sys::Status::napi_ok,
+      "Drop FunctionRef failed"
+    );
   }
 }
 

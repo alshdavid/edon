@@ -7,14 +7,13 @@ use std::sync::Arc;
 use std::sync::Mutex;
 use std::thread;
 
+use super::JsTransferable;
 use crate::napi::threadsafe_function::ErrorStrategy;
 use crate::napi::threadsafe_function::ThreadsafeFunctionCallMode;
 use crate::napi::JsFunction;
 use crate::napi::JsString;
 use crate::napi::JsUnknown;
 use crate::Env;
-
-use super::JsTransferable;
 
 static STARTED: AtomicBool = AtomicBool::new(false);
 
@@ -90,7 +89,7 @@ pub fn start_node_instance() -> crate::Result<Sender<NodejsEvent>> {
                   .into_unknown();
 
                 Ok(vec![action, payload, resolve])
-              },
+              }
               NodejsEvent::StopCommonjsWorker { id, resolve } => {
                 let action = ctx.env.create_uint32(1)?.into_unknown();
                 let payload = ctx.env.create_string(&id)?.into_unknown();
@@ -192,7 +191,7 @@ pub fn start_node_instance() -> crate::Result<Sender<NodejsEvent>> {
                 .into_unknown();
 
               Ok(vec![action, payload, resolve])
-            },
+            }
             NodejsContextEvent::Import { specifier, resolve } => {
               let action = ctx.env.create_uint32(3)?.into_unknown();
               let payload = ctx.env.create_string(&specifier)?.into_unknown();
@@ -205,7 +204,7 @@ pub fn start_node_instance() -> crate::Result<Sender<NodejsEvent>> {
                 .into_unknown();
 
               Ok(vec![action, payload, resolve])
-            },
+            }
           },
         )?;
 

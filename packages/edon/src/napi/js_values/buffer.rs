@@ -3,12 +3,13 @@ use std::ops::Deref;
 use std::ops::DerefMut;
 use std::ptr;
 
+use libnode_sys;
+
 use super::Value;
 use super::ValueType;
 use crate::napi::bindgen_runtime::TypeName;
 use crate::napi::bindgen_runtime::ValidateNapiValue;
 use crate::napi::check_status;
-use libnode_sys;
 use crate::napi::Error;
 use crate::napi::JsUnknown;
 use crate::napi::NapiValue;

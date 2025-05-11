@@ -6,10 +6,11 @@ use std::rc::Rc;
 use std::sync::atomic::AtomicU8;
 use std::sync::atomic::Ordering;
 
+use libnode_sys;
+
 use crate::napi::bindgen_runtime::ToNapiValue;
 use crate::napi::check_status;
 use crate::napi::js_values::NapiValue;
-use libnode_sys;
 use crate::napi::Env;
 use crate::napi::JsError;
 use crate::napi::JsObject;
@@ -143,8 +144,9 @@ unsafe extern "C" fn complete<T: Task>(
         );
       }
       Err(e) => {
-        let status =
-          unsafe { libnode_sys::napi_reject_deferred(env, deferred, JsError::from(e).into_value(env)) };
+        let status = unsafe {
+          libnode_sys::napi_reject_deferred(env, deferred, JsError::from(e).into_value(env))
+        };
         debug_assert!(
           status == libnode_sys::Status::napi_ok,
           "Reject promise failed, status: {:?}",

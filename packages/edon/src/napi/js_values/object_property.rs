@@ -4,11 +4,11 @@ use std::ffi::CString;
 use std::ptr;
 
 use bitflags::bitflags;
+use libnode_sys;
 
 use crate::napi::bindgen_runtime::FromNapiValue;
 use crate::napi::bindgen_runtime::This;
 use crate::napi::bindgen_runtime::ToNapiValue;
-use libnode_sys;
 use crate::napi::Callback;
 use crate::napi::Env;
 use crate::napi::NapiRaw;

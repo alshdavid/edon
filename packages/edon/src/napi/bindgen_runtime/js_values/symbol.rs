@@ -1,11 +1,12 @@
 use std::ptr;
 
+use libnode_sys;
+
 use super::FromNapiValue;
 use super::ToNapiValue;
 use super::TypeName;
 use super::ValidateNapiValue;
 use crate::napi::check_status;
-use libnode_sys;
 
 pub struct Symbol {
   desc: Option<String>,

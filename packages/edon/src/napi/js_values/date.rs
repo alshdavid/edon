@@ -1,9 +1,10 @@
 use std::ptr;
 
+use libnode_sys;
+
 use super::check_status;
 use crate::napi::bindgen_runtime::TypeName;
 use crate::napi::bindgen_runtime::ValidateNapiValue;
-use libnode_sys;
 use crate::napi::Error;
 use crate::napi::Result;
 use crate::napi::Status;
@@ -43,7 +44,9 @@ impl ValidateNapiValue for JsDate {
 impl JsDate {
   pub fn value_of(&self) -> Result<f64> {
     let mut timestamp: f64 = 0.0;
-    check_status!(unsafe { libnode_sys::napi_get_date_value(self.0.env, self.0.value, &mut timestamp) })?;
+    check_status!(unsafe {
+      libnode_sys::napi_get_date_value(self.0.env, self.0.value, &mut timestamp)
+    })?;
     Ok(timestamp)
   }
 }

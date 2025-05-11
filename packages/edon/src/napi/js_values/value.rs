@@ -1,5 +1,6 @@
-use super::ValueType;
 use libnode_sys;
+
+use super::ValueType;
 
 #[derive(Clone, Copy)]
 pub struct Value {
