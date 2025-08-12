@@ -2,7 +2,7 @@ pub fn main() -> anyhow::Result<()> {
   let nodejs = edon::Nodejs::load_auto()?;
 
   // Start a Nodejs context
-  let ctx0 = nodejs.spawn_context()?;
+  let ctx0 = nodejs.spawn_worker_thread()?;
 
   // Open a native execution context and set a global variable
   ctx0.exec(|env| {

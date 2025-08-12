@@ -3,9 +3,9 @@ pub fn main() -> anyhow::Result<()> {
 
   // Start a pool of contexts
   // Each context runs on its own thread
-  let wk0 = nodejs.spawn_context()?;
-  let wk1 = nodejs.spawn_context()?;
-  let wk2 = nodejs.spawn_context()?;
+  let wk0 = nodejs.spawn_worker_thread()?;
+  let wk1 = nodejs.spawn_worker_thread()?;
+  let wk2 = nodejs.spawn_worker_thread()?;
 
   // Declare some global variables
   wk0.eval("globalThis.i = 0;")?;

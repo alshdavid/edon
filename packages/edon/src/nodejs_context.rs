@@ -2,29 +2,29 @@ use std::sync::atomic::Ordering;
 use std::sync::mpsc::channel;
 use std::sync::mpsc::Sender;
 
-use crate::internal::NodejsContextEvent;
-use crate::internal::NodejsEvent;
+use crate::internal::NodejsWorkerEvent;
+use crate::internal::NodejsMainEvent;
 use crate::Env;
 use crate::NodejsOptions;
 use crate::NODEJS_CONTEXT_COUNT;
 
-pub struct NodejsContext {
+pub struct NodejsWorker {
   id: String,
-  tx_main: Sender<NodejsEvent>,
-  tx_wrk: Sender<NodejsContextEvent>,
+  tx_main: Sender<NodejsMainEvent>,
+  tx_wrk: Sender<NodejsWorkerEvent>,
 }
 
-impl NodejsContext {
+impl NodejsWorker {
   pub(crate) fn start(
     options: &NodejsOptions,
-    tx_main: Sender<NodejsEvent>,
+    tx_main: Sender<NodejsMainEvent>,
   ) -> crate::Result<Self> {
     NODEJS_CONTEXT_COUNT.fetch_add(1, Ordering::AcqRel);
     let (tx, rx) = channel();
-    let (tx_wrk, rx_wrk) = channel::<NodejsContextEvent>();
+    let (tx_wrk, rx_wrk) = channel::<NodejsWorkerEvent>();
 
     tx_main
-      .send(NodejsEvent::StartCommonjsWorker {
+      .send(NodejsMainEvent::StartCommonjsWorker {
         rx_wrk,
         argv: options.as_argv(),
         resolve: tx,
@@ -52,7 +52,7 @@ impl NodejsContext {
     let code = code.as_ref().to_string();
 
     tx_eval
-      .send(NodejsContextEvent::Eval { code, resolve: tx })
+      .send(NodejsWorkerEvent::Eval { code, resolve: tx })
       .ok();
 
     rx.recv().unwrap()
@@ -68,7 +68,7 @@ impl NodejsContext {
     let code = code.as_ref().to_string();
 
     tx_eval
-      .send(NodejsContextEvent::EvalModule { code, resolve: tx })
+      .send(NodejsWorkerEvent::EvalModule { code, resolve: tx })
       .ok();
 
     rx.recv().unwrap()
@@ -86,7 +86,7 @@ impl NodejsContext {
 
     self
       .tx_wrk
-      .send(NodejsContextEvent::Exec {
+      .send(NodejsWorkerEvent::Exec {
         callback: Box::new(callback),
         resolve: tx,
       })
@@ -103,7 +103,7 @@ impl NodejsContext {
 
     self
       .tx_wrk
-      .send(NodejsContextEvent::Require {
+      .send(NodejsWorkerEvent::Require {
         specifier: specifier.as_ref().to_string(),
         resolve: tx,
       })
@@ -120,7 +120,7 @@ impl NodejsContext {
 
     self
       .tx_wrk
-      .send(NodejsContextEvent::Import {
+      .send(NodejsWorkerEvent::Import {
         specifier: specifier.as_ref().to_string(),
         resolve: tx,
       })
@@ -130,12 +130,12 @@ impl NodejsContext {
   }
 }
 
-impl Drop for NodejsContext {
+impl Drop for NodejsWorker {
   fn drop(&mut self) {
     let (tx, rx) = channel();
     self
       .tx_main
-      .send(NodejsEvent::StopCommonjsWorker {
+      .send(NodejsMainEvent::StopCommonjsWorker {
         id: self.id.clone(),
         resolve: tx,
       })
@@ -147,7 +147,7 @@ impl Drop for NodejsContext {
       let (tx, rx) = channel();
       self
         .tx_main
-        .send(NodejsEvent::StopMain { resolve: tx })
+        .send(NodejsMainEvent::StopMain { resolve: tx })
         .unwrap();
       rx.recv().unwrap();
     }

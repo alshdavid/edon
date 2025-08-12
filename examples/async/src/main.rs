@@ -32,7 +32,7 @@ pub fn main() -> anyhow::Result<()> {
   })?;
 
   // Start a new Nodejs context
-  let ctx0 = nodejs.spawn_context()?;
+  let ctx0 = nodejs.spawn_worker_thread()?;
 
   ctx0.eval(
     r#"

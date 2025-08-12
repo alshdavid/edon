@@ -15,7 +15,7 @@ pub fn main() -> anyhow::Result<()> {
   })?;
 
   // Start a Nodejs context
-  let ctx0 = nodejs.spawn_context()?;
+  let ctx0 = nodejs.spawn_worker_thread()?;
 
   // Evaluate arbitrary code within the context
   ctx0.eval(

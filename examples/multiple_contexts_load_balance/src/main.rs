@@ -25,7 +25,7 @@ pub fn main() -> anyhow::Result<()> {
 
   for _ in 0..threads {
     // Spawn a Nodejs Worker Context
-    let ctx = nodejs.spawn_context()?;
+    let ctx = nodejs.spawn_worker_thread()?;
 
     // Spawn a Rust thread
     handles.push(std::thread::spawn(move || -> anyhow::Result<i32> {

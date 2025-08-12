@@ -8,8 +8,8 @@ use std::sync::OnceLock;
 use libnode_sys::constants::LIB_NAME;
 
 use super::internal;
-use super::NodejsContext;
-use crate::internal::NodejsEvent;
+use super::NodejsWorker;
+use crate::internal::NodejsMainEvent;
 use crate::internal::PathExt;
 use crate::napi::JsObject;
 use crate::Env;
@@ -24,7 +24,7 @@ use crate::NodejsOptions;
 static NODEJS: OnceLock<crate::Result<NodejsRef>> = OnceLock::new();
 pub(crate) static NODEJS_CONTEXT_COUNT: AtomicU32 = AtomicU32::new(0);
 
-pub type NodejsRef = Sender<NodejsEvent>;
+pub type NodejsRef = Sender<NodejsMainEvent>;
 
 pub struct Nodejs {
   tx_main: NodejsRef,
@@ -102,15 +102,15 @@ impl Nodejs {
   }
 
   /// Spawn a Nodejs worker thread
-  pub fn spawn_context(&self) -> crate::Result<NodejsContext> {
-    self.spawn_context_with_options(&NodejsOptions::default())
+  pub fn spawn_worker_thread(&self) -> crate::Result<NodejsWorker> {
+    self.spawn_worker_thread_with_options(&NodejsOptions::default())
   }
 
-  pub fn spawn_context_with_options(
+  pub fn spawn_worker_thread_with_options(
     &self,
     options: &NodejsOptions,
-  ) -> crate::Result<NodejsContext> {
-    NodejsContext::start(options, self.tx_main.clone())
+  ) -> crate::Result<NodejsWorker> {
+    NodejsWorker::start(options, self.tx_main.clone())
   }
 }
 
@@ -121,7 +121,7 @@ impl Drop for Nodejs {
       let (tx, rx) = channel();
       self
         .tx_main
-        .send(NodejsEvent::StopMain { resolve: tx })
+        .send(NodejsMainEvent::StopMain { resolve: tx })
         .unwrap();
       rx.recv().unwrap();
     }

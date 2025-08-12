@@ -32,7 +32,7 @@ pub fn main() -> std::io::Result<()> {
 
   // Nodejs context runs on its own thread
   // you can have multiple and load balance between them
-  let ctx = nodejs.spawn_context()?;
+  let ctx = nodejs.spawn_worker_thread()?;
 
   // Execute JavaScript and TypeScript with
   ctx.eval(r#"
@@ -68,7 +68,7 @@ pub fn main() -> anyhow::Result<()> {
     })?;
 
   // Start a Nodejs context
-  let ctx0 = nodejs.spawn_context()?;
+  let ctx0 = nodejs.spawn_worker_thread()?;
 
   // Evaluate arbitrary code within the context
   ctx0.eval(r#"
@@ -90,7 +90,7 @@ pub fn main() -> anyhow::Result<()> {
   let nodejs = edon::Nodejs::load_auto()?;
 
   // Start a Nodejs context
-  let ctx0 = nodejs.spawn_context()?;
+  let ctx0 = nodejs.spawn_worker_thread()?;
 
   // Open a native execution context and set a global variable
   ctx0.exec(|env| {
@@ -166,7 +166,7 @@ pub fn main() -> anyhow::Result<()> {
   })?;
 
   // Start a new Nodejs context
-  let ctx0 = nodejs.spawn_context()?;
+  let ctx0 = nodejs.spawn_worker_thread()?;
 
   // Consume the native module
   ctx0.eval(
