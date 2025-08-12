@@ -18,7 +18,7 @@ pub fn start_blocking<Args: AsRef<str>>(argv: &[Args]) -> crate::Result<()> {
     .map(|arg| arg.as_ptr())
     .collect::<Vec<*const c_char>>();
 
-  unsafe { libnode_sys::node_embedding_start(c_args.len() as c_int, c_args.as_ptr()) };
+  unsafe { libnode_sys::node_embedding_main(c_args.len() as c_int, c_args.as_ptr()) };
 
   Ok(())
 }

@@ -216,7 +216,7 @@ checksum = "7454e41ff9012c00d53cf7f475c5e3afa3b91b7c90568495495e8d9bf47a1055"
 
 [[package]]
 name = "edon"
-version = "0.0.17"
+version = "0.0.18"
 dependencies = [
  "anyhow",
  "bitflags",
@@ -493,9 +493,9 @@ dependencies = [
 
 [[package]]
 name = "libnode_sys"
-version = "0.0.6"
+version = "0.0.7"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "e6edc6394a1f7ec331beac4f573b2750d306be812a8598be607afefc9801c1b6"
+checksum = "9108e8123582dd81f56ea05ff0cab887c8f2a6567a60717f06d8e861b3880809"
 dependencies = [
  "libloading",
 ]

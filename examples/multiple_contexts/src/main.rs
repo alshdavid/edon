@@ -10,7 +10,7 @@ pub fn main() -> anyhow::Result<()> {
   // Declare some global variables
   wk0.eval("globalThis.i = 0;")?;
   wk1.eval("globalThis.i = 0;")?;
-  wk2.eval("globalThis.i = ;")?;
+  wk2.eval("globalThis.i = 0;")?;
 
   // Do work on global variables
   for _ in 0..100 {
