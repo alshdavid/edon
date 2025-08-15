@@ -2,10 +2,11 @@ use std::sync::atomic::Ordering;
 use std::sync::mpsc::channel;
 use std::sync::mpsc::Sender;
 
+use napi::JsUnknown;
+use napi::Env;
+
 use crate::internal::NodejsMainEvent;
 use crate::internal::NodejsWorkerEvent;
-use crate::napi::JsUnknown;
-use crate::Env;
 use crate::NodejsOptions;
 use crate::NODEJS_CONTEXT_COUNT;
 

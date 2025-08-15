@@ -8,9 +8,9 @@ use std::ptr;
 use std::sync::LazyLock;
 use std::sync::RwLock;
 
-use crate::napi::JsObject;
-use crate::napi::NapiValue;
-use crate::Env;
+use napi::Env;
+use napi::JsObject;
+use napi::NapiValue;
 
 type InitFn =
   unsafe extern "C" fn(libnode_sys::napi_env, libnode_sys::napi_value) -> libnode_sys::napi_value;
@@ -49,8 +49,13 @@ pub fn napi_module_register<
   let wrapped_fn = move |napi_env: libnode_sys::napi_env,
                          napi_value: libnode_sys::napi_value|
         -> libnode_sys::napi_value {
-    let env = unsafe { Env::from_raw(napi_env) };
-    let exports = unsafe { JsObject::from_raw_unchecked(napi_env, napi_value) };
+    let env = unsafe { Env::from_raw(napi_env as napi::sys::napi_env) };
+    let exports = unsafe {
+      JsObject::from_raw_unchecked(
+        napi_env as napi::sys::napi_env,
+        napi_value as napi::sys::napi_value,
+      )
+    };
     register_function(env, exports).unwrap();
     napi_value
   };

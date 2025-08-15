@@ -5,12 +5,13 @@ use std::sync::mpsc::channel;
 use std::sync::mpsc::Sender;
 use std::sync::OnceLock;
 
+use napi::JsObject;
+use napi::JsUnknown;
+use napi::Env;
+
 use super::internal;
 use super::NodejsWorker;
 use crate::internal::NodejsMainEvent;
-use crate::napi::JsObject;
-use crate::napi::JsUnknown;
-use crate::Env;
 use crate::NodejsOptions;
 
 // Due to a quirk of v8, only one instance of Nodejs can be used per process.
@@ -42,7 +43,8 @@ impl Nodejs {
     NODEJS_CONTEXT_COUNT.fetch_add(1, Ordering::AcqRel);
 
     let nodejs = NODEJS.get_or_init(move || {
-      let _ = libnode_sys::load::cdylib(path);
+      let _ = libnode_sys::load::cdylib(path.as_ref());
+      napi::setup(path.as_ref());
       let tx_main = internal::start_node_instance(args)?;
       Ok(tx_main)
     });

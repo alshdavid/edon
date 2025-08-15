@@ -15,7 +15,7 @@ pub enum Error {
   LibnodeSymbolNotFound,
   Generic(String),
   IoError(Arc<std::io::Error>),
-  NapiError(crate::napi::Error),
+  NapiError(napi::Error),
 }
 
 impl std::fmt::Debug for Error {
@@ -87,7 +87,7 @@ impl From<&Error> for Error {
       Error::LibnodeSymbolNotFound => Error::LibnodeSymbolNotFound,
       Error::Generic(s) => Error::Generic(s.clone()),
       Error::IoError(error) => Error::IoError(error.clone()),
-      Error::NapiError(error) => Error::NapiError(error.clone()),
+      Error::NapiError(error) => Error::NapiError(error.try_clone().unwrap()),
     }
   }
 }
@@ -104,8 +104,8 @@ impl From<std::io::Error> for Error {
   }
 }
 
-impl From<crate::napi::Error> for Error {
-  fn from(value: crate::napi::Error) -> Self {
+impl From<napi::Error> for Error {
+  fn from(value: napi::Error) -> Self {
     Self::NapiError(value)
   }
 }

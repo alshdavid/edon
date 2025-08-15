@@ -9,12 +9,12 @@ use std::sync::Mutex;
 use std::thread;
 
 use super::JsTransferable;
-use crate::napi::threadsafe_function::ErrorStrategy;
-use crate::napi::threadsafe_function::ThreadsafeFunctionCallMode;
-use crate::napi::JsFunction;
-use crate::napi::JsString;
-use crate::napi::JsUnknown;
-use crate::Env;
+use napi::threadsafe_function::ErrorStrategy;
+use napi::threadsafe_function::ThreadsafeFunctionCallMode;
+use napi::JsFunction;
+use napi::JsString;
+use napi::JsUnknown;
+use napi::Env;
 
 static STARTED: AtomicBool = AtomicBool::new(false);
 
