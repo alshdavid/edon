@@ -27,11 +27,11 @@ pub enum NodejsMainEvent {
   },
   Eval {
     code: String,
-    callback: Box<dyn 'static + Send + FnOnce()>,
+    callback: Box<dyn 'static + Send + FnOnce(Env, JsUnknown)>,
   },
   EvalTypeScript {
     code: String,
-    callback: Box<dyn 'static + Send + FnOnce()>,
+    callback: Box<dyn 'static + Send + FnOnce(Env, JsUnknown)>,
   },
   Require {
     specifier: String,
@@ -58,11 +58,11 @@ pub enum NodejsWorkerEvent {
   },
   Eval {
     code: String,
-    callback: Box<dyn 'static + Send + FnOnce()>,
+    callback: Box<dyn 'static + Send + FnOnce(Env, JsUnknown)>,
   },
   EvalTypeScript {
     code: String,
-    callback: Box<dyn 'static + Send + FnOnce()>,
+    callback: Box<dyn 'static + Send + FnOnce(Env, JsUnknown)>,
   },
   Require {
     specifier: String,
@@ -118,17 +118,22 @@ pub fn start_node_instance<Args: AsRef<str>>(
                 let payload = ctx.env.create_string(&code)?.into_unknown();
                 let callback = {
                   let cell = Cell::new(Some(callback));
-                  move || {
+                  move |env, val| {
                     let func = cell
                       .take()
                       .expect("This function should not be called more than once");
-                    func()
+                    func(env, val)
                   }
                 };
                 let resolve = ctx
                   .env
                   .create_function_from_closure("NodejsEvent::done", move |ctx| {
-                    callback();
+                    let ret = if ctx.length > 0 {
+                      ctx.get(0)?
+                    } else {
+                      ctx.env.get_undefined()?.into_unknown()
+                    };
+                    callback(*ctx.env, ret);
                     ctx.env.get_undefined()
                   })?
                   .into_unknown();
@@ -140,17 +145,22 @@ pub fn start_node_instance<Args: AsRef<str>>(
                 let payload = ctx.env.create_string(&code)?.into_unknown();
                 let callback = {
                   let cell = Cell::new(Some(callback));
-                  move || {
+                  move |env, val| {
                     let func = cell
                       .take()
                       .expect("This function should not be called more than once");
-                    func()
+                    func(env, val)
                   }
                 };
                 let resolve = ctx
                   .env
                   .create_function_from_closure("NodejsEvent::done", move |ctx| {
-                    callback();
+                    let ret = if ctx.length > 0 {
+                      ctx.get(0)?
+                    } else {
+                      ctx.env.get_undefined()?.into_unknown()
+                    };
+                    callback(*ctx.env, ret);
                     ctx.env.get_undefined()
                   })?
                   .into_unknown();
@@ -271,17 +281,22 @@ pub fn start_node_instance<Args: AsRef<str>>(
               let payload = ctx.env.create_string(&code)?.into_unknown();
               let callback = {
                 let cell = Cell::new(Some(callback));
-                move || {
+                move |env, val| {
                   let func = cell
                     .take()
                     .expect("This function should not be called more than once");
-                  func()
+                  func(env, val)
                 }
               };
               let resolve = ctx
                 .env
-                .create_function_from_closure("NodejsContextEvent::done", move |ctx| {
-                  callback();
+                .create_function_from_closure("NodejsEvent::done", move |ctx| {
+                  let ret = if ctx.length > 0 {
+                    ctx.get(0)?
+                  } else {
+                    ctx.env.get_undefined()?.into_unknown()
+                  };
+                  callback(*ctx.env, ret);
                   ctx.env.get_undefined()
                 })?
                 .into_unknown();
@@ -293,17 +308,22 @@ pub fn start_node_instance<Args: AsRef<str>>(
               let payload = ctx.env.create_string(&code)?.into_unknown();
               let callback = {
                 let cell = Cell::new(Some(callback));
-                move || {
+                move |env, val| {
                   let func = cell
                     .take()
                     .expect("This function should not be called more than once");
-                  func()
+                  func(env, val)
                 }
               };
               let resolve = ctx
                 .env
-                .create_function_from_closure("NodejsContextEvent::done", move |ctx| {
-                  callback();
+                .create_function_from_closure("NodejsEvent::done", move |ctx| {
+                  let ret = if ctx.length > 0 {
+                    ctx.get(0)?
+                  } else {
+                    ctx.env.get_undefined()?.into_unknown()
+                  };
+                  callback(*ctx.env, ret);
                   ctx.env.get_undefined()
                 })?
                 .into_unknown();

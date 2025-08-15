@@ -9,6 +9,7 @@ use super::internal;
 use super::NodejsWorker;
 use crate::internal::NodejsMainEvent;
 use crate::napi::JsObject;
+use crate::napi::JsUnknown;
 use crate::Env;
 use crate::NodejsOptions;
 
@@ -104,7 +105,7 @@ impl Nodejs {
   pub fn eval<Code: AsRef<str>>(
     &self,
     code: Code,
-    callback: impl 'static + Send + FnOnce(),
+    callback: impl 'static + Send + FnOnce(Env, JsUnknown),
   ) -> crate::Result<()> {
     self
       .tx_main
@@ -130,7 +131,7 @@ impl Nodejs {
       .tx_main
       .send(NodejsMainEvent::Eval {
         code: code.as_ref().to_string(),
-        callback: Box::new(move || {
+        callback: Box::new(move |_env, _val| {
           tx.send(Ok(())).unwrap();
         }),
       })
@@ -143,7 +144,7 @@ impl Nodejs {
   pub fn eval_typescript<Code: AsRef<str>>(
     &self,
     code: Code,
-    callback: impl 'static + Send + FnOnce(),
+    callback: impl 'static + Send + FnOnce(Env, JsUnknown),
   ) -> crate::Result<()> {
     self
       .tx_main
@@ -167,7 +168,7 @@ impl Nodejs {
       .tx_main
       .send(NodejsMainEvent::EvalTypeScript {
         code: code.as_ref().to_string(),
-        callback: Box::new(move || {
+        callback: Box::new(move |_env, _val| {
           tx.send(Ok(())).unwrap();
         }),
       })

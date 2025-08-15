@@ -4,6 +4,7 @@ use std::sync::mpsc::Sender;
 
 use crate::internal::NodejsMainEvent;
 use crate::internal::NodejsWorkerEvent;
+use crate::napi::JsUnknown;
 use crate::Env;
 use crate::NodejsOptions;
 use crate::NODEJS_CONTEXT_COUNT;
@@ -40,13 +41,10 @@ impl NodejsWorker {
     });
   }
 
-  /// Evaluate Block of Commonjs JavaScript
-  ///
-  /// The last line of the script will be returned
-  pub fn eval<Code: AsRef<str>>(
+    pub fn eval<Code: AsRef<str>>(
     &self,
     code: Code,
-    callback: impl 'static + Send + FnOnce(),
+    callback: impl 'static + Send + FnOnce(Env, JsUnknown),
   ) -> crate::Result<()> {
     self
       .tx_wrk
@@ -72,7 +70,7 @@ impl NodejsWorker {
       .tx_wrk
       .send(NodejsWorkerEvent::Eval {
         code: code.as_ref().to_string(),
-        callback: Box::new(move || {
+        callback: Box::new(move |_env, _val| {
           tx.send(Ok(())).unwrap();
         }),
       })
@@ -85,7 +83,7 @@ impl NodejsWorker {
   pub fn eval_typescript<Code: AsRef<str>>(
     &self,
     code: Code,
-    callback: impl 'static + Send + FnOnce(),
+    callback: impl 'static + Send + FnOnce(Env, JsUnknown),
   ) -> crate::Result<()> {
     self
       .tx_wrk
@@ -109,7 +107,7 @@ impl NodejsWorker {
       .tx_wrk
       .send(NodejsWorkerEvent::EvalTypeScript {
         code: code.as_ref().to_string(),
-        callback: Box::new(move || {
+        callback: Box::new(move |_env, _val| {
           tx.send(Ok(())).unwrap();
         }),
       })
