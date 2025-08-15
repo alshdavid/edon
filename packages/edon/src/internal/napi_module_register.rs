@@ -66,6 +66,8 @@ pub fn napi_module_register<
   let target_fn: InitFn = unsafe { std::mem::transmute(target_fn_ptr) };
   std::mem::forget(target_fn_closure);
 
+  println!("hey {}", module_name.as_ref());
+
   let nm = Box::into_raw(Box::new(libnode_sys::napi_module {
     nm_version: 131 as c_int,
     nm_flags: 0 as c_uint,

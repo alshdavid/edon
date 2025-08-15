@@ -87,7 +87,7 @@ impl From<&Error> for Error {
       Error::LibnodeSymbolNotFound => Error::LibnodeSymbolNotFound,
       Error::Generic(s) => Error::Generic(s.clone()),
       Error::IoError(error) => Error::IoError(error.clone()),
-      Error::NapiError(error) => Error::NapiError(error.try_clone().unwrap()),
+      Error::NapiError(error) => Error::NapiError(error.clone()),
     }
   }
 }
