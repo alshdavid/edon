@@ -22,14 +22,3 @@ pub fn start_blocking<Args: AsRef<str>>(argv: &[Args]) -> crate::Result<()> {
 
   Ok(())
 }
-
-pub fn eval_blocking<Code: AsRef<str>>(code: Code) -> crate::Result<()> {
-  start_blocking(&[
-    "--disable-warning=ExperimentalWarning",
-    "--experimental-strip-types",
-    "--experimental-vm-modules",
-    "-e",
-    code.as_ref(),
-  ])?;
-  Ok(())
-}

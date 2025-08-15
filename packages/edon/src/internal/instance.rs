@@ -18,16 +18,36 @@ use crate::Env;
 static STARTED: AtomicBool = AtomicBool::new(false);
 
 pub enum NodejsMainEvent {
-  StartCommonjsWorker {
+  Exec {
+    callback: Box<dyn Send + FnOnce(Env) -> crate::Result<()>>,
+    resolve: Sender<crate::Result<()>>,
+  },
+  StopMain {
+    resolve: Sender<()>,
+  },
+  Eval {
+    code: String,
+    resolve: Sender<crate::Result<()>>,
+  },
+  EvalTypeScript {
+    code: String,
+    resolve: Sender<crate::Result<()>>,
+  },
+  Require {
+    specifier: String,
+    resolve: Sender<crate::Result<()>>,
+  },
+  Import {
+    specifier: String,
+    resolve: Sender<crate::Result<()>>,
+  },
+  StartWorker {
     rx_wrk: Receiver<NodejsWorkerEvent>,
     argv: Vec<String>,
     resolve: Sender<String>,
   },
-  StopCommonjsWorker {
+  StopWorker {
     id: String,
-    resolve: Sender<()>,
-  },
-  StopMain {
     resolve: Sender<()>,
   },
 }
@@ -41,7 +61,7 @@ pub enum NodejsWorkerEvent {
     code: String,
     resolve: Sender<crate::Result<()>>,
   },
-  EvalModule {
+  EvalTypeScript {
     code: String,
     resolve: Sender<crate::Result<()>>,
   },
@@ -55,7 +75,7 @@ pub enum NodejsWorkerEvent {
   },
 }
 
-pub fn start_node_instance() -> crate::Result<Sender<NodejsMainEvent>> {
+pub fn start_node_instance<Args: AsRef<str>>(args: &[Args]) -> crate::Result<Sender<NodejsMainEvent>> {
   if STARTED
     .compare_exchange(false, true, Ordering::Acquire, Ordering::Acquire)
     .is_err()
@@ -64,7 +84,7 @@ pub fn start_node_instance() -> crate::Result<Sender<NodejsMainEvent>> {
   };
 
   let (tx, rx) = channel();
-  let rx = Arc::new(Mutex::new(Some(rx)));
+  let rx: Arc<Mutex<Option<Receiver<NodejsMainEvent>>>> = Arc::new(Mutex::new(Some(rx)));
 
   super::napi_module_register("edon:main", move |env, mut exports| {
     let js_on_event = env.create_function_from_closure("edon::main::onEvent", {
@@ -76,12 +96,80 @@ pub fn start_node_instance() -> crate::Result<Sender<NodejsMainEvent>> {
           .create_threadsafe_function::<NodejsMainEvent, JsUnknown, _, ErrorStrategy::Fatal>(
             0,
             move |ctx| match ctx.value {
-              NodejsMainEvent::StartCommonjsWorker {
+              NodejsMainEvent::Exec { callback, resolve } => {
+                resolve.send(callback(ctx.env)).ok();
+                Ok(vec![])
+              }
+              NodejsMainEvent::StopMain { resolve } => {
+                let action = ctx.env.create_uint32(0)?.into_unknown();
+                let payload = ctx.env.get_undefined()?.into_unknown();
+                let resolve = ctx
+                  .env
+                  .create_function_from_closure("NodejsEvent::done", move |ctx| {
+                    resolve.send(()).unwrap();
+                    ctx.env.get_undefined()
+                  })?
+                  .into_unknown();
+                Ok(vec![action, payload, resolve])
+              }
+              NodejsMainEvent::Eval { code, resolve } => {
+                let action = ctx.env.create_uint32(1)?.into_unknown();
+                let payload = ctx.env.create_string(&code)?.into_unknown();
+                let resolve = ctx
+                  .env
+                  .create_function_from_closure("NodejsEvent::done", move |ctx| {
+                    resolve.send(Ok(())).unwrap();
+                    ctx.env.get_undefined()
+                  })?
+                  .into_unknown();
+
+                Ok(vec![action, payload, resolve])
+              }
+              NodejsMainEvent::EvalTypeScript { code, resolve } => {
+                let action = ctx.env.create_uint32(2)?.into_unknown();
+                let payload = ctx.env.create_string(&code)?.into_unknown();
+                let resolve = ctx
+                  .env
+                  .create_function_from_closure("NodejsEvent::done", move |ctx| {
+                    resolve.send(Ok(())).unwrap();
+                    ctx.env.get_undefined()
+                  })?
+                  .into_unknown();
+
+                Ok(vec![action, payload, resolve])
+              }
+              NodejsMainEvent::Require { specifier, resolve } => {
+                let action = ctx.env.create_uint32(3)?.into_unknown();
+                let payload = ctx.env.create_string(&specifier)?.into_unknown();
+                let resolve = ctx
+                  .env
+                  .create_function_from_closure("NodejsEvent::done", move |ctx| {
+                    resolve.send(Ok(())).unwrap();
+                    ctx.env.get_undefined()
+                  })?
+                  .into_unknown();
+
+                Ok(vec![action, payload, resolve])
+              }
+              NodejsMainEvent::Import { specifier, resolve } => {
+                let action = ctx.env.create_uint32(4)?.into_unknown();
+                let payload = ctx.env.create_string(&specifier)?.into_unknown();
+                let resolve = ctx
+                  .env
+                  .create_function_from_closure("NodejsEvent::done", move |ctx| {
+                    resolve.send(Ok(())).unwrap();
+                    ctx.env.get_undefined()
+                  })?
+                  .into_unknown();
+
+                Ok(vec![action, payload, resolve])
+              }
+              NodejsMainEvent::StartWorker {
                 rx_wrk,
                 argv,
                 resolve,
               } => {
-                let action = ctx.env.create_uint32(0)?.into_unknown();
+                let action = ctx.env.create_uint32(5)?.into_unknown();
 
                 // [argv, tx_worker]
                 let mut payload = ctx.env.create_array(2)?;
@@ -109,22 +197,9 @@ pub fn start_node_instance() -> crate::Result<Sender<NodejsMainEvent>> {
 
                 Ok(vec![action, payload, resolve])
               }
-              NodejsMainEvent::StopCommonjsWorker { id, resolve } => {
-                let action = ctx.env.create_uint32(1)?.into_unknown();
+              NodejsMainEvent::StopWorker { id, resolve } => {
+                let action = ctx.env.create_uint32(6)?.into_unknown();
                 let payload = ctx.env.create_string(&id)?.into_unknown();
-                let resolve = ctx
-                  .env
-                  .create_function_from_closure("NodejsEvent::done", move |ctx| {
-                    resolve.send(()).unwrap();
-                    ctx.env.get_undefined()
-                  })?
-                  .into_unknown();
-
-                Ok(vec![action, payload, resolve])
-              }
-              NodejsMainEvent::StopMain { resolve } => {
-                let action = ctx.env.create_uint32(2)?.into_unknown();
-                let payload = ctx.env.get_undefined()?.into_unknown();
                 let resolve = ctx
                   .env
                   .create_function_from_closure("NodejsEvent::done", move |ctx| {
@@ -185,7 +260,7 @@ pub fn start_node_instance() -> crate::Result<Sender<NodejsMainEvent>> {
 
               Ok(vec![action, payload, resolve])
             }
-            NodejsWorkerEvent::EvalModule { code, resolve } => {
+            NodejsWorkerEvent::EvalTypeScript { code, resolve } => {
               let action = ctx.env.create_uint32(1)?.into_unknown();
               let payload = ctx.env.create_string(&code)?.into_unknown();
               let resolve = ctx
@@ -245,8 +320,11 @@ pub fn start_node_instance() -> crate::Result<Sender<NodejsMainEvent>> {
     Ok(exports)
   })?;
 
+  let mut args = args.iter().map(|v| v.as_ref().to_string()).collect::<Vec<String>>(); 
   std::thread::spawn(move || {
-    super::eval_blocking(format!("{};\n", crate::prelude::MAIN_JS)).unwrap();
+    args.push("-e".to_string());
+    args.push(format!("{};\n", crate::prelude::MAIN_JS));
+    super::start_blocking(&args).unwrap();
   });
 
   Ok(tx)

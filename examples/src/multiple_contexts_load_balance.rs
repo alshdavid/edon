@@ -14,7 +14,7 @@ use edon::napi::JsNumber;
 */
 pub fn main() -> anyhow::Result<()> {
   // Start Nodejs
-  let nodejs = edon::Nodejs::load_auto()?;
+  let nodejs = edon::Nodejs::load_default(edon::auto_resolve_libnode()?)?;
 
   // Number of threads to spawn and number to sum until
   let threads = 5;

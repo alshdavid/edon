@@ -1,5 +1,5 @@
 pub fn main() -> anyhow::Result<()> {
-  let nodejs = edon::Nodejs::load_auto()?;
+  let nodejs = edon::Nodejs::load_default(edon::auto_resolve_libnode()?)?;
 
   // Register a native module
   nodejs.napi_module_register("example_native_module", |env, mut exports| {

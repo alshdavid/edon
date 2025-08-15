@@ -5,6 +5,10 @@ use std::path::PathBuf;
 /// [Read more here](https://nodejs.org/api/cli.html)
 #[derive(Debug, Default, Clone)]
 pub struct NodejsOptions {
+  /// Path to libnode.so / libnode.dylib / libnode.dll
+  pub libnode_path: PathBuf,
+  /// CLI arguments
+  pub args: Vec<String>,
   /// Sets the max memory size of V8's old memory section. As memory consumption approaches the limit, V8 will spend more time on garbage collection in an effort to free unused memory.
   ///
   /// On a machine with 2 GiB of memory, consider setting this to 1536 (1.5 GiB) to leave some memory for other uses and avoid swapping.
@@ -50,11 +54,18 @@ pub struct NodejsOptions {
   /// The V8 flags and CPU features are compatible with that of the binary that generates the snapshot.
   /// If they don't match, Node.js refuses to load the snapshot and exits with status code 1.
   pub snapshot_blob: Option<PathBuf>,
+
+  // "--disable-warning=ExperimentalWarning",
+  pub disable_warnings: Vec<String>
 }
 
 impl NodejsOptions {
   pub(crate) fn as_argv(&self) -> Vec<String> {
     let mut argv = vec![];
+
+    for disable_warning in  &self.disable_warnings {
+      argv.push(format!("--disable-warning={}", disable_warning));
+    }
 
     if let Some(conditions) = &self.conditions {
       for condition in conditions {
@@ -92,6 +103,8 @@ impl NodejsOptions {
         snapshot_blob.to_str().unwrap()
       ));
     }
+
+    argv.extend(self.args.clone());
 
     argv
   }

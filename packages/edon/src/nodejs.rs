@@ -5,12 +5,9 @@ use std::sync::mpsc::channel;
 use std::sync::mpsc::Sender;
 use std::sync::OnceLock;
 
-use libnode_sys::constants::LIB_NAME;
-
 use super::internal;
 use super::NodejsWorker;
 use crate::internal::NodejsMainEvent;
-use crate::internal::PathExt;
 use crate::napi::JsObject;
 use crate::Env;
 use crate::NodejsOptions;
@@ -37,12 +34,15 @@ impl Nodejs {
   /// MacOS:    "libnode.dylib"
   /// Linux:    "libnode.so"
   /// ```
-  pub fn load<P: AsRef<Path>>(path: P) -> crate::Result<Nodejs> {
+  pub fn load_with_args<P: AsRef<Path>, Args: AsRef<str>>(
+    path: P,
+    args: &[Args],
+  ) -> crate::Result<Nodejs> {
     NODEJS_CONTEXT_COUNT.fetch_add(1, Ordering::AcqRel);
 
     let nodejs = NODEJS.get_or_init(move || {
       let _ = libnode_sys::load::cdylib(path);
-      let tx_main = internal::start_node_instance()?;
+      let tx_main = internal::start_node_instance(args)?;
       Ok(tx_main)
     });
 
@@ -54,36 +54,24 @@ impl Nodejs {
     }
   }
 
-  /// Look for libnode.so from
-  ///
-  /// * $EDON_LIBNODE_PATH
-  /// * <exe_path>/libnode.so
-  /// * <exe_path>/lib/libnode.so
-  /// * <exe_path>/share/libnode.so
-  /// * <exe_path>/../lib/libnode.so
-  /// * <exe_path>/../share/libnode.so
-  pub fn load_auto() -> crate::Result<Nodejs> {
-    if let Ok(path) = std::env::var("EDON_LIBNODE_PATH") {
-      Self::load(&path)
-    } else {
-      let dirname = std::env::current_exe()?.try_parent()?;
+  /// Load libnode by path
+  /// ```
+  /// Windows:  "libnode.dll"
+  /// MacOS:    "libnode.dylib"
+  /// Linux:    "libnode.so"
+  /// ```
+  pub fn load_default<P: AsRef<Path>>(path: P) -> crate::Result<Nodejs> {
+    Self::load_with_args(path, &[] as &[&str])
+  }
 
-      let paths = vec![
-        dirname.join(LIB_NAME),
-        dirname.join("lib").join(LIB_NAME),
-        dirname.join("share").join(LIB_NAME),
-        dirname.join("..").join("lib").join(LIB_NAME),
-        dirname.join("..").join("share").join(LIB_NAME),
-      ];
-
-      for path in paths {
-        if std::fs::exists(&path)? {
-          return Self::load(&path);
-        }
-      }
-
-      Err(crate::Error::LibnodeNotFound)
-    }
+  /// Load libnode by path
+  /// ```
+  /// Windows:  "libnode.dll"
+  /// MacOS:    "libnode.dylib"
+  /// Linux:    "libnode.so"
+  /// ```
+  pub fn load(options: NodejsOptions) -> crate::Result<Nodejs> {
+    Self::load_with_args(options.libnode_path.clone(), &options.as_argv())
   }
 
   /// Register native module
@@ -111,6 +99,97 @@ impl Nodejs {
     options: &NodejsOptions,
   ) -> crate::Result<NodejsWorker> {
     NodejsWorker::start(options, self.tx_main.clone())
+  }
+
+  /// Evaluate Block of Commonjs JavaScript
+  ///
+  /// The last line of the script will be returned
+  pub fn eval<Code: AsRef<str>>(
+    &self,
+    code: Code,
+  ) -> crate::Result<()> {
+    let (tx, rx) = channel();
+    let tx_eval = self.tx_main.clone();
+    let code = code.as_ref().to_string();
+
+    tx_eval
+      .send(NodejsMainEvent::Eval { code, resolve: tx })
+      .ok();
+
+    rx.recv().unwrap()
+  }
+
+  /// Evaluate Block of ESM JavaScript
+  pub fn eval_typescript<Code: AsRef<str>>(
+    &self,
+    code: Code,
+  ) -> crate::Result<()> {
+    let (tx, rx) = channel();
+    let tx_eval = self.tx_main.clone();
+    let code = code.as_ref().to_string();
+
+    tx_eval
+      .send(NodejsMainEvent::EvalTypeScript { code, resolve: tx })
+      .ok();
+
+    rx.recv().unwrap()
+  }
+
+  /// Evaluate Native JavaScript
+  ///
+  /// This will provide a Nodejs Env and allow execution of
+  /// native code in the JavaScript context
+  pub fn exec<F: 'static + Send + FnOnce(Env) -> crate::Result<()>>(
+    &self,
+    callback: F,
+  ) -> crate::Result<()> {
+    let (tx, rx) = channel();
+
+    self
+      .tx_main
+      .send(NodejsMainEvent::Exec {
+        callback: Box::new(callback),
+        resolve: tx,
+      })
+      .ok();
+
+    rx.recv().unwrap()
+  }
+
+  /// Call Nodejs's require() function to import code
+  pub fn require<Specifier: AsRef<str>>(
+    &self,
+    specifier: Specifier,
+  ) -> crate::Result<()> {
+    let (tx, rx) = channel();
+
+    self
+      .tx_main
+      .send(NodejsMainEvent::Require {
+        specifier: specifier.as_ref().to_string(),
+        resolve: tx,
+      })
+      .ok();
+
+    rx.recv().unwrap()
+  }
+
+  /// Call Nodejs's await import() to import code
+  pub fn import<Specifier: AsRef<str>>(
+    &self,
+    specifier: Specifier,
+  ) -> crate::Result<()> {
+    let (tx, rx) = channel();
+
+    self
+      .tx_main
+      .send(NodejsMainEvent::Import {
+        specifier: specifier.as_ref().to_string(),
+        resolve: tx,
+      })
+      .ok();
+
+    rx.recv().unwrap()
   }
 }
 

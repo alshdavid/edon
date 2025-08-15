@@ -2,8 +2,8 @@ use std::sync::atomic::Ordering;
 use std::sync::mpsc::channel;
 use std::sync::mpsc::Sender;
 
-use crate::internal::NodejsWorkerEvent;
 use crate::internal::NodejsMainEvent;
+use crate::internal::NodejsWorkerEvent;
 use crate::Env;
 use crate::NodejsOptions;
 use crate::NODEJS_CONTEXT_COUNT;
@@ -24,7 +24,7 @@ impl NodejsWorker {
     let (tx_wrk, rx_wrk) = channel::<NodejsWorkerEvent>();
 
     tx_main
-      .send(NodejsMainEvent::StartCommonjsWorker {
+      .send(NodejsMainEvent::StartWorker {
         rx_wrk,
         argv: options.as_argv(),
         resolve: tx,
@@ -59,7 +59,7 @@ impl NodejsWorker {
   }
 
   /// Evaluate Block of ESM JavaScript
-  pub fn eval_module<Code: AsRef<str>>(
+  pub fn eval_typescript<Code: AsRef<str>>(
     &self,
     code: Code,
   ) -> crate::Result<()> {
@@ -68,7 +68,7 @@ impl NodejsWorker {
     let code = code.as_ref().to_string();
 
     tx_eval
-      .send(NodejsWorkerEvent::EvalModule { code, resolve: tx })
+      .send(NodejsWorkerEvent::EvalTypeScript { code, resolve: tx })
       .ok();
 
     rx.recv().unwrap()
@@ -95,6 +95,7 @@ impl NodejsWorker {
     rx.recv().unwrap()
   }
 
+  /// Call Nodejs's require() function to import code
   pub fn require<Specifier: AsRef<str>>(
     &self,
     specifier: Specifier,
@@ -112,6 +113,7 @@ impl NodejsWorker {
     rx.recv().unwrap()
   }
 
+  /// Call Nodejs's await import() to import code
   pub fn import<Specifier: AsRef<str>>(
     &self,
     specifier: Specifier,
@@ -135,7 +137,7 @@ impl Drop for NodejsWorker {
     let (tx, rx) = channel();
     self
       .tx_main
-      .send(NodejsMainEvent::StopCommonjsWorker {
+      .send(NodejsMainEvent::StopWorker {
         id: self.id.clone(),
         resolve: tx,
       })

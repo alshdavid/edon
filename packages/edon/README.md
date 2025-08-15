@@ -10,7 +10,7 @@ Features:
 - [x] Multi-threading support
 - [x] Evaluate arbitrary JavaScript
 - [x] Execute arbitrary n-api code
-- [x] Support for async Rust
+- [ ] Support for async Rust (Experimental, coming soon)
 
 # Use Cases
 
@@ -28,20 +28,36 @@ Evaluate JavaScript as a string
 ```rust
 pub fn main() -> std::io::Result<()> {
   // Load the libnode dynamic library
-  let nodejs = edon::Nodejs::load("/path/to/libnode.so")?;
+  let nodejs = edon::Nodejs::load_default("/path/to/libnode.so")?;
 
-  // Nodejs context runs on its own thread
-  // you can have multiple and load balance between them
-  let ctx = nodejs.spawn_worker_thread()?;
-
-  // Execute JavaScript and TypeScript with
-  ctx.eval(r#"
-    const message: string = "Hello World TypeScript"
-    console.log(message)
+  // Execute JavaScript with
+  nodejs.eval(r#"
+    const message = "Hello World";
+    console.log(message);
   "#)?;
+
+  // Execute TypeScript with
+  nodejs.eval_typescript(r#"
+    const message: string = "Hello World TypeScript";
+    console.log(message);
+  "#)?;
+
+  // Execute n-api code with
+  nodejs.exec(|env| {
+    let mut global_this = env.get_global()?;
+
+    let key = env.create_string("meaningOfLife")?;
+    let value = env.create_uint32(42)?;
+
+    global_this.set_property(key, value)?;
+    Ok(())
+  })?;
+
+  nodejs.eval("console.log(globalThis.meaningOfLife)")?;
 
   Ok(())
 }
+
 ```
 
 ## Native Extensions
@@ -50,16 +66,16 @@ Register a Napi extension and use the napi-rs API to work with the values
 
 ```rust
 pub fn main() -> anyhow::Result<()> {
-  let nodejs = edon::Nodejs::load_auto()?;
+  let nodejs = edon::Nodejs::load_default("/path/to/libnode.so")?;
 
   // Register a native module
   nodejs.napi_module_register(
     "example_native_module", 
     |env, mut exports| {
       // Create an object that looks like
-      // { meaning: 42 }
+      // { meaningOfLife: 42 }
 
-      let key = env.create_string("meaning")?;
+      let key = env.create_string("meaningOfLife")?;
       let value = env.create_uint32(42)?;
       exports.set_property(key, value)?;
 
@@ -67,13 +83,10 @@ pub fn main() -> anyhow::Result<()> {
       Ok(exports)
     })?;
 
-  // Start a Nodejs context
-  let ctx0 = nodejs.spawn_worker_thread()?;
-
   // Evaluate arbitrary code within the context
-  ctx0.eval(r#"
+  nodejs.eval(r#"
     const native = process._linkedBinding('example_native_module')
-    console.log(native)
+    console.log(native) // { meaningOfLife: 42 }
   "#)?;
 
   Ok(())
@@ -87,7 +100,7 @@ Node's n-api.
 
 ```rust
 pub fn main() -> anyhow::Result<()> {
-  let nodejs = edon::Nodejs::load_auto()?;
+  let nodejs = edon::Nodejs::load_default("/path/to/libnode.so")?;
 
   // Start a Nodejs context
   let ctx0 = nodejs.spawn_worker_thread()?;
@@ -102,7 +115,7 @@ pub fn main() -> anyhow::Result<()> {
     
     let mut global_this = env.get_global()?;
 
-    let key = env.create_string("meaning")?;
+    let key = env.create_string("meaningOfLife")?;
     let value = env.create_uint32(42)?;
 
     global_this.set_property(key, value)?;
@@ -111,74 +124,7 @@ pub fn main() -> anyhow::Result<()> {
   })?;
 
   // Inspect the value set by the native code
-  ctx0.eval("console.log(globalThis.meaning)")?; // "42"
-
-  Ok(())
-}
-
-```
-
-## Use Async Rust to interact with JsValues 
-
-Use a Rust async runtime that works cooperatively with Nodejs's libuv event loop to work with
-JavaScript values in a non-blocking/asynchronous fashion.
-
-```rust
-pub fn main() -> anyhow::Result<()> {
-  let nodejs = edon::Nodejs::load_auto()?;
-
-  /*
-    Register a native extension with the following interface
-
-    interface MyAsyncExtension {
-      add_one(a: number): Promise<number>
-    }
-  */
-  nodejs.napi_module_register("my_async_extension", |env, mut exports| {
-    // Declare a function called "add_one" on the "module.exports"
-    exports.set_named_property("add_one", env.create_function_from_closure("add_one", |ctx| {
-      // Get the first argument passed to it. Note that a "JsRc<T>" 
-      // prevents the Nodejs GC from freeing the value which allows it
-      // to work in async contexts
-      let arg0 = ctx.get::<JsRc<JsNumber>>(0)?;
-      
-      // Spawn a promise that return the summed value
-      // Note: This works using a custom async runtime that runs on 
-      //       the Nodejs thread cooperatively with libuv.
-      //       Make sure you spawn an OS thread or use a runtime like
-      //       rayon or tokio _in addition_ to do actual work on
-      ctx.env.spawn_local_promise({
-        // Clone the env and pass it into the async closure
-        let env = ctx.env.clone();
-        async move {
-          // Do some work asynchronously coordinate via channels.
-          async_io::Timer::after(Duration::from_secs(1)).await;
-          let value = arg0.get_int32()?;
-
-          // Return the value back to JavaScript
-          let js_value = env.create_int32(value + 1)?;
-          Ok(js_value)
-        }
-      })
-    })?)?;
-
-    Ok(exports)
-  })?;
-
-  // Start a new Nodejs context
-  let ctx0 = nodejs.spawn_worker_thread()?;
-
-  // Consume the native module
-  ctx0.eval(
-    r#"
-    const native = process._linkedBinding('my_async_extension');
-
-    (async () => {
-      const result = await native.add_one(41)
-      console.log(result)                       // "42"
-    })();
-  "#,
-  )?;
+  ctx0.eval("console.log(globalThis.meaningOfLife)")?; // "42"
 
   Ok(())
 }
@@ -193,13 +139,13 @@ Offering prebuilt binaries with a C FFI is currently under development, however 
 [https://github.com/alshdavid/libnode-prebuilt](https://github.com/alshdavid/libnode-prebuilt)
 
 ```bash
-mkdir -p /opt/libnode
+mkdir -p $HOME/.local/libnode/24
 
 curl -L \
-  --url https://github.com/alshdavid/libnode-prebuilt/releases/download/v22.15.0/libnode-linux-amd64.tar.xz \
-  | tar -xJvf - -C /opt/libnode
+  --url https://github.com/alshdavid/libnode-prebuilt/releases/download/v24/libnode-linux-amd64.tar.xz \
+  | tar -xJvf - -C $HOME/.local/libnode/24
 
-export EDON_LIBNODE_PATH="/opt/libnode/libnode.so"
+export EDON_LIBNODE_PATH="$HOME/.local/libnode/24/libnode.so"
 ```
 
 ### Distributing `libnode` with your application

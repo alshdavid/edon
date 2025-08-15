@@ -1,5 +1,5 @@
 pub fn main() -> anyhow::Result<()> {
-  let nodejs = edon::Nodejs::load_auto()?;
+  let nodejs = edon::Nodejs::load_default(edon::auto_resolve_libnode()?)?;
 
   // Start a pool of contexts
   // Each context runs on its own thread

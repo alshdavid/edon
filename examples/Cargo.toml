@@ -1,11 +1,10 @@
 [package]
-name = "multiple_contexts_load_balance"
+name = "edon_examples"
 version = "0.0.0-local"
 authors = ["alshdavid"]
 edition = "2021"
 license = "MIT"
 
 [dependencies]
-edon = { path = "../../packages/edon" }
+edon = { path = "../packages/edon" }
 anyhow = "*"
-crossbeam = "*"
