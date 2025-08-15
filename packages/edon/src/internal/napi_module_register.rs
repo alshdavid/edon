@@ -81,7 +81,9 @@ pub fn napi_module_register<
     ],
   }));
 
-  napi::sys::napi_module_register(nm);
+  unsafe {
+    napi::sys::napi_module_register(nm);
+  }
 
   Ok(())
 }
