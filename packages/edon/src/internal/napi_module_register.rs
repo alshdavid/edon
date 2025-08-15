@@ -13,7 +13,7 @@ use napi::JsObject;
 use napi::NapiValue;
 
 type InitFn =
-  unsafe extern "C" fn(libnode_sys::napi_env, libnode_sys::napi_value) -> libnode_sys::napi_value;
+  unsafe extern "C" fn(napi::sys::napi_env, napi::sys::napi_value) -> napi::sys::napi_value;
 
 static NAPI_MODULE_NAMES: LazyLock<RwLock<HashMap<String, CString>>> =
   LazyLock::new(Default::default);
@@ -46,9 +46,9 @@ pub fn napi_module_register<
     return Err(crate::Error::NapiModuleAlreadyRegistered);
   }
 
-  let wrapped_fn = move |napi_env: libnode_sys::napi_env,
-                         napi_value: libnode_sys::napi_value|
-        -> libnode_sys::napi_value {
+  let wrapped_fn = move |napi_env: napi::sys::napi_env,
+                         napi_value: napi::sys::napi_value|
+        -> napi::sys::napi_value {
     let env = unsafe { Env::from_raw(napi_env as napi::sys::napi_env) };
     let exports = unsafe {
       JsObject::from_raw_unchecked(
@@ -66,9 +66,7 @@ pub fn napi_module_register<
   let target_fn: InitFn = unsafe { std::mem::transmute(target_fn_ptr) };
   std::mem::forget(target_fn_closure);
 
-  println!("hey {}", module_name.as_ref());
-
-  let nm = Box::into_raw(Box::new(libnode_sys::napi_module {
+  let nm = Box::into_raw(Box::new(napi::sys::napi_module {
     nm_version: 131 as c_int,
     nm_flags: 0 as c_uint,
     nm_filename: get_napi_module_register_name(&module_name).unwrap(),
@@ -83,9 +81,7 @@ pub fn napi_module_register<
     ],
   }));
 
-  unsafe {
-    libnode_sys::napi_module_register(nm);
-  }
+  napi::sys::napi_module_register(nm);
 
   Ok(())
 }

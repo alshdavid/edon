@@ -43,8 +43,9 @@ impl Nodejs {
     NODEJS_CONTEXT_COUNT.fetch_add(1, Ordering::AcqRel);
 
     let nodejs = NODEJS.get_or_init(move || {
-      let _ = libnode_sys::load::cdylib(path.as_ref());
+      let lib = libnode_sys::load::cdylib(path.as_ref()).unwrap();
       napi::setup(path.as_ref());
+
       let tx_main = internal::start_node_instance(args)?;
       Ok(tx_main)
     });
