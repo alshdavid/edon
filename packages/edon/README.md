@@ -31,13 +31,13 @@ pub fn main() -> std::io::Result<()> {
   let nodejs = edon::Nodejs::load_default("/path/to/libnode.so")?;
 
   // Execute JavaScript with
-  nodejs.eval(r#"
+  nodejs.eval_blocking(r#"
     const message = "Hello World";
     console.log(message);
   "#)?;
 
   // Execute TypeScript with
-  nodejs.eval_typescript(r#"
+  nodejs.eval_typescript_blocking(r#"
     const message: string = "Hello World TypeScript";
     console.log(message);
   "#)?;

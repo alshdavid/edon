@@ -30,11 +30,11 @@ pub fn main() -> anyhow::Result<()> {
     // Spawn a Rust thread
     handles.push(std::thread::spawn(move || -> anyhow::Result<i32> {
       // Set the initial value in the JavaScript context
-      ctx.eval("globalThis.sum = 0;")?;
+      ctx.eval_blocking("globalThis.sum = 0;")?;
 
       // Do addition in the JavaScript context using eval statements
       for _ in 0..add_until {
-        ctx.eval("globalThis.sum += 1;")?;
+        ctx.eval_blocking("globalThis.sum += 1;")?;
       }
 
       // Extract value stored inside JavaScript using native code

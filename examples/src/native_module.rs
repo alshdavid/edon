@@ -18,7 +18,7 @@ pub fn main() -> anyhow::Result<()> {
   let ctx0 = nodejs.spawn_worker_thread()?;
 
   // Evaluate arbitrary code within the context
-  ctx0.eval(
+  ctx0.eval_blocking(
     r#"
     const native = process._linkedBinding('example_native_module')
     console.log(native)

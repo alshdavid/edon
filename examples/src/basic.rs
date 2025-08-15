@@ -10,7 +10,7 @@ pub fn main() -> anyhow::Result<()> {
   })?;
 
   // Execute JavaScript with
-  nodejs.eval(
+  nodejs.eval_blocking(
     r#"
     const message = "Hello World"
     console.log(message)
@@ -18,7 +18,7 @@ pub fn main() -> anyhow::Result<()> {
   )?;
 
   // Execute TypeScript with
-  nodejs.eval_typescript(
+  nodejs.eval_typescript_blocking(
     r#"
     const message: string = "Hello World TypeScript"
     console.log(message)
@@ -36,7 +36,7 @@ pub fn main() -> anyhow::Result<()> {
     Ok(())
   })?;
 
-  nodejs.eval("console.log(globalThis.meaningOfLife)")?;
+  nodejs.eval_blocking("console.log(globalThis.meaningOfLife)")?;
 
   Ok(())
 }

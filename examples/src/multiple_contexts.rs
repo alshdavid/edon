@@ -8,21 +8,21 @@ pub fn main() -> anyhow::Result<()> {
   let wk2 = nodejs.spawn_worker_thread()?;
 
   // Declare some global variables
-  wk0.eval("globalThis.i = 0;")?;
-  wk1.eval("globalThis.i = 0;")?;
-  wk2.eval("globalThis.i = 0;")?;
+  wk0.eval_blocking("globalThis.i = 0;")?;
+  wk1.eval_blocking("globalThis.i = 0;")?;
+  wk2.eval_blocking("globalThis.i = 0;")?;
 
   // Do work on global variables
   for _ in 0..100 {
-    wk0.eval("globalThis.i += 1")?;
-    wk1.eval("globalThis.i += 1")?;
-    wk2.eval("globalThis.i += 1")?;
+    wk0.eval_blocking("globalThis.i += 1")?;
+    wk1.eval_blocking("globalThis.i += 1")?;
+    wk2.eval_blocking("globalThis.i += 1")?;
   }
 
   // Inspect values
-  wk0.eval("console.log(globalThis.i)")?; // "100"
-  wk1.eval("console.log(globalThis.i)")?; // "100"
-  wk2.eval("console.log(globalThis.i)")?; // "100"
+  wk0.eval_blocking("console.log(globalThis.i)")?; // "100"
+  wk1.eval_blocking("console.log(globalThis.i)")?; // "100"
+  wk2.eval_blocking("console.log(globalThis.i)")?; // "100"
 
   Ok(())
 }

@@ -56,14 +56,14 @@ pub struct NodejsOptions {
   pub snapshot_blob: Option<PathBuf>,
 
   // "--disable-warning=ExperimentalWarning",
-  pub disable_warnings: Vec<String>
+  pub disable_warnings: Vec<String>,
 }
 
 impl NodejsOptions {
   pub(crate) fn as_argv(&self) -> Vec<String> {
     let mut argv = vec![];
 
-    for disable_warning in  &self.disable_warnings {
+    for disable_warning in &self.disable_warnings {
       argv.push(format!("--disable-warning={}", disable_warning));
     }
 

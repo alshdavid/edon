@@ -101,19 +101,39 @@ impl Nodejs {
     NodejsWorker::start(options, self.tx_main.clone())
   }
 
+  pub fn eval<Code: AsRef<str>>(
+    &self,
+    code: Code,
+    callback: impl 'static + Send + FnOnce(),
+  ) -> crate::Result<()> {
+    self
+      .tx_main
+      .send(NodejsMainEvent::Eval {
+        code: code.as_ref().to_string(),
+        callback: Box::new(callback),
+      })
+      .unwrap();
+
+    Ok(())
+  }
+
   /// Evaluate Block of Commonjs JavaScript
   ///
   /// The last line of the script will be returned
-  pub fn eval<Code: AsRef<str>>(
+  pub fn eval_blocking<Code: AsRef<str>>(
     &self,
     code: Code,
   ) -> crate::Result<()> {
     let (tx, rx) = channel();
-    let tx_eval = self.tx_main.clone();
-    let code = code.as_ref().to_string();
 
-    tx_eval
-      .send(NodejsMainEvent::Eval { code, resolve: tx })
+    self
+      .tx_main
+      .send(NodejsMainEvent::Eval {
+        code: code.as_ref().to_string(),
+        callback: Box::new(move || {
+          tx.send(Ok(())).unwrap();
+        }),
+      })
       .ok();
 
     rx.recv().unwrap()
@@ -123,13 +143,34 @@ impl Nodejs {
   pub fn eval_typescript<Code: AsRef<str>>(
     &self,
     code: Code,
+    callback: impl 'static + Send + FnOnce(),
+  ) -> crate::Result<()> {
+    self
+      .tx_main
+      .send(NodejsMainEvent::EvalTypeScript {
+        code: code.as_ref().to_string(),
+        callback: Box::new(callback),
+      })
+      .unwrap();
+
+    Ok(())
+  }
+
+  /// Evaluate Block of ESM JavaScript
+  pub fn eval_typescript_blocking<Code: AsRef<str>>(
+    &self,
+    code: Code,
   ) -> crate::Result<()> {
     let (tx, rx) = channel();
-    let tx_eval = self.tx_main.clone();
-    let code = code.as_ref().to_string();
 
-    tx_eval
-      .send(NodejsMainEvent::EvalTypeScript { code, resolve: tx })
+    self
+      .tx_main
+      .send(NodejsMainEvent::EvalTypeScript {
+        code: code.as_ref().to_string(),
+        callback: Box::new(move || {
+          tx.send(Ok(())).unwrap();
+        }),
+      })
       .ok();
 
     rx.recv().unwrap()

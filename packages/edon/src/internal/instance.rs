@@ -1,3 +1,4 @@
+use std::cell::Cell;
 use std::sync::atomic::AtomicBool;
 use std::sync::atomic::Ordering;
 use std::sync::mpsc::channel;
@@ -27,11 +28,11 @@ pub enum NodejsMainEvent {
   },
   Eval {
     code: String,
-    resolve: Sender<crate::Result<()>>,
+    callback: Box<dyn 'static + Send + FnOnce()>,
   },
   EvalTypeScript {
     code: String,
-    resolve: Sender<crate::Result<()>>,
+    callback: Box<dyn 'static + Send + FnOnce()>,
   },
   Require {
     specifier: String,
@@ -59,11 +60,11 @@ pub enum NodejsWorkerEvent {
   },
   Eval {
     code: String,
-    resolve: Sender<crate::Result<()>>,
+    callback: Box<dyn 'static + Send + FnOnce()>,
   },
   EvalTypeScript {
     code: String,
-    resolve: Sender<crate::Result<()>>,
+    callback: Box<dyn 'static + Send + FnOnce()>,
   },
   Require {
     specifier: String,
@@ -75,7 +76,9 @@ pub enum NodejsWorkerEvent {
   },
 }
 
-pub fn start_node_instance<Args: AsRef<str>>(args: &[Args]) -> crate::Result<Sender<NodejsMainEvent>> {
+pub fn start_node_instance<Args: AsRef<str>>(
+  args: &[Args]
+) -> crate::Result<Sender<NodejsMainEvent>> {
   if STARTED
     .compare_exchange(false, true, Ordering::Acquire, Ordering::Acquire)
     .is_err()
@@ -112,26 +115,44 @@ pub fn start_node_instance<Args: AsRef<str>>(args: &[Args]) -> crate::Result<Sen
                   .into_unknown();
                 Ok(vec![action, payload, resolve])
               }
-              NodejsMainEvent::Eval { code, resolve } => {
+              NodejsMainEvent::Eval { code, callback } => {
                 let action = ctx.env.create_uint32(1)?.into_unknown();
                 let payload = ctx.env.create_string(&code)?.into_unknown();
+                let callback = {
+                  let cell = Cell::new(Some(callback));
+                  move || {
+                    let func = cell
+                      .take()
+                      .expect("This function should not be called more than once");
+                    func()
+                  }
+                };
                 let resolve = ctx
                   .env
                   .create_function_from_closure("NodejsEvent::done", move |ctx| {
-                    resolve.send(Ok(())).unwrap();
+                    callback();
                     ctx.env.get_undefined()
                   })?
                   .into_unknown();
 
                 Ok(vec![action, payload, resolve])
               }
-              NodejsMainEvent::EvalTypeScript { code, resolve } => {
+              NodejsMainEvent::EvalTypeScript { code, callback } => {
                 let action = ctx.env.create_uint32(2)?.into_unknown();
                 let payload = ctx.env.create_string(&code)?.into_unknown();
+                let callback = {
+                  let cell = Cell::new(Some(callback));
+                  move || {
+                    let func = cell
+                      .take()
+                      .expect("This function should not be called more than once");
+                    func()
+                  }
+                };
                 let resolve = ctx
                   .env
                   .create_function_from_closure("NodejsEvent::done", move |ctx| {
-                    resolve.send(Ok(())).unwrap();
+                    callback();
                     ctx.env.get_undefined()
                   })?
                   .into_unknown();
@@ -247,26 +268,44 @@ pub fn start_node_instance<Args: AsRef<str>>(args: &[Args]) -> crate::Result<Sen
               resolve.send(callback(ctx.env)).ok();
               Ok(vec![])
             }
-            NodejsWorkerEvent::Eval { code, resolve } => {
+            NodejsWorkerEvent::Eval { code, callback } => {
               let action = ctx.env.create_uint32(0)?.into_unknown();
               let payload = ctx.env.create_string(&code)?.into_unknown();
+              let callback = {
+                let cell = Cell::new(Some(callback));
+                move || {
+                  let func = cell
+                    .take()
+                    .expect("This function should not be called more than once");
+                  func()
+                }
+              };
               let resolve = ctx
                 .env
                 .create_function_from_closure("NodejsContextEvent::done", move |ctx| {
-                  resolve.send(Ok(())).unwrap();
+                  callback();
                   ctx.env.get_undefined()
                 })?
                 .into_unknown();
 
               Ok(vec![action, payload, resolve])
             }
-            NodejsWorkerEvent::EvalTypeScript { code, resolve } => {
+            NodejsWorkerEvent::EvalTypeScript { code, callback } => {
               let action = ctx.env.create_uint32(1)?.into_unknown();
               let payload = ctx.env.create_string(&code)?.into_unknown();
+              let callback = {
+                let cell = Cell::new(Some(callback));
+                move || {
+                  let func = cell
+                    .take()
+                    .expect("This function should not be called more than once");
+                  func()
+                }
+              };
               let resolve = ctx
                 .env
                 .create_function_from_closure("NodejsContextEvent::done", move |ctx| {
-                  resolve.send(Ok(())).unwrap();
+                  callback();
                   ctx.env.get_undefined()
                 })?
                 .into_unknown();
@@ -320,7 +359,10 @@ pub fn start_node_instance<Args: AsRef<str>>(args: &[Args]) -> crate::Result<Sen
     Ok(exports)
   })?;
 
-  let mut args = args.iter().map(|v| v.as_ref().to_string()).collect::<Vec<String>>(); 
+  let mut args = args
+    .iter()
+    .map(|v| v.as_ref().to_string())
+    .collect::<Vec<String>>();
   std::thread::spawn(move || {
     args.push("-e".to_string());
     args.push(format!("{};\n", crate::prelude::MAIN_JS));

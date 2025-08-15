@@ -23,18 +23,18 @@ pub fn main() -> anyhow::Result<()> {
   })?;
 
   // Evaluate script that inspects the value set by the native code
-  worker.eval("console.log(globalThis.meaning)")?; // "42"
+  worker.eval_blocking("console.log(globalThis.meaning)")?; // "42"
 
   // Evaluate script that demonstrates waiting for tasks to end before continuing
-  worker.eval(
+  worker.eval_blocking(
     r#"
     ;(async () => {
       console.log(globalThis.meaning)
     })();
   "#,
-  )?; 
+  )?;
 
-  worker.eval(
+  worker.eval_blocking(
     r#"
     ;(async () => {
       const fs = await import('node:fs')
@@ -43,7 +43,7 @@ pub fn main() -> anyhow::Result<()> {
       console.log(fs.readdirSync(process.cwd()))
     })();
   "#,
-  )?; 
+  )?;
 
   Ok(())
 }

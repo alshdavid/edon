@@ -46,13 +46,36 @@ impl NodejsWorker {
   pub fn eval<Code: AsRef<str>>(
     &self,
     code: Code,
+    callback: impl 'static + Send + FnOnce(),
+  ) -> crate::Result<()> {
+    self
+      .tx_wrk
+      .send(NodejsWorkerEvent::Eval {
+        code: code.as_ref().to_string(),
+        callback: Box::new(callback),
+      })
+      .unwrap();
+
+    Ok(())
+  }
+
+  /// Evaluate Block of Commonjs JavaScript
+  ///
+  /// The last line of the script will be returned
+  pub fn eval_blocking<Code: AsRef<str>>(
+    &self,
+    code: Code,
   ) -> crate::Result<()> {
     let (tx, rx) = channel();
-    let tx_eval = self.tx_wrk.clone();
-    let code = code.as_ref().to_string();
 
-    tx_eval
-      .send(NodejsWorkerEvent::Eval { code, resolve: tx })
+    self
+      .tx_wrk
+      .send(NodejsWorkerEvent::Eval {
+        code: code.as_ref().to_string(),
+        callback: Box::new(move || {
+          tx.send(Ok(())).unwrap();
+        }),
+      })
       .ok();
 
     rx.recv().unwrap()
@@ -62,13 +85,34 @@ impl NodejsWorker {
   pub fn eval_typescript<Code: AsRef<str>>(
     &self,
     code: Code,
+    callback: impl 'static + Send + FnOnce(),
+  ) -> crate::Result<()> {
+    self
+      .tx_wrk
+      .send(NodejsWorkerEvent::EvalTypeScript {
+        code: code.as_ref().to_string(),
+        callback: Box::new(callback),
+      })
+      .unwrap();
+
+    Ok(())
+  }
+
+  /// Evaluate Block of ESM JavaScript
+  pub fn eval_typescript_blocking<Code: AsRef<str>>(
+    &self,
+    code: Code,
   ) -> crate::Result<()> {
     let (tx, rx) = channel();
-    let tx_eval = self.tx_wrk.clone();
-    let code = code.as_ref().to_string();
 
-    tx_eval
-      .send(NodejsWorkerEvent::EvalTypeScript { code, resolve: tx })
+    self
+      .tx_wrk
+      .send(NodejsWorkerEvent::EvalTypeScript {
+        code: code.as_ref().to_string(),
+        callback: Box::new(move || {
+          tx.send(Ok(())).unwrap();
+        }),
+      })
       .ok();
 
     rx.recv().unwrap()
