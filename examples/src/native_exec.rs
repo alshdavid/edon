@@ -5,7 +5,7 @@ pub fn main() -> anyhow::Result<()> {
   let worker = nodejs.spawn_worker_thread()?;
 
   // Open a native execution context and set a global variable
-  worker.exec(|env| {
+  worker.exec_blocking(|env| {
     // Add the following to globalThis:
     // {
     //    ...globalThis,

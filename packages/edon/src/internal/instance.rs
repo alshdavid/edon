@@ -21,7 +21,6 @@ static STARTED: AtomicBool = AtomicBool::new(false);
 pub enum NodejsMainEvent {
   Exec {
     callback: Box<dyn Send + FnOnce(Env) -> crate::Result<()>>,
-    resolve: Sender<crate::Result<()>>,
   },
   StopMain {
     resolve: Sender<()>,
@@ -56,7 +55,6 @@ pub enum NodejsMainEvent {
 pub enum NodejsWorkerEvent {
   Exec {
     callback: Box<dyn Send + FnOnce(Env) -> crate::Result<()>>,
-    resolve: Sender<crate::Result<()>>,
   },
   Eval {
     code: String,
@@ -99,8 +97,8 @@ pub fn start_node_instance<Args: AsRef<str>>(
           .create_threadsafe_function::<NodejsMainEvent, JsUnknown, _, ErrorStrategy::Fatal>(
             0,
             move |ctx| match ctx.value {
-              NodejsMainEvent::Exec { callback, resolve } => {
-                resolve.send(callback(ctx.env)).ok();
+              NodejsMainEvent::Exec { callback } => {
+                callback(ctx.env).unwrap();
                 Ok(vec![])
               }
               NodejsMainEvent::StopMain { resolve } => {
@@ -264,8 +262,8 @@ pub fn start_node_instance<Args: AsRef<str>>(
         .create_threadsafe_function::<NodejsWorkerEvent, JsUnknown, _, ErrorStrategy::Fatal>(
           0,
           move |ctx| match ctx.value {
-            NodejsWorkerEvent::Exec { callback, resolve } => {
-              resolve.send(callback(ctx.env)).ok();
+            NodejsWorkerEvent::Exec { callback } => {
+              callback(ctx.env).unwrap();
               Ok(vec![])
             }
             NodejsWorkerEvent::Eval { code, callback } => {

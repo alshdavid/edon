@@ -40,7 +40,7 @@ pub fn main() -> anyhow::Result<()> {
       // Extract value stored inside JavaScript using native code
       let (tx, rx) = channel();
 
-      ctx.exec(move |env| {
+      ctx.exec_blocking(move |env| {
         let global_this = env.get_global()?;
         let i = global_this.get_named_property::<JsNumber>("sum")?;
         tx.send(i.get_int32()?).unwrap();

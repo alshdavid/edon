@@ -122,7 +122,7 @@ impl NodejsWorker {
   ///
   /// This will provide a Nodejs Env and allow execution of
   /// native code in the JavaScript context
-  pub fn exec<F: 'static + Send + FnOnce(Env) -> crate::Result<()>>(
+  pub fn exec_blocking<F: 'static + Send + FnOnce(Env) -> crate::Result<()>>(
     &self,
     callback: F,
   ) -> crate::Result<()> {
@@ -131,12 +131,33 @@ impl NodejsWorker {
     self
       .tx_wrk
       .send(NodejsWorkerEvent::Exec {
-        callback: Box::new(callback),
-        resolve: tx,
+        callback: Box::new(move |env| {
+          let result = callback(env);
+          tx.send(Ok(())).unwrap();
+          result
+        }),
       })
       .ok();
 
     rx.recv().unwrap()
+  }
+
+  /// Evaluate Native JavaScript
+  ///
+  /// This will provide a Nodejs Env and allow execution of
+  /// native code in the JavaScript context
+  pub fn exec<F: 'static + Send + FnOnce(Env) -> crate::Result<()>>(
+    &self,
+    callback: F,
+  ) -> crate::Result<()> {
+    self
+      .tx_wrk
+      .send(NodejsWorkerEvent::Exec {
+        callback: Box::new(callback),
+      })
+      .unwrap();
+    
+    Ok(())
   }
 
   /// Call Nodejs's require() function to import code

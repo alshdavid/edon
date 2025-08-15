@@ -26,7 +26,7 @@ pub fn main() -> anyhow::Result<()> {
   )?;
 
   // Execute n-api code with
-  nodejs.exec(|env| {
+  nodejs.exec_blocking(|env| {
     let mut global_this = env.get_global()?;
 
     let key = env.create_string("meaningOfLife")?;
