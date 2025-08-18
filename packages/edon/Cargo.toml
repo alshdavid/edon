@@ -7,9 +7,14 @@ description = "Library embedding Nodejs (libnode) within Rust"
 edition = "2021"
 license = "MIT"
 
+[features]
+serde-json = ["napi/serde_json"]
+error_anyhow = ["napi/error_anyhow"]
+chrono_date = ["napi/chrono_date"]
+
 [lib]
 
 [dependencies]
 libnode_sys = { workspace = true }
 libffi = { workspace = true }
-napi = {  workspace = true } 
+napi = { workspace = true }

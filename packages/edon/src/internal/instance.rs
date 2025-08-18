@@ -8,13 +8,14 @@ use std::sync::Arc;
 use std::sync::Mutex;
 use std::thread;
 
-use super::JsTransferable;
 use napi::threadsafe_function::ErrorStrategy;
 use napi::threadsafe_function::ThreadsafeFunctionCallMode;
+use napi::Env;
 use napi::JsFunction;
 use napi::JsString;
 use napi::JsUnknown;
-use napi::Env;
+
+use super::JsTransferable;
 
 static STARTED: AtomicBool = AtomicBool::new(false);
 

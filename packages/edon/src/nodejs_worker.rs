@@ -2,8 +2,8 @@ use std::sync::atomic::Ordering;
 use std::sync::mpsc::channel;
 use std::sync::mpsc::Sender;
 
-use napi::JsUnknown;
 use napi::Env;
+use napi::JsUnknown;
 
 use crate::internal::NodejsMainEvent;
 use crate::internal::NodejsWorkerEvent;
@@ -42,7 +42,7 @@ impl NodejsWorker {
     });
   }
 
-    pub fn eval<Code: AsRef<str>>(
+  pub fn eval<Code: AsRef<str>>(
     &self,
     code: Code,
     callback: impl 'static + Send + FnOnce(Env, JsUnknown),
@@ -155,7 +155,7 @@ impl NodejsWorker {
         callback: Box::new(callback),
       })
       .unwrap();
-    
+
     Ok(())
   }
 

@@ -5,9 +5,9 @@ use std::sync::mpsc::channel;
 use std::sync::mpsc::Sender;
 use std::sync::OnceLock;
 
+use napi::Env;
 use napi::JsObject;
 use napi::JsUnknown;
-use napi::Env;
 
 use super::internal;
 use super::NodejsWorker;
@@ -218,7 +218,7 @@ impl Nodejs {
         callback: Box::new(callback),
       })
       .unwrap();
-    
+
     Ok(())
   }
 

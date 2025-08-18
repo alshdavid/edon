@@ -10,6 +10,7 @@ pub(crate) mod prelude;
 mod resolve_libnode;
 
 pub use libnode_sys as sys;
+pub use napi;
 
 pub use self::error::*;
 // pub use self::napi::js_values;
@@ -18,5 +19,3 @@ pub use self::nodejs::*;
 pub use self::nodejs_options::*;
 pub use self::nodejs_worker::*;
 pub use self::resolve_libnode::*;
-pub use napi;
-
