@@ -8,9 +8,8 @@ use std::ops::Deref;
 use std::sync::atomic::AtomicI32;
 use std::sync::atomic::Ordering;
 use std::sync::Arc;
+use std::sync::LazyLock;
 use std::sync::Mutex;
-
-use once_cell::sync::Lazy;
 
 use napi::bindgen_prelude::FromNapiValue;
 use napi::bindgen_prelude::ToNapiValue;
@@ -22,7 +21,7 @@ use napi::NapiRaw;
 type Inner = Arc<dyn Any + Send + Sync>;
 
 static COUNTER: AtomicI32 = AtomicI32::new(0);
-static VALUES: Lazy<Mutex<HashMap<i32, Inner>>> = Lazy::new(Default::default);
+static VALUES: LazyLock<Mutex<HashMap<i32, Inner>>> = LazyLock::new(Default::default);
 
 /// Creates an external reference to a Rust value and
 /// makes it transferable across Nodejs workers

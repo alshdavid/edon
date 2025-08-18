@@ -1,3 +1,5 @@
+#![deny(unused_extern_crates)]
+
 mod error;
 pub(crate) mod internal;
 // pub mod napi;

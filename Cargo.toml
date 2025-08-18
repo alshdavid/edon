@@ -5,3 +5,9 @@ members = [
   "./packages/edon",
   "./examples"
 ]
+
+[workspace.dependencies]
+ctor = "0.4.2"
+libffi = "^4.0.0"
+libnode_sys = "^0.0.7"
+napi = { git = "https://github.com/alshdavid-forks/napi-rs.git", branch = "alsh/libnode-v2", features = ["napi8", "libnode"]} 

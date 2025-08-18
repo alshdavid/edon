@@ -7,23 +7,9 @@ description = "Library embedding Nodejs (libnode) within Rust"
 edition = "2021"
 license = "MIT"
 
-[features]
-serde-json = ["serde", "serde_json"]
-error-anyhow = ["anyhow"]
-chrono-date = ["chrono"]
-
 [lib]
 
 [dependencies]
-bitflags = "2.9.0"
-ctor = "0.4.2"
-libffi = "^4.0.0"
-# libnode_sys = { path = "../../../libnode_sys/crates/libnode_sys" }
-libnode_sys = "^0.0.7"
-once_cell = "^1.21.3"
-anyhow = { version = "^1", optional = true }
-serde = { version = "^1", optional = true }
-serde_json = { version = "^1", optional = true }
-chrono = { version = "^0.4", optional = true }
-# napi = { path = "/Volumes/Local/Development/alshdavid-forks/napi-rs/crates/napi", features = ["napi8", "libnode"]} 
-napi = { git = "https://github.com/alshdavid-forks/napi-rs.git", branch = "alsh/libnode-v2", features = ["napi8", "libnode"]} 
+libnode_sys = { workspace = true }
+libffi = { workspace = true }
+napi = {  workspace = true } 
